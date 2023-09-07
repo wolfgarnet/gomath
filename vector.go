@@ -6,6 +6,16 @@ import (
 	"math"
 )
 
+type Vector32 struct {
+	Vector2[float32]
+}
+
+func NewVector32(x, y float32) Vector32 {
+	return Vector32{
+		Vector2[float32]{x, y},
+	}
+}
+
 const Epsilon = 0.00001
 
 type Number interface {
@@ -80,14 +90,14 @@ func (v Vector2[T]) Mul(v2 Vector2[T]) Vector2[T] {
 	}
 }
 
-func (v Vector2[T]) MulScalar(scalar T) Vector2[T] {
+func (v Vector2[T]) MultiplyScalar(scalar T) Vector2[T] {
 	return Vector2[T]{
 		X: v.X * scalar,
 		Y: v.Y * scalar,
 	}
 }
 
-func (v Vector2[T]) MulScalars(x T, y T) Vector2[T] {
+func (v Vector2[T]) MultiplyScalars(x T, y T) Vector2[T] {
 	return Vector2[T]{
 		X: v.X * x,
 		Y: v.Y * y,
@@ -129,12 +139,12 @@ func (v Vector2[T]) Lerp(v2 *Vector2[T], t T) Vector2[T] {
 	}
 }
 
-func (v Vector2[T]) Magnitude() float64 {
+func (v Vector2[T]) Length() float64 {
 	return math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y))
 }
 
 func (v Vector2[T]) Normalize() Vector2[T] {
-	m := v.Magnitude()
+	m := v.Length()
 
 	if m > Epsilon {
 		return v.DivScalar(m)
@@ -144,7 +154,7 @@ func (v Vector2[T]) Normalize() Vector2[T] {
 }
 
 func (v Vector2[T]) Reflect(v2 Vector2[T]) Vector2[T] {
-	factor := -2.0 * v.Dot(v2)
+	factor := -T(2.0) * v.Dot(v2)
 	return New(
 		factor*v.X+v2.X,
 		factor*v.Y+v2.Y,
@@ -153,6 +163,11 @@ func (v Vector2[T]) Reflect(v2 Vector2[T]) Vector2[T] {
 
 func (v Vector2[T]) Equals(v2 Vector2[T]) bool {
 	return v.X == v2.X && v.Y == v2.Y
+}
+
+func (v Vector2[T]) AngleTo(v2 Vector2[T]) float32 {
+	theta := float64(v.Dot(v2)) / v.Length() * v2.Length()
+	return float32(math.Acos(Clamp[float64](theta, -1, 1)))
 }
 
 func (v Vector2[T]) String() string {
