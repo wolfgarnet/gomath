@@ -19,7 +19,7 @@ func NewVector32(x, y float32) Vector32 {
 const Epsilon = 0.00001
 
 type Number interface {
-	constraints.Integer | constraints.Float
+	constraints.Signed | constraints.Float
 }
 
 type Vector2[T Number] struct {
@@ -27,7 +27,7 @@ type Vector2[T Number] struct {
 	Y T
 }
 
-func New[T Number](x T, y T) Vector2[T] {
+func NewVector2[T Number](x T, y T) Vector2[T] {
 	return Vector2[T]{
 		X: x,
 		Y: y,
@@ -45,6 +45,17 @@ func (v Vector2[T]) Add(v2 Vector2[T]) Vector2[T] {
 	return Vector2[T]{
 		X: v.X + v2.X,
 		Y: v.Y + v2.Y,
+	}
+}
+
+func (v Vector2[T]) Component(i int) T {
+	switch i {
+	case 0:
+		return v.X
+	case 1:
+		return v.Y
+	default:
+		panic("out of range")
 	}
 }
 
@@ -111,7 +122,7 @@ func (v Vector2[T]) Div(v2 Vector2[T]) Vector2[T] {
 	}
 }
 
-func (v Vector2[T]) DivScalar(scalar float64) Vector2[T] {
+func (v Vector2[T]) DivScalar(scalar T) Vector2[T] {
 	return Vector2[T]{X: v.X / T(scalar), Y: v.Y / T(scalar)}
 }
 
@@ -139,14 +150,22 @@ func (v Vector2[T]) Lerp(v2 *Vector2[T], t T) Vector2[T] {
 	}
 }
 
-func (v Vector2[T]) Length() float64 {
+func (v Vector2[T]) Length64() float64 {
 	return math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y))
+}
+
+func (v Vector2[T]) Length() T {
+	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
+}
+
+func (v Vector2[T]) Length32() float32 {
+	return float32(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
 
 func (v Vector2[T]) Normalize() Vector2[T] {
 	m := v.Length()
 
-	if m > Epsilon {
+	if float64(m) > Epsilon {
 		return v.DivScalar(m)
 	} else {
 		return v
@@ -155,7 +174,7 @@ func (v Vector2[T]) Normalize() Vector2[T] {
 
 func (v Vector2[T]) Reflect(v2 Vector2[T]) Vector2[T] {
 	factor := -T(2.0) * v.Dot(v2)
-	return New(
+	return NewVector2(
 		factor*v.X+v2.X,
 		factor*v.Y+v2.Y,
 	)
@@ -165,9 +184,37 @@ func (v Vector2[T]) Equals(v2 Vector2[T]) bool {
 	return v.X == v2.X && v.Y == v2.Y
 }
 
-func (v Vector2[T]) AngleTo(v2 Vector2[T]) float32 {
-	theta := float64(v.Dot(v2)) / v.Length() * v2.Length()
-	return float32(math.Acos(Clamp[float64](theta, -1, 1)))
+func (v Vector2[T]) AngleTo(v2 Vector2[T]) T {
+	theta := v.Dot(v2) / v.Length() * v2.Length()
+	return Acos(Clamp[T](theta, T(-1.0), 1))
+}
+
+// DistanceTo returns the distance to the given vector
+func (v Vector2[T]) DistanceTo(v2 Vector2[T]) T {
+
+	return Sqrt(v.DistanceToSquared(v2))
+}
+
+// DistanceToSquared returns the squared distance to the given vector
+func (v Vector2[T]) DistanceToSquared(v2 Vector2[T]) T {
+
+	dx := v.X - v2.X
+	dy := v.Y - v2.Y
+	return dx*dx + dy*dy
+}
+
+// FindNormalVector returns a normalized normal vector which is perpendicular to the line segment given by the two vectors.
+func FindNormalVector[T Number](p1, p2 Vector2[T]) Vector2[T] {
+	p3, p4 := FindNormal(p1, p2)
+	return p4.Sub(p3).Normalize()
+}
+
+// FindNormal returns a normal vector which is perpendicular to the line segment given by the two vectors as two vector endpoints.
+func FindNormal[T Number](p1, p2 Vector2[T]) (Vector2[T], Vector2[T]) {
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
+
+	return Vector2[T]{X: -dy, Y: dx}, Vector2[T]{X: dy, Y: -dx}
 }
 
 func (v Vector2[T]) String() string {
