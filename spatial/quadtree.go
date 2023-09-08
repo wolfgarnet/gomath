@@ -179,8 +179,8 @@ func (qt *QuadTree[T]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
 	qt.Insert(item)
 }
 
-func (qt *QuadTree) Remove(item BoundedItem) bool {
-	if !intersection.IntersectingAABB(qt.Boundary, item.GetBounds()) {
+func (qt *QuadTree[T]) Remove(item BoundedItem) bool {
+	if !intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds()) {
 		return false
 	}
 
@@ -212,10 +212,6 @@ func (qt *QuadTree) Remove(item BoundedItem) bool {
 		}
 	}
 
-	//fmt.Printf("I HAVE %v == UNIQUE = %v NE=%v, NE=%v\n", qt.Size(), qt.Unique(), qt.NorthEast != nil, qt.NorthEast.NorthEast == nil)
-	/*if qt.NorthEast != nil && qt.NorthEast.NorthEast == nil && qt.Unique() <= NodeCapacity {
-		qt.Collapse()
-	}*/
 	if wasRemoved {
 		qt.Collapse()
 	}
@@ -223,9 +219,9 @@ func (qt *QuadTree) Remove(item BoundedItem) bool {
 	return wasRemoved
 }
 
-func (qt *QuadTree) Insert(item BoundedItem) bool {
+func (qt *QuadTree[T]) Insert(item BoundedItem) bool {
 	// First, verify that the item belongs in this tree.
-	if !intersection.Intersecting2DAABB(qt.Boundary, item.GetBounds()) {
+	if !intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds()) {
 		return false
 	}
 
@@ -247,7 +243,7 @@ func (qt *QuadTree) Insert(item BoundedItem) bool {
 	}
 
 	// Figure out which children the item can be in.
-	var insertInto *QuadTree
+	var insertInto *QuadTree[T]
 	multiple := false
 	if qt.NorthEast.ContainedIn(item) {
 		insertInto = qt.NorthEast
@@ -285,8 +281,8 @@ func (qt *QuadTree) Insert(item BoundedItem) bool {
 	}
 }
 
-func (qt *QuadTree) ContainedIn(item BoundedItem) bool {
-	return intersection.Intersecting2DAABB(qt.Boundary, item.GetBounds())
+func (qt *QuadTree[T]) ContainedIn(item BoundedItem) bool {
+	return intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds())
 }
 
 type QueryResultWrapper struct {
@@ -313,20 +309,20 @@ func (w *QueryResultWrapper) RemoveDuplicates() {
 	w.Items = w.Items[:i]
 }
 
-func (qt *QuadTree) Query(contained BoundedItem) []BoundedItem {
+func (qt *QuadTree[T]) Query(contained BoundedItem) []BoundedItem {
 	return qt.Query2(contained, false)
 }
 
-func (qt *QuadTree) Query2(contained BoundedItem, testMutual bool) []BoundedItem {
-	if !intersection.Intersecting2DAABB(qt.Boundary, contained.GetBounds()) {
+func (qt *QuadTree[T]) Query2(contained BoundedItem, testMutual bool) []BoundedItem {
+	if !intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
 		return nil
 	}
 	// Leaf node
 	points := []BoundedItem{}
 	for _, p := range qt.Items {
-		if intersection.Intersecting2DAABB(qt.Boundary, contained.GetBounds()) {
+		if intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
 			if testMutual {
-				if intersection.Intersecting2D(p.GetBounds(), contained.GetBounds()) {
+				if intersection.Intersecting2D[T](p.GetBounds(), contained.GetBounds()) {
 					points = append(points, p)
 				}
 			} else {
@@ -347,20 +343,20 @@ func (qt *QuadTree) Query2(contained BoundedItem, testMutual bool) []BoundedItem
 	return points
 }
 
-func (qt *QuadTree) QueryGeometry(contained interface{}) []BoundedItem {
+func (qt *QuadTree[T]) QueryGeometry(contained interface{}) []BoundedItem {
 	return qt.QueryGeometry2(contained, false)
 }
 
-func (qt *QuadTree) QueryGeometry2(contained interface{}, testMutual bool) []BoundedItem {
-	if !intersection.Intersecting2DAABB(qt.Boundary, contained) {
+func (qt *QuadTree[T]) QueryGeometry2(contained interface{}, testMutual bool) []BoundedItem {
+	if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
 		return nil
 	}
 	// Leaf node
 	points := []BoundedItem{}
 	for _, p := range qt.Items {
-		if intersection.Intersecting2DAABB(qt.Boundary, contained) {
+		if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
 			if testMutual {
-				if intersection.Intersecting2D(p.GetBounds(), contained) {
+				if intersection.Intersecting2D[T](p.GetBounds(), contained) {
 					points = append(points, p)
 				}
 			} else {
@@ -382,28 +378,28 @@ func (qt *QuadTree) QueryGeometry2(contained interface{}, testMutual bool) []Bou
 	return points
 }
 
-func (qt *QuadTree) QueryBoundedWithDrain(contained BoundedItem, drain chan BoundedItem) {
+func (qt *QuadTree[T]) QueryBoundedWithDrain(contained BoundedItem, drain chan BoundedItem) {
 	qt.QueryWithDrain2(contained.GetBounds(), false, drain)
 }
 
-func (qt *QuadTree) QueryWithDrain(contained interface{}, drain chan BoundedItem) {
+func (qt *QuadTree[T]) QueryWithDrain(contained interface{}, drain chan BoundedItem) {
 	qt.QueryWithDrain2(contained, false, drain)
 	return
 }
 
-func (qt *QuadTree) QueryBoundedWithDrain2(contained BoundedItem, testMutual bool, drain chan BoundedItem) {
+func (qt *QuadTree[T]) QueryBoundedWithDrain2(contained BoundedItem, testMutual bool, drain chan BoundedItem) {
 	qt.QueryWithDrain2(contained.GetBounds(), testMutual, drain)
 }
 
-func (qt *QuadTree) QueryWithDrain2(contained interface{}, testMutual bool, drain chan BoundedItem) {
-	if !intersection.Intersecting2DAABB(qt.Boundary, contained) {
+func (qt *QuadTree[T]) QueryWithDrain2(contained interface{}, testMutual bool, drain chan BoundedItem) {
+	if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
 		return
 	}
 	// Leaf node
 	for _, p := range qt.Items {
-		if intersection.Intersecting2DAABB(qt.Boundary, contained) {
+		if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
 			if testMutual {
-				if intersection.Intersecting2D(p.GetBounds(), contained) {
+				if intersection.Intersecting2D[T](p.GetBounds(), contained) {
 					drain <- p
 				}
 			} else {
@@ -424,7 +420,7 @@ func (qt *QuadTree) QueryWithDrain2(contained interface{}, testMutual bool, drai
 	return
 }
 
-func (qt *QuadTree) Clone() *QuadTree {
+func (qt *QuadTree[T]) Clone() *QuadTree[T] {
 	newQT := NewQuadTree(qt.Boundary.Center.X, qt.Boundary.Center.Y, qt.Boundary.HalfSize)
 	if qt.NorthEast != nil {
 		newQT.NorthEast = qt.NorthEast.Clone()
@@ -440,11 +436,11 @@ func (qt *QuadTree) Clone() *QuadTree {
 	return newQT
 }
 
-func (qt *QuadTree) Stringify() {
+func (qt *QuadTree[T]) Stringify() {
 	qt.stringify(0)
 }
 
-func (qt *QuadTree) stringify(lvl int) {
+func (qt *QuadTree[T]) stringify(lvl int) {
 	fmt.Printf("%vBounds: %v, points: %v\n", strings.Repeat("-", lvl), qt.Boundary, qt.Items)
 	if qt.NorthEast != nil {
 		fmt.Printf("%vNorth east:\n", strings.Repeat("-", lvl))
@@ -458,7 +454,7 @@ func (qt *QuadTree) stringify(lvl int) {
 	}
 }
 
-func (qt *QuadTree) Visit(cb func(tree *QuadTree)) {
+func (qt *QuadTree[T]) Visit(cb func(tree *QuadTree[T])) {
 	cb(qt)
 	if qt.NorthEast == nil {
 		return
