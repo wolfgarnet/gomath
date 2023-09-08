@@ -1,4 +1,4 @@
-module github.com/wolfgarnet/math
+module github.com/wolfgarnet/gomath
 
 go 1.19
 

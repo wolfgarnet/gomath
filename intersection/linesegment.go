@@ -5,6 +5,8 @@ import (
 	"math"
 )
 
+const maxf = 1e300
+
 // LineSegmentLineSegment2D tests if two line segments intersects. Supports collinear segments.
 // Based on https://github.com/pgkelley4/line-segments-intersect/blob/master/js/line-segments-intersect.js
 // Returns true if the segments overlap, but can still return a point where the extended versions will eventually overlap.
@@ -64,7 +66,7 @@ func LineSegmentLineSegment2D2[T gomath.Number](l1P1, l1P2, l2P1, l2P2 gomath.Ve
 	return nil, false
 }
 
-func LineSquaredAABB[T gomath.Number](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
+func LineSquaredAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
 	beginToEnd := ls.P2.Sub(ls.P1)
 	minToMax := gomath.Vector2[T]{X: bb.HalfSize, Y: bb.HalfSize}
 	bbCenter := gomath.Vector2[T]{X: bb.Center.X, Y: bb.Center.Y}
@@ -72,8 +74,8 @@ func LineSquaredAABB[T gomath.Number](ls gomath.LineSegment[T], bb gomath.Square
 	max := bbCenter.Add(minToMax)
 	beginToMin := min.Sub(ls.P1)
 	beginToMax := max.Sub(ls.P1)
-	tNear := T(-math.MaxFloat64)
-	tFar := T(math.MaxFloat64)
+	tNear := T(-math.MaxFloat32)
+	tFar := T(math.MaxFloat32)
 	axes := []int{0, 1}
 
 	for _, axis := range axes {
@@ -129,7 +131,7 @@ func LineInsideSquaredAABB[T gomath.Number](ls gomath.LineSegment[T], bb gomath.
 	return false
 }
 
-func LineSegmentInsideOrIntersectsSquaredAABB[T gomath.Number](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
+func LineSegmentInsideOrIntersectsSquaredAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
 	if ls.P1.X < bb.Center.X-bb.HalfSize && ls.P2.X < bb.Center.X-bb.HalfSize {
 		return false
 	}
@@ -142,6 +144,7 @@ func LineSegmentInsideOrIntersectsSquaredAABB[T gomath.Number](ls gomath.LineSeg
 	if ls.P1.Y > bb.Center.Y+bb.HalfSize && ls.P2.Y > bb.Center.Y+bb.HalfSize {
 		return false
 	}
+
 	//if ls.Intersects(bb) {
 	if LineSquaredAABB(ls, bb) {
 		return true

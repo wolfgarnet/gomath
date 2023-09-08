@@ -29,6 +29,12 @@ func CircleLineSegment[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment
 	return dist < c.Radius
 }
 
+func CirclePoint[T gomath.Number](c gomath.Circle[T], v gomath.Vector2[T]) bool {
+	dist := c.Center.DistanceTo(v)
+
+	return dist < c.Radius
+}
+
 func CircleAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) bool {
 	p1 := gomath.Vector2[T]{X: b.Center.X + b.HalfSize, Y: b.Center.Y + b.HalfSize}
 	p2 := gomath.Vector2[T]{X: b.Center.X + b.HalfSize, Y: b.Center.Y - b.HalfSize}

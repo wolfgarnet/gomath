@@ -22,6 +22,10 @@ type Number interface {
 	constraints.Signed | constraints.Float
 }
 
+type Float interface {
+	constraints.Float
+}
+
 type Vector2[T Number] struct {
 	X T
 	Y T
