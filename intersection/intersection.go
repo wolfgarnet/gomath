@@ -20,6 +20,21 @@ func IntersectingSquaredAABB[T gomath.Float](aabb gomath.SquaredAABB2D[T], other
 	}
 }
 
+/*func IntersectingSquaredAABBWithPenetration[T gomath.Float](aabb gomath.SquaredAABB2D[T], other interface{}) (T, bool) {
+	switch o := other.(type) {
+	case gomath.SquaredAABB2D[T]:
+		return AABB2DAABB2D(aabb, o)
+	case gomath.Circle[T]:
+		return CircleAABB(o, aabb)
+	case gomath.LineSegment[T]:
+		return LineSegmentInsideOrIntersectsSquaredAABB(o, aabb)
+	case gomath.Vector2[T]:
+		return AABB2DPoint(aabb, o)
+	default:
+		panic(fmt.Sprintf("Unsupported operand: %T", other))
+	}
+}*/
+
 func IntersectingCircle[T gomath.Number](circle gomath.Circle[T], other interface{}) bool {
 	switch t := other.(type) {
 	case gomath.SquaredAABB2D[T]:

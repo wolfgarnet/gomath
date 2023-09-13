@@ -2,7 +2,7 @@ package gomath
 
 func dist2[T Number](v, w Vector2[T]) T { return Sqr(v.X-w.X) + Sqr(v.Y-w.Y) }
 
-// Minimum Distance calculates the minimum distance from a point, p,
+// MinimumDistance calculates the minimum distance from a point, p,
 // to the line segment defined by a and b.
 // https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
 func MinimumDistance[T Number](a, b, p Vector2[T]) T {

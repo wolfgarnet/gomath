@@ -221,6 +221,21 @@ func FindNormal[T Number](p1, p2 Vector2[T]) (Vector2[T], Vector2[T]) {
 	return Vector2[T]{X: -dy, Y: dx}, Vector2[T]{X: dy, Y: -dx}
 }
 
+func GetNormal[T Number](v Vector2[T]) Vector2[T] {
+	return NewVector2(v.Y, -v.X).Normalize()
+}
+
+// Three points are a counter-clockwise turn if ccw > 0, clockwise if
+// ccw < 0, and collinear if ccw = 0 because ccw is a determinant that
+// gives twice the signed  area of the triangle formed by p1, p2 and p3.
+func CCW2D[T Number](p1, p2, p3 Vector2[T]) T {
+	return (p2.X-p1.X)*(p3.Y-p1.Y) - (p2.Y-p1.Y)*(p3.X-p1.X)
+}
+
+func CCW2DOrigin[T Number](p2, p3 Vector2[T]) T {
+	return (p2.X-0)*(p3.Y-0) - (p2.Y-0)*(p3.X-0)
+}
+
 func (v Vector2[T]) String() string {
 	return fmt.Sprintf("Vector2(%v, %v)", v.X, v.Y)
 }

@@ -29,10 +29,22 @@ func CircleLineSegment[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment
 	return dist < c.Radius
 }
 
+func CircleLineSegmentWithPenetration[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment[T]) (T, bool) {
+	dist := gomath.MinimumDistance(s.P1, s.P2, c.Center)
+
+	return c.Radius - dist, dist < c.Radius
+}
+
 func CirclePoint[T gomath.Number](c gomath.Circle[T], v gomath.Vector2[T]) bool {
 	dist := c.Center.DistanceTo(v)
 
 	return dist < c.Radius
+}
+
+func CirclePointWithPenetration[T gomath.Number](c gomath.Circle[T], v gomath.Vector2[T]) (T, gomath.Vector2[T], bool) {
+	dist := c.Center.DistanceTo(v)
+
+	return c.Radius - dist, v.Sub(c.Center).Normalize(), dist < c.Radius
 }
 
 func CircleAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) bool {
@@ -63,4 +75,23 @@ func CircleAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) 
 	}
 
 	return false
+}
+
+func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	if !CircleAABB(c, b) {
+		return 0, normal, false
+	}
+
+	var max T
+	for _, side := range b.Sides() {
+		p, ok := CircleLineSegmentWithPenetration(c, side)
+		if !ok {
+			continue
+		}
+		if p > max {
+			max = p
+		}
+	}
+
+	return max, true
 }
