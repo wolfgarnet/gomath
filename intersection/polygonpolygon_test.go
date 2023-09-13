@@ -1,6 +1,7 @@
 package intersection
 
 import (
+	"fmt"
 	"github.com/wolfgarnet/gomath"
 	"testing"
 
@@ -14,9 +15,15 @@ func TestPolygonPolygon2D(t *testing.T) {
 		penetration    float32
 		hasPenetration bool
 	}{
-		"1": {
+		"1a": {
 			p1:             []gomath.Vector2[float32]{{0, 0}, {1, 0}, {1, 1}, {0, 1}},
 			p2:             []gomath.Vector2[float32]{{1, 1}, {2, 1}, {2, 2}, {1, 2}},
+			hasPenetration: true,
+			penetration:    0.0,
+		},
+		"1b": {
+			p1:             []gomath.Vector2[float32]{{0, 1}, {1, 1}, {1, 2}, {0, 2}},
+			p2:             []gomath.Vector2[float32]{{0, 0}, {1, 0}, {1, 1}, {0, 1}},
 			hasPenetration: true,
 			penetration:    0.0,
 		},
@@ -62,7 +69,8 @@ func TestPolygonPolygon2D(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			p1 := gomath.Polygon[float32]{Points: test.p1}
 			p2 := gomath.Polygon[float32]{Points: test.p2}
-			penetration, hit := PolygonPolygon(p1, p2)
+			penetration, surfaceNormal, hit := PolygonPolygon(p1, p2)
+			fmt.Printf("Normal: %v\n", surfaceNormal)
 
 			require.Equalf(t, test.hasPenetration, hit, "Test %v failed", name)
 			assert.Equalf(t, test.penetration, penetration, "Test %v failed", name)

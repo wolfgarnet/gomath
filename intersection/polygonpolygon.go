@@ -5,11 +5,11 @@ import (
 	"math"
 )
 
-func PolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T]) (T, bool) {
+func PolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
 	var (
-		p1          gomath.Vector2[T]
-		penetration T = math.MaxFloat32
+		p1 gomath.Vector2[T]
 	)
+	penetration = math.MaxFloat32
 	l1 := len(poly1.Points)
 	for i, p0 := range poly1.Points {
 		if i < l1-1 {
@@ -19,8 +19,8 @@ func PolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T]) (T, bool) {
 		}
 		vector1 := p0.Sub(p1)
 		axis := gomath.GetNormal(vector1)
-		if hit := overlapOnAxisPolygonPolygon(poly1, poly2, axis, &penetration); !hit {
-			return 0, false
+		if hit := overlapOnAxisPolygonPolygon(poly1, poly2, axis, &penetration, &surfaceNormal); !hit {
+			return 0, surfaceNormal, false
 		}
 	}
 
@@ -35,15 +35,15 @@ func PolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T]) (T, bool) {
 		vector1_1 := p1_0.Sub(p1)
 
 		axis := gomath.GetNormal(vector1_1)
-		if hit := overlapOnAxisPolygonPolygon(poly1, poly2, axis, &penetration); !hit {
-			return 0, false
+		if hit := overlapOnAxisPolygonPolygon(poly1, poly2, axis, &penetration, &surfaceNormal); !hit {
+			return 0, surfaceNormal, false
 		}
 	}
 
-	return penetration, true
+	return penetration, surfaceNormal, true
 }
 
-func overlapOnAxisPolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T], axis gomath.Vector2[T], penetration2 *T) bool {
+func overlapOnAxisPolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T], axis gomath.Vector2[T], penetration2 *T, normal *gomath.Vector2[T]) bool {
 	if axis.LengthSq() < 0.0001 {
 		return false
 	}
@@ -59,6 +59,7 @@ func overlapOnAxisPolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T],
 
 	if penetration < *penetration2 && penetration >= 0 {
 		*penetration2 = penetration
+		*normal = axis
 	}
 
 	return penetration >= 0
