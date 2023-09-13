@@ -24,6 +24,14 @@ func Abs[T Number](v T) T {
 	return T(math.Abs(float64(v)))
 }
 
+func Cos[T Number](theta T) T {
+	return T(math.Cos(float64(theta)))
+}
+
+func Sin[T Number](theta T) T {
+	return T(math.Sin(float64(theta)))
+}
+
 func Clamp[T Number](x, a, b T) T {
 	if x < a {
 		return a

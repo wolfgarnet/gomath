@@ -162,6 +162,10 @@ func (v Vector2[T]) Length() T {
 	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
 
+func (v Vector2[T]) LengthSq() T {
+	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
+}
+
 func (v Vector2[T]) Length32() float32 {
 	return float32(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
@@ -205,6 +209,15 @@ func (v Vector2[T]) DistanceToSquared(v2 Vector2[T]) T {
 	dx := v.X - v2.X
 	dy := v.Y - v2.Y
 	return dx*dx + dy*dy
+}
+
+func (v Vector2[T]) ApplyMatrix(m Matrix[T]) Vector2[T] {
+	x := v.X
+	y := v.Y
+	v.X = m[0]*x + m[3]*y + m[6]
+	v.Y = m[1]*x + m[4]*y + m[7]
+
+	return v
 }
 
 // FindNormalVector returns a normalized normal vector which is perpendicular to the line segment given by the two vectors.

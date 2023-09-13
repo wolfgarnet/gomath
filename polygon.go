@@ -80,7 +80,7 @@ func (p Polygon[T]) Center2() Vector2[T] {
 			previous = p.Points[i-1]
 			next = p.Points[i+1]
 		}
-		
+
 		w := point.Sub(next).Length() + point.Sub(previous).Length()
 		center.Add(point.MultiplyScalar(w))
 		weight += w
@@ -188,6 +188,17 @@ func (p Polygon[T]) ExtendSimple(e T) Polygon[T] {
 
 	return Polygon[T]{
 		Points: ps,
+	}
+}
+
+func (p Polygon[T]) Transform(m Matrix[T]) Polygon[T] {
+	newPoints := make([]Vector2[T], 0, len(p.Points))
+	for _, pp := range p.Points {
+		newPoints = append(newPoints, pp.ApplyMatrix(m))
+	}
+
+	return Polygon[T]{
+		Points: newPoints,
 	}
 }
 

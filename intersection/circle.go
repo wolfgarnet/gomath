@@ -93,5 +93,5 @@ func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.Squ
 		}
 	}
 
-	return max, true
+	return max, normal, true
 }
