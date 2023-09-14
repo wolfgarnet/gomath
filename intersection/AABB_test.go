@@ -35,21 +35,21 @@ func TestAABB2DAABB2D(t *testing.T) {
 		bb1, bb2      gomath.SquaredAABB2D[float32]
 		isOverlapping bool
 		penetration   float32
-		normal        *gomath.Vector2[float32]
+		normal        gomath.Vector2[float32]
 	}{
-		"1":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 0, 1), true, 2, &gomath.Vector2[float32]{0, -1}},
-		"0.5":  {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0.5, 0, 1), true, 1.5, &gomath.Vector2[float32]{1, 0}},
-		"-0.5": {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](-0.5, 0, 1), true, 1.5, &gomath.Vector2[float32]{-1, 0}},
-		"2":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](1, 0, 1), true, 1, &gomath.Vector2[float32]{1, 0}},
-		"3":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](2, 0, 1), true, 0, &gomath.Vector2[float32]{1, 0}},
-		"4":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](2.1, 0, 1), false, 0, nil},
-		"5":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 2, 1), true, 0, &gomath.Vector2[float32]{0, 1}},
-		"6":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 2.01, 1), false, 0, nil},
-		"7":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 0, 2), true, 3, &gomath.Vector2[float32]{0, -1}},
-		"8":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 2), gomath.NewSquaredAABB2DXY[float32](0, 0, 1), true, 3, &gomath.Vector2[float32]{0, -1}},
-		"9":    {gomath.NewSquaredAABB2DXY[float32](-10, 0, 1), gomath.NewSquaredAABB2DXY[float32](10, 0, 1), false, 1, nil},
-		"10":   {gomath.NewSquaredAABB2DXY[float32](200, 0, 2), gomath.NewSquaredAABB2DXY[float32](201, 0, 2), true, 3, &gomath.Vector2[float32]{1, 0}},
-		"11":   {gomath.NewSquaredAABB2DXY[float32](0, 0, 2), gomath.NewSquaredAABB2DXY[float32](3, 0, 2), true, 1, &gomath.Vector2[float32]{1, 0}},
+		"1":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 0, 1), true, 2, gomath.Vector2[float32]{0, -1}},
+		"0.5":  {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0.5, 0, 1), true, 1.5, gomath.Vector2[float32]{1, 0}},
+		"-0.5": {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](-0.5, 0, 1), true, 1.5, gomath.Vector2[float32]{-1, 0}},
+		"2":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](1, 0, 1), true, 1, gomath.Vector2[float32]{1, 0}},
+		"3":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](2, 0, 1), true, 0, gomath.Vector2[float32]{1, 0}},
+		"4":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](2.1, 0, 1), false, 0, gomath.Vector2[float32]{}},
+		"5":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 2, 1), true, 0, gomath.Vector2[float32]{0, 1}},
+		"6":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 2.01, 1), false, 0, gomath.Vector2[float32]{}},
+		"7":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 1), gomath.NewSquaredAABB2DXY[float32](0, 0, 2), true, 3, gomath.Vector2[float32]{0, -1}},
+		"8":    {gomath.NewSquaredAABB2DXY[float32](0, 0, 2), gomath.NewSquaredAABB2DXY[float32](0, 0, 1), true, 3, gomath.Vector2[float32]{0, -1}},
+		"9":    {gomath.NewSquaredAABB2DXY[float32](-10, 0, 1), gomath.NewSquaredAABB2DXY[float32](10, 0, 1), false, 1, gomath.Vector2[float32]{}},
+		"10":   {gomath.NewSquaredAABB2DXY[float32](200, 0, 2), gomath.NewSquaredAABB2DXY[float32](201, 0, 2), true, 3, gomath.Vector2[float32]{1, 0}},
+		"11":   {gomath.NewSquaredAABB2DXY[float32](0, 0, 2), gomath.NewSquaredAABB2DXY[float32](3, 0, 2), true, 1, gomath.Vector2[float32]{1, 0}},
 	}
 
 	for name, test := range tests {

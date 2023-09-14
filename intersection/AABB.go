@@ -31,7 +31,7 @@ func AABB2DAABB2D[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) bool {
 	return true
 }
 
-func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) (penetration T, normal *gomath.Vector2[T], overlapping bool) {
+func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
 	diffx := b1.Center.X - b2.Center.X
 	directionx := directionRight
 	if diffx < 0 {
@@ -40,7 +40,7 @@ func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]
 	}
 	sizex := b1.HalfSize + b2.HalfSize
 	if diffx > sizex {
-		return 0, nil, false
+		return 0, normal, false
 	}
 	diffy := b1.Center.Y - b2.Center.Y
 	directiony := directionUp
@@ -50,22 +50,22 @@ func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]
 	}
 	sizey := b1.HalfSize + b2.HalfSize
 	if diffy > sizey {
-		return 0, nil, false
+		return 0, normal, false
 	}
 
 	px := sizex - diffx
 	py := sizey - diffy
 	if px < py {
 		if directionx == directionRight {
-			return px, &gomath.Vector2[T]{X: -1, Y: 0}, true
+			return px, gomath.Vector2[T]{X: -1, Y: 0}, true
 		} else {
-			return px, &gomath.Vector2[T]{X: 1, Y: 0}, true
+			return px, gomath.Vector2[T]{X: 1, Y: 0}, true
 		}
 	}
 
 	if directiony == directionUp {
-		return py, &gomath.Vector2[T]{X: 0, Y: -1}, true
+		return py, gomath.Vector2[T]{X: 0, Y: -1}, true
 	} else {
-		return py, &gomath.Vector2[T]{X: 0, Y: 1}, true
+		return py, gomath.Vector2[T]{X: 0, Y: 1}, true
 	}
 }

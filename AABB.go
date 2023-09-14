@@ -28,7 +28,7 @@ func NewSquaredAABB2D[T Number](center Vector2[T], halfSize T) SquaredAABB2D[T] 
 }
 
 func (a SquaredAABB2D[T]) Sides() []LineSegment[T] {
-	segments := make([]LineSegment[T], 0, 4)
+	segments := make([]LineSegment[T], 4)
 
 	p1 := Vector2[T]{
 		X: a.Center.X - a.HalfSize,

@@ -130,8 +130,8 @@ func (m Matrix[T]) Transpose() Matrix[T] {
 
 // Translation set the translation part of a transformation matrix
 func (m *Matrix[T]) Translation(x, y T) {
-	m[6] = x
-	m[7] = y
+	m[6] += x
+	m[7] += y
 }
 
 // Rotation sets the rotation part of a transformation matrix given in radians.

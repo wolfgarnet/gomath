@@ -11,10 +11,10 @@ func CircleCircle[T gomath.Number](a, b gomath.Circle[T]) bool {
 }
 
 // CircleCircleWithPenetration determines if the two circles are intersecting and how deep the penetration is
-func CircleCircleWithPenetration[T gomath.Number](a, b gomath.Circle[T]) (T, bool) {
-	dist := T(b.Center.Sub(a.Center).Length())
-	penetration := dist - (a.Radius + b.Radius)
-	return penetration, penetration > 0
+func CircleCircleWithPenetration[T gomath.Number](a, b gomath.Circle[T]) (T, gomath.Vector2[T], bool) {
+	dist := b.Center.Sub(a.Center).Length()
+	penetration := (a.Radius + b.Radius) - dist
+	return penetration, b.Center.Sub(a.Center).Normalize(), penetration > 0
 }
 
 func CircleSegment[T gomath.Number](c gomath.Circle[T], p1, p2 gomath.Vector2[T]) bool {
@@ -90,6 +90,7 @@ func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.Squ
 		}
 		if p > max {
 			max = p
+			normal = side.Normal()
 		}
 	}
 
