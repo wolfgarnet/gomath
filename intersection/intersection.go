@@ -111,7 +111,8 @@ func IntersectingSquaredAABB2[T gomath.Float](aabb gomath.SquaredAABB2D[T], othe
 	case gomath.SquaredAABB2D[T]:
 		return SquaredAABB2DSquaredAABB2DWithPenetration(aabb, o)
 	case gomath.AABB[T]:
-		return AABBSquaredAABB2DWithPenetration(o, aabb)
+		penetration, surfaceNormal, overlapping = AABBSquaredAABB2DWithPenetration(o, aabb)
+		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
 	case gomath.Circle[T]:
 		penetration, surfaceNormal, overlapping = CircleSquaredAABBWithPenetration(o, aabb)
 		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
