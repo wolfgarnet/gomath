@@ -172,7 +172,7 @@ func (qt *QuadTree[T]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
 	// Test to see if the update changes the quad
 	quad, ok := qt.FindQuadTree(item)
 	//if ok && quad.Boundary.Contains(newPos) {
-	if ok && intersection.AABB2DPoint(quad.Boundary, newPos) {
+	if ok && intersection.SquaredAABBPoint(quad.Boundary, newPos) {
 		return
 	}
 	qt.Remove(item)

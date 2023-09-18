@@ -19,7 +19,7 @@ func TestAABB2DPoint(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		contains := AABB2DPoint(test.bb, test.point)
+		contains := SquaredAABBPoint(test.bb, test.point)
 		if contains && !test.contains {
 			t.Errorf("Failed test %v. Was contained, shouldn't have been", i)
 		}
@@ -54,7 +54,7 @@ func TestAABB2DAABB2D(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			r := AABB2DAABB2D(test.bb1, test.bb2)
+			r := SquaredAABBSquaredAABB(test.bb1, test.bb2)
 			if !r && test.isOverlapping {
 				t.Errorf("Failed test %v, should have been contained", name)
 			}

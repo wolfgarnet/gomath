@@ -75,7 +75,7 @@ func TestCircleAABB(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			penetration, normal, overlapping := CircleAABBWithPenetration(test.circle, test.box)
+			penetration, normal, overlapping := CircleSquaredAABBWithPenetration(test.circle, test.box)
 			assert.Equal(t, test.overlapping, overlapping)
 			if !overlapping {
 				return

@@ -13,14 +13,21 @@ const (
 	directionLeft
 )
 
-func AABB2DPoint[T gomath.Number](a gomath.SquaredAABB2D[T], p gomath.Vector2[T]) bool {
+func SquaredAABBPoint[T gomath.Number](a gomath.SquaredAABB2D[T], p gomath.Vector2[T]) bool {
 	return a.Center.X-a.HalfSize < p.X &&
 		a.Center.X+a.HalfSize >= p.X &&
 		a.Center.Y-a.HalfSize < p.Y &&
 		a.Center.Y+a.HalfSize >= p.Y
 }
 
-func AABB2DAABB2D[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) bool {
+func AABBPoint[T gomath.Number](a gomath.AABB[T], p gomath.Vector2[T]) bool {
+	return a.Center.X-a.HalfWidth < p.X &&
+		a.Center.X+a.HalfWidth >= p.X &&
+		a.Center.Y-a.HalfHeight < p.Y &&
+		a.Center.Y+a.HalfHeight >= p.Y
+}
+
+func SquaredAABBSquaredAABB[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) bool {
 	if gomath.Abs(b1.Center.X-b2.Center.X) > (b1.HalfSize + b2.HalfSize) {
 		return false
 	}
@@ -31,14 +38,62 @@ func AABB2DAABB2D[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) bool {
 	return true
 }
 
-func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
+	if gomath.Abs(b1.Center.X-b2.Center.X) > (b1.HalfWidth + b2.HalfWidth) {
+		return false
+	}
+	if gomath.Abs(b1.Center.Y-b2.Center.Y) > (b1.HalfHeight + b2.HalfHeight) {
+		return false
+	}
+
+	return true
+}
+
+func AABBSquaredAABB[T gomath.Number](b1 gomath.AABB[T], b2 gomath.SquaredAABB2D[T]) bool {
+	if gomath.Abs(b1.Center.X-b2.Center.X) > (b1.HalfWidth + b2.HalfSize) {
+		return false
+	}
+	if gomath.Abs(b1.Center.Y-b2.Center.Y) > (b1.HalfHeight + b2.HalfSize) {
+		return false
+	}
+
+	return true
+}
+
+func SquaredAABB2DSquaredAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	return AABB2DAABB2DWithPenetration(
+		gomath.AABB[T]{
+			Center:     b1.Center,
+			HalfWidth:  b1.HalfSize,
+			HalfHeight: b1.HalfSize,
+		},
+		gomath.AABB[T]{
+			Center:     b2.Center,
+			HalfWidth:  b2.HalfSize,
+			HalfHeight: b2.HalfSize,
+		},
+	)
+}
+
+func AABBSquaredAABB2DWithPenetration[T gomath.Number](b1 gomath.AABB[T], b2 gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	return AABB2DAABB2DWithPenetration(
+		b1,
+		gomath.AABB[T]{
+			Center:     b2.Center,
+			HalfWidth:  b2.HalfSize,
+			HalfHeight: b2.HalfSize,
+		},
+	)
+}
+
+func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
 	diffx := b1.Center.X - b2.Center.X
 	directionx := directionRight
 	if diffx < 0 {
 		diffx *= -1
 		directionx = directionLeft
 	}
-	sizex := b1.HalfSize + b2.HalfSize
+	sizex := b1.HalfWidth + b2.HalfWidth
 	if diffx > sizex {
 		return 0, normal, false
 	}
@@ -48,7 +103,7 @@ func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]
 		diffy *= -1
 		directiony = directionDown
 	}
-	sizey := b1.HalfSize + b2.HalfSize
+	sizey := b1.HalfHeight + b2.HalfHeight
 	if diffy > sizey {
 		return 0, normal, false
 	}

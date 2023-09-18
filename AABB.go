@@ -4,6 +4,52 @@ import (
 	"fmt"
 )
 
+type AABB[T Number] struct {
+	Center     Vector2[T]
+	HalfWidth  T
+	HalfHeight T
+}
+
+func NewAABB[T Number](center Vector2[T], halfWidth T, halfHeight T) AABB[T] {
+	return AABB[T]{
+		Center:     center,
+		HalfWidth:  halfWidth,
+		HalfHeight: halfHeight,
+	}
+}
+
+func (a AABB[T]) Sides() []LineSegment[T] {
+	segments := make([]LineSegment[T], 4)
+
+	p1 := Vector2[T]{
+		X: a.Center.X - a.HalfWidth,
+		Y: a.Center.Y + a.HalfHeight,
+	}
+	p2 := Vector2[T]{
+		X: a.Center.X + a.HalfWidth,
+		Y: a.Center.Y + a.HalfHeight,
+	}
+	p3 := Vector2[T]{
+		X: a.Center.X + a.HalfWidth,
+		Y: a.Center.Y - a.HalfHeight,
+	}
+	p4 := Vector2[T]{
+		X: a.Center.X - a.HalfWidth,
+		Y: a.Center.Y - a.HalfHeight,
+	}
+
+	segments[0] = NewLineSegment(p1, p2)
+	segments[1] = NewLineSegment(p2, p3)
+	segments[2] = NewLineSegment(p3, p4)
+	segments[3] = NewLineSegment(p4, p1)
+
+	return segments
+}
+
+func (a AABB[T]) String() string {
+	return fmt.Sprintf("AABB[c=%v w=%v, g=%v]", a.Center, a.HalfWidth, a.HalfHeight)
+}
+
 type SquaredAABB2D[T Number] struct {
 	Center   Vector2[T]
 	HalfSize T
@@ -56,5 +102,5 @@ func (a SquaredAABB2D[T]) Sides() []LineSegment[T] {
 }
 
 func (a SquaredAABB2D[T]) String() string {
-	return fmt.Sprintf("AABB[c=%v s=%v]", a.Center, a.HalfSize)
+	return fmt.Sprintf("SquaredAABB[c=%v s=%v]", a.Center, a.HalfSize)
 }

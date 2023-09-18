@@ -67,8 +67,16 @@ func LineSegmentLineSegment2D2[T gomath.Number](l1P1, l1P2, l2P1, l2P2 gomath.Ve
 }
 
 func LineSquaredAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
+	return LineAABB(ls, gomath.AABB[T]{
+		Center:     bb.Center,
+		HalfWidth:  bb.HalfSize,
+		HalfHeight: bb.HalfSize,
+	})
+}
+
+func LineAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool {
 	beginToEnd := ls.P2.Sub(ls.P1)
-	minToMax := gomath.Vector2[T]{X: bb.HalfSize, Y: bb.HalfSize}
+	minToMax := gomath.Vector2[T]{X: bb.HalfWidth, Y: bb.HalfHeight}
 	bbCenter := gomath.Vector2[T]{X: bb.Center.X, Y: bb.Center.Y}
 	min := bbCenter.Sub(minToMax)
 	max := bbCenter.Add(minToMax)
@@ -131,6 +139,21 @@ func LineInsideSquaredAABB[T gomath.Number](ls gomath.LineSegment[T], bb gomath.
 	return false
 }
 
+func LineInsideAABB[T gomath.Number](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool {
+	if ls.P1.X > bb.Center.X-bb.HalfWidth &&
+		ls.P2.X > bb.Center.X-bb.HalfWidth &&
+		ls.P1.X < bb.Center.X+bb.HalfWidth &&
+		ls.P2.X < bb.Center.X+bb.HalfWidth &&
+		ls.P1.Y > bb.Center.Y-bb.HalfHeight &&
+		ls.P2.Y > bb.Center.Y-bb.HalfHeight &&
+		ls.P1.Y < bb.Center.Y+bb.HalfHeight &&
+		ls.P2.Y < bb.Center.Y+bb.HalfHeight {
+		return true
+	}
+
+	return false
+}
+
 func LineSegmentInsideOrIntersectsSquaredAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
 	if ls.P1.X < bb.Center.X-bb.HalfSize && ls.P2.X < bb.Center.X-bb.HalfSize {
 		return false
@@ -153,6 +176,30 @@ func LineSegmentInsideOrIntersectsSquaredAABB[T gomath.Float](ls gomath.LineSegm
 	// Check if inside bbox
 	//return ls.Inside(bb)
 	return LineInsideSquaredAABB(ls, bb)
+}
+
+func LineSegmentInsideOrIntersectsAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool {
+	if ls.P1.X < bb.Center.X-bb.HalfWidth && ls.P2.X < bb.Center.X-bb.HalfWidth {
+		return false
+	}
+	if ls.P1.X > bb.Center.X+bb.HalfWidth && ls.P2.X > bb.Center.X+bb.HalfWidth {
+		return false
+	}
+	if ls.P1.Y < bb.Center.Y-bb.HalfHeight && ls.P2.Y < bb.Center.Y-bb.HalfHeight {
+		return false
+	}
+	if ls.P1.Y > bb.Center.Y+bb.HalfHeight && ls.P2.Y > bb.Center.Y+bb.HalfHeight {
+		return false
+	}
+
+	//if ls.Intersects(bb) {
+	if LineAABB(ls, bb) {
+		return true
+	}
+
+	// Check if inside bbox
+	//return ls.Inside(bb)
+	return LineInsideAABB(ls, bb)
 }
 
 func allEqual(bs ...bool) bool {

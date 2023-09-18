@@ -47,7 +47,7 @@ func CirclePointWithPenetration[T gomath.Number](c gomath.Circle[T], v gomath.Ve
 	return c.Radius - dist, v.Sub(c.Center).Normalize(), dist < c.Radius
 }
 
-func CircleAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) bool {
+func CircleSquaredAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) bool {
 	p1 := gomath.Vector2[T]{X: b.Center.X + b.HalfSize, Y: b.Center.Y + b.HalfSize}
 	p2 := gomath.Vector2[T]{X: b.Center.X + b.HalfSize, Y: b.Center.Y - b.HalfSize}
 
@@ -70,14 +70,64 @@ func CircleAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) 
 		return true
 	}
 
-	if AABB2DPoint(b, c.Center) {
+	if SquaredAABBPoint(b, c.Center) {
 		return true
 	}
 
 	return false
 }
 
-func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+func CircleAABB[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
+	p1 := gomath.Vector2[T]{X: b.Center.X + b.HalfWidth, Y: b.Center.Y + b.HalfHeight}
+	p2 := gomath.Vector2[T]{X: b.Center.X + b.HalfWidth, Y: b.Center.Y - b.HalfHeight}
+
+	if CircleSegment(c, p1, p2) {
+		return true
+	}
+
+	p3 := gomath.Vector2[T]{X: b.Center.X - b.HalfWidth, Y: b.Center.Y - b.HalfHeight}
+
+	if CircleSegment(c, p2, p3) {
+		return true
+	}
+
+	p4 := gomath.Vector2[T]{X: b.Center.X - b.HalfWidth, Y: b.Center.Y + b.HalfHeight}
+
+	if CircleSegment(c, p3, p4) {
+		return true
+	}
+	if CircleSegment(c, p4, p1) {
+		return true
+	}
+
+	if AABBPoint(b, c.Center) {
+		return true
+	}
+
+	return false
+}
+
+func CircleSquaredAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	if !CircleSquaredAABB(c, b) {
+		return 0, normal, false
+	}
+
+	var max T
+	for _, side := range b.Sides() {
+		p, ok := CircleLineSegmentWithPenetration(c, side)
+		if !ok {
+			continue
+		}
+		if p > max {
+			max = p
+			normal = side.Normal()
+		}
+	}
+
+	return max, normal, true
+}
+
+func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
 	if !CircleAABB(c, b) {
 		return 0, normal, false
 	}
