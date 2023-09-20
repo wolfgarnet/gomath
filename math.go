@@ -32,6 +32,14 @@ func Sin[T Number](theta T) T {
 	return T(math.Sin(float64(theta)))
 }
 
+func Floor[T Number](v T) T {
+	return T(math.Floor(float64(v)))
+}
+
+func Mod[T Number](v T, d T) T {
+	return T(math.Mod(float64(v), float64(d)))
+}
+
 func Clamp[T Number](x, a, b T) T {
 	if x < a {
 		return a
