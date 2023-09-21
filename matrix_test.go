@@ -24,3 +24,10 @@ func TestMatrix_Rotation(t *testing.T) {
 
 	spew.Dump(v2)
 }
+
+func TestMatrix_SetPosition(t *testing.T) {
+	m := Matrix[float32]{}.Identity()
+	spew.Dump(m)
+	m.SetPosition(1, 2)
+	spew.Dump(m)
+}

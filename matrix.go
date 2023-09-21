@@ -5,14 +5,12 @@ import "errors"
 // Matrix is 3x3 matrix column matrix
 type Matrix[T Number] [9]T
 
-func (m Matrix[T]) Identity() Matrix[T] {
-
+func (m *Matrix[T]) Identity() {
 	m.Set(
 		1, 0, 0,
 		0, 1, 0,
 		0, 0, 1,
 	)
-	return m
 }
 
 func NewMatrix[T Number]() Matrix[T] {
@@ -25,7 +23,7 @@ func NewMatrix[T Number]() Matrix[T] {
 // Set sets all the elements of the matrix row by row starting at row1, column1,
 // row1, column2, row1, column3 and so forth.
 // Returns the pointer to this updated Matrix.
-func (m Matrix[T]) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 T) Matrix[T] {
+func (m *Matrix[T]) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 T) {
 
 	m[0] = n11
 	m[3] = n12
@@ -36,12 +34,18 @@ func (m Matrix[T]) Set(n11, n12, n13, n21, n22, n23, n31, n32, n33 T) Matrix[T] 
 	m[2] = n31
 	m[5] = n32
 	m[8] = n33
-
-	return m
 }
 
-func (m Matrix[T]) Multiply(b Matrix[T]) Matrix[T] {
+func (m *Matrix[T]) SetPosition(x, y T) {
+	m[6] = x
+	m[7] = y
+}
 
+func (m *Matrix[T]) GetPosition() Vector2[T] {
+	return Vector2[T]{X: m[6], Y: m[7]}
+}
+
+func (m *Matrix[T]) Multiply(b *Matrix[T]) {
 	m[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2]
 	m[3] = m[0]*b[3] + m[3]*b[4] + m[6]*b[5]
 	m[6] = m[0]*b[6] + m[3]*b[7] + m[6]*b[8]
@@ -53,8 +57,23 @@ func (m Matrix[T]) Multiply(b Matrix[T]) Matrix[T] {
 	m[2] = m[2]*b[0] + m[5]*b[1] + m[8]*b[2]
 	m[5] = m[2]*b[3] + m[5]*b[4] + m[8]*b[5]
 	m[8] = m[2]*b[6] + m[5]*b[7] + m[8]*b[8]
+}
 
-	return m
+func MatrixMultiply[T Number](m *Matrix[T], b *Matrix[T]) (c Matrix[T]) {
+	c.Identity()
+	c[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2]
+	c[3] = m[0]*b[3] + m[3]*b[4] + m[6]*b[5]
+	c[6] = m[0]*b[6] + m[3]*b[7] + m[6]*b[8]
+
+	c[1] = m[1]*b[0] + m[4]*b[1] + m[7]*b[2]
+	c[4] = m[1]*b[3] + m[4]*b[4] + m[7]*b[5]
+	c[7] = m[1]*b[6] + m[4]*b[7] + m[7]*b[8]
+
+	c[2] = m[2]*b[0] + m[5]*b[1] + m[8]*b[2]
+	c[5] = m[2]*b[3] + m[5]*b[4] + m[8]*b[5]
+	c[8] = m[2]*b[6] + m[5]*b[7] + m[8]*b[8]
+
+	return c
 }
 
 func (m Matrix[T]) MultiplyScalar(s T) Matrix[T] {
