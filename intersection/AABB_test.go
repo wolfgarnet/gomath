@@ -62,7 +62,7 @@ func TestAABB2DAABB2D(t *testing.T) {
 				t.Errorf("Failed test %v, should NOT have been contained", name)
 			}
 
-			penetration, normal, overlapping := AABB2DAABB2DWithPenetration(test.bb1, test.bb2)
+			penetration, normal, overlapping := SquaredAABB2DSquaredAABB2DWithPenetration[float32](test.bb1, test.bb2)
 			if !overlapping && test.isOverlapping {
 				t.Errorf("Failed test %v, should have been overlapping", name)
 			}

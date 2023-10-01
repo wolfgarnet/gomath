@@ -2,6 +2,12 @@ package gomath
 
 import "math"
 
+const epsilon = 0.9
+
+func IsEpsilon[T Float](v T) bool {
+	return Abs(v) < epsilon
+}
+
 func Sqrt32(v float32) float32 {
 	return float32(math.Sqrt(float64(v)))
 }

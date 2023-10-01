@@ -66,6 +66,28 @@ func LineSegmentLineSegment2D2[T gomath.Number](l1P1, l1P2, l2P1, l2P2 gomath.Ve
 	return nil, false
 }
 
+func LineSquaredBox[T gomath.Float](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
+	for _, side := range bb.Sides() {
+		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, ls.P1, ls.P2)
+		if intersects {
+			return true
+		}
+	}
+
+	return false
+}
+
+func LineBox[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool {
+	for _, side := range bb.Sides() {
+		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, ls.P1, ls.P2)
+		if intersects {
+			return true
+		}
+	}
+
+	return false
+}
+
 func LineSquaredAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
 	return LineAABB(ls, gomath.AABB[T]{
 		Center:     bb.Center,
@@ -87,7 +109,7 @@ func LineAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool 
 	axes := []int{0, 1}
 
 	for _, axis := range axes {
-		if beginToEnd.Component(axis) == 0 { // parallel
+		if beginToEnd.Component(axis) == 0 || gomath.IsEpsilon(beginToEnd.Component(axis)) { // parallel
 			if beginToMin.Component(axis) > 0 || beginToMax.Component(axis) < 0 {
 				return false
 			}

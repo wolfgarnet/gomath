@@ -75,3 +75,33 @@ func TestLineSegmentLineSegment2D2(t *testing.T) {
 		}
 	}
 }
+
+func TestLineAABB(t *testing.T) {
+	tests := map[string]struct {
+		ls         gomath.LineSegment[float32]
+		aabb       gomath.SquaredAABB2D[float32]
+		intersects bool
+	}{
+		"straight line": {
+			ls:         gomath.NewLineSegmentXY[float32](100, 0, -100, 0.0),
+			aabb:       gomath.NewSquaredAABB2DXY[float32](0, 0, 10),
+			intersects: true,
+		},
+		"straight line 2": {
+			ls:         gomath.NewLineSegmentXY[float32](89, 0.0, -111, -0.0),
+			aabb:       gomath.NewSquaredAABB2DXY[float32](64, 0, 10),
+			intersects: true,
+		},
+		"straight line 3": {
+			ls:         gomath.NewLineSegmentXY[float32](89, 0.00066808256, -111, -0.00084443326),
+			aabb:       gomath.NewSquaredAABB2DXY[float32](64, 0, 10),
+			intersects: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, test.intersects, LineSquaredBox(test.ls, test.aabb))
+		})
+	}
+}

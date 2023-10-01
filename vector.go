@@ -163,7 +163,8 @@ func (v Vector2[T]) Length() T {
 }
 
 func (v Vector2[T]) LengthSq() T {
-	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
+	//return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
+	return v.X*v.X + v.Y*v.Y
 }
 
 func (v Vector2[T]) Length32() float32 {

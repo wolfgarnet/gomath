@@ -281,6 +281,15 @@ func (qt *QuadTree[T]) Insert(item BoundedItem) bool {
 	}
 }
 
+func (qt *QuadTree[T]) Clear() {
+	qt.NorthEast = nil
+	qt.NorthWest = nil
+	qt.SouthEast = nil
+	qt.SouthWest = nil
+
+	qt.Items = nil
+}
+
 func (qt *QuadTree[T]) ContainedIn(item BoundedItem) bool {
 	return intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds())
 }
