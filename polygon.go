@@ -235,7 +235,7 @@ func (p Polygon[T]) CCWPoints() {
 			p2 = p.Points[i+2]
 		}
 
-		ccw += CCW2D(p0, p1, p2)
+		ccw += CCW(p0, p1, p2)
 	}
 
 	// Polygon is already counterclockwise

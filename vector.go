@@ -127,7 +127,7 @@ func (v Vector2[T]) Div(v2 Vector2[T]) Vector2[T] {
 }
 
 func (v Vector2[T]) DivScalar(scalar T) Vector2[T] {
-	return Vector2[T]{X: v.X / T(scalar), Y: v.Y / T(scalar)}
+	return Vector2[T]{X: v.X / scalar, Y: v.Y / scalar}
 }
 
 func (v Vector2[T]) DivScalars(x T, y T) Vector2[T] {
@@ -147,7 +147,7 @@ func (v Vector2[T]) Dot(v2 Vector2[T]) T {
 	return v.X*v2.X + v.Y*v2.Y
 }
 
-func (v Vector2[T]) Lerp(v2 *Vector2[T], t T) Vector2[T] {
+func (v Vector2[T]) Lerp(v2 Vector2[T], t T) Vector2[T] {
 	return Vector2[T]{
 		v.X + (v2.X-v.X)*t,
 		v.Y + (v2.Y-v.Y)*t,
@@ -242,11 +242,15 @@ func GetNormal[T Number](v Vector2[T]) Vector2[T] {
 // Three points are a counter-clockwise turn if ccw > 0, clockwise if
 // ccw < 0, and collinear if ccw = 0 because ccw is a determinant that
 // gives twice the signed  area of the triangle formed by p1, p2 and p3.
-func CCW2D[T Number](p1, p2, p3 Vector2[T]) T {
+func CCW[T Number](p1, p2, p3 Vector2[T]) T {
 	return (p2.X-p1.X)*(p3.Y-p1.Y) - (p2.Y-p1.Y)*(p3.X-p1.X)
 }
 
-func CCW2DOrigin[T Number](p2, p3 Vector2[T]) T {
+func IsLeft[T Number](p1, p2, p3 Vector2[T]) T {
+	return CCW(p1, p2, p3)
+}
+
+func CCWOrigin[T Number](p2, p3 Vector2[T]) T {
 	return (p2.X-0)*(p3.Y-0) - (p2.Y-0)*(p3.X-0)
 }
 
