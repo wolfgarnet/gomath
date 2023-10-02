@@ -46,6 +46,26 @@ func (a AABB[T]) Sides() []LineSegment[T] {
 	return segments
 }
 
+func (a AABB[T]) Polygon() Polygon[T] {
+	p1 := Vector2[T]{
+		X: a.Center.X - a.HalfWidth,
+		Y: a.Center.Y + a.HalfHeight,
+	}
+	p2 := Vector2[T]{
+		X: a.Center.X + a.HalfWidth,
+		Y: a.Center.Y + a.HalfHeight,
+	}
+	p3 := Vector2[T]{
+		X: a.Center.X + a.HalfWidth,
+		Y: a.Center.Y - a.HalfHeight,
+	}
+	p4 := Vector2[T]{
+		X: a.Center.X - a.HalfWidth,
+		Y: a.Center.Y - a.HalfHeight,
+	}
+	return NewPolygon([]Vector2[T]{p1, p2, p3, p4})
+}
+
 func (a AABB[T]) String() string {
 	return fmt.Sprintf("AABB[c=%v w=%v, g=%v]", a.Center, a.HalfWidth, a.HalfHeight)
 }
@@ -99,6 +119,27 @@ func (a SquaredAABB2D[T]) Sides() []LineSegment[T] {
 	segments[3] = NewLineSegment(p4, p1)
 
 	return segments
+}
+
+func (a SquaredAABB2D[T]) Polygon() Polygon[T] {
+
+	p1 := Vector2[T]{
+		X: a.Center.X - a.HalfSize,
+		Y: a.Center.Y + a.HalfSize,
+	}
+	p2 := Vector2[T]{
+		X: a.Center.X + a.HalfSize,
+		Y: a.Center.Y + a.HalfSize,
+	}
+	p3 := Vector2[T]{
+		X: a.Center.X + a.HalfSize,
+		Y: a.Center.Y - a.HalfSize,
+	}
+	p4 := Vector2[T]{
+		X: a.Center.X - a.HalfSize,
+		Y: a.Center.Y - a.HalfSize,
+	}
+	return NewPolygon([]Vector2[T]{p1, p2, p3, p4})
 }
 
 func (a SquaredAABB2D[T]) String() string {
