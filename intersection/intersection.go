@@ -96,7 +96,7 @@ func IntersectingPoint[T gomath.Float](vector gomath.Vector2[T], other interface
 func IntersectingPolygon[T gomath.Float](polygon gomath.Polygon[T], other interface{}) bool {
 	switch t := other.(type) {
 	case gomath.Vector2[T]:
-		return PointPolygon2D(t, polygon)
+		return PointPolygon(t, polygon)
 	default:
 		panic(fmt.Sprintf("Unsupported operand: %T", other))
 	}

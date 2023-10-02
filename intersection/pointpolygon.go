@@ -2,10 +2,10 @@ package intersection
 
 import "github.com/wolfgarnet/gomath"
 
-func PointPolygon2D[T gomath.Float](point gomath.Vector2[T], polygon gomath.Polygon[T]) bool {
+func PointPolygon[T gomath.Float](point gomath.Vector2[T], polygon gomath.Polygon[T]) bool {
 	var j int
 	var count int
-	ray := gomath.Ray2D[T]{
+	ray := gomath.Ray[T]{
 		Origin:    point,
 		Direction: gomath.Vector2[T]{X: 1},
 	}

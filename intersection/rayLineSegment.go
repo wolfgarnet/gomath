@@ -2,11 +2,11 @@ package intersection
 
 import "github.com/wolfgarnet/gomath"
 
-func RayLineSegment2[T gomath.Float](ray gomath.Ray2D[T], lineSegment gomath.LineSegment[T]) (rayRatio, lineRatio T, intersects bool) {
+func RayLineSegment2[T gomath.Float](ray gomath.Ray[T], lineSegment gomath.LineSegment[T]) (rayRatio, lineRatio T, intersects bool) {
 	return RayLineSegment(ray, lineSegment.P1, lineSegment.P2)
 }
 
-func RayLineSegment[T gomath.Float](ray gomath.Ray2D[T], P1, P2 gomath.Vector2[T]) (rayRatio, lineRatio T, intersects bool) {
+func RayLineSegment[T gomath.Float](ray gomath.Ray[T], P1, P2 gomath.Vector2[T]) (rayRatio, lineRatio T, intersects bool) {
 	seg := P2.Sub(P1) //l2 - l1
 	segPerp := gomath.NewVector2(seg.Y, -seg.X)
 	perpDotd := ray.Direction.Dot(segPerp) //Vector2.Dot(rd, segPerp);

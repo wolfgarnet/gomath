@@ -38,7 +38,7 @@ func TestPointPolygon2D(t *testing.T) {
 		polygon := gomath.Polygon[float32]{
 			Points: test.points,
 		}
-		intersects := PointPolygon2D(test.point, polygon)
+		intersects := PointPolygon(test.point, polygon)
 		assert.Equalf(t, test.intersects, intersects, "Failed test %v", i)
 	}
 }

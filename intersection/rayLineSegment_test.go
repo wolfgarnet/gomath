@@ -8,7 +8,7 @@ import (
 
 func TestRayLineSegment(t *testing.T) {
 	tests := []struct {
-		ray         gomath.Ray2D[float32]
+		ray         gomath.Ray[float32]
 		lineSegment gomath.LineSegment[float32]
 		//intersection *gomath.Vector2[float32]
 		rayRatio   float32
@@ -16,7 +16,7 @@ func TestRayLineSegment(t *testing.T) {
 		intersects bool
 	}{
 		{
-			ray: gomath.Ray2D[float32]{
+			ray: gomath.Ray[float32]{
 				Origin:    gomath.Vector2[float32]{0, 0},
 				Direction: gomath.Vector2[float32]{1, 0},
 			},
@@ -29,7 +29,7 @@ func TestRayLineSegment(t *testing.T) {
 			intersects: true,
 		},
 		{
-			ray: gomath.Ray2D[float32]{
+			ray: gomath.Ray[float32]{
 				Origin:    gomath.Vector2[float32]{0, 0},
 				Direction: gomath.Vector2[float32]{1, 0},
 			},
@@ -42,7 +42,7 @@ func TestRayLineSegment(t *testing.T) {
 			intersects: true,
 		},
 		{
-			ray: gomath.Ray2D[float32]{
+			ray: gomath.Ray[float32]{
 				Origin:    gomath.Vector2[float32]{0, 0},
 				Direction: gomath.Vector2[float32]{1, 0},
 			},
