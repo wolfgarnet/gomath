@@ -32,6 +32,11 @@ func TestPointPolygon2D(t *testing.T) {
 			point:      gomath.Vector2[float32]{2, 0},
 			intersects: false,
 		},
+		{
+			points:     []gomath.Vector2[float32]{{188, -67}, {187, 68}, {4, 0}},
+			point:      gomath.Vector2[float32]{48, -16}, // 80,-16 80,16 48,16
+			intersects: true,
+		},
 	}
 
 	for i, test := range tests {
