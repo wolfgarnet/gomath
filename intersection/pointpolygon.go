@@ -24,3 +24,16 @@ func PointPolygon[T gomath.Float](point gomath.Vector2[T], polygon gomath.Polygo
 
 	return count%2 != 0
 }
+
+func PointsInsideTriangle(p0, pl, pr gomath.Vector2[float32], points []gomath.Vector2[float32]) bool {
+	for _, point := range points {
+		if gomath.IsLeft(p0, pl, point) > 0 {
+			return false
+		}
+		if gomath.IsLeft(p0, pr, point) < 0 {
+			return false
+		}
+	}
+
+	return true
+}
