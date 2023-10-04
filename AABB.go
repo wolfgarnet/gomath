@@ -18,6 +18,14 @@ func NewAABB[T Number](center Vector2[T], halfWidth T, halfHeight T) AABB[T] {
 	}
 }
 
+func (a AABB[T]) Extend(w T) AABB[T] {
+	return AABB[T]{
+		Center:     a.Center,
+		HalfWidth:  a.HalfWidth + w,
+		HalfHeight: a.HalfHeight + w,
+	}
+}
+
 func (a AABB[T]) Sides() []LineSegment[T] {
 	segments := make([]LineSegment[T], 4)
 

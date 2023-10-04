@@ -88,6 +88,24 @@ func LineBox[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool {
 	return false
 }
 
+func LineBoxSide[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) (sidess *gomath.LineSegment[T]) {
+	var closest T = math.MaxFloat32
+	for _, side := range bb.Sides() {
+		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, ls.P1, ls.P2)
+		if !intersects {
+			continue
+		}
+
+		distance := ls.P1.DistanceToSquared(side.P1) + ls.P1.DistanceToSquared(side.P2)
+		if distance < closest {
+			closest = distance
+			sidess = &side
+		}
+	}
+
+	return sidess
+}
+
 func LineSquaredAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
 	return LineAABB(ls, gomath.AABB[T]{
 		Center:     bb.Center,
