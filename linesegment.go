@@ -23,6 +23,13 @@ func NewLineSegment[T Number](p1, p2 Vector2[T]) LineSegment[T] {
 	}
 }
 
+func (l LineSegment[T]) Ray() Ray[T] {
+	return Ray[T]{
+		Origin:    l.P1,
+		Direction: l.P2.Sub(l.P1).Normalize(),
+	}
+}
+
 func (l LineSegment[T]) TransformToAxis(axis Vector2[T]) (min, max T) {
 	min = l.P1.X*axis.X + l.P1.Y*axis.Y
 	max = l.P2.X*axis.X + l.P2.Y*axis.Y

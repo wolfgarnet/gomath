@@ -2,6 +2,7 @@ package gomath
 
 import (
 	"fmt"
+	"math"
 )
 
 type AABB[T Number] struct {
@@ -76,6 +77,43 @@ func (a AABB[T]) Polygon() Polygon[T] {
 
 func (a AABB[T]) String() string {
 	return fmt.Sprintf("AABB[c=%v w=%v, g=%v]", a.Center, a.HalfWidth, a.HalfHeight)
+}
+
+func (a AABB[T]) Points() []Vector2[T] {
+	p1 := Vector2[T]{
+		X: a.Center.X - a.HalfWidth,
+		Y: a.Center.Y + a.HalfHeight,
+	}
+	p2 := Vector2[T]{
+		X: a.Center.X + a.HalfWidth,
+		Y: a.Center.Y + a.HalfHeight,
+	}
+	p3 := Vector2[T]{
+		X: a.Center.X + a.HalfWidth,
+		Y: a.Center.Y - a.HalfHeight,
+	}
+	p4 := Vector2[T]{
+		X: a.Center.X - a.HalfWidth,
+		Y: a.Center.Y - a.HalfHeight,
+	}
+
+	return []Vector2[T]{
+		p1, p2, p3, p4,
+	}
+}
+
+func ShortestDistance[T Float](a AABB[T], b AABB[T]) T {
+	var closest = T(math.MaxFloat32)
+	for _, a1 := range a.Points() {
+		for _, a2 := range b.Points() {
+			d := a1.DistanceToSquared(a2)
+			if d < closest {
+				closest = d
+			}
+		}
+	}
+
+	return Sqrt(closest)
 }
 
 type SquaredAABB2D[T Number] struct {
