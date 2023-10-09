@@ -50,13 +50,37 @@ func TestExtremePoints(t *testing.T) {
 			left:  Vector2[float32]{X: -1, Y: 2},
 			right: Vector2[float32]{X: -1, Y: 1},
 		},
+		"parallel up": {
+			center: Vector2[float32]{X: 0, Y: 0},
+			polygon: []Vector2[float32]{
+				{X: 0, Y: 1}, {X: 1, Y: 1}, {X: 1, Y: 2}, {X: 0, Y: 2},
+			},
+			left:  Vector2[float32]{X: 0, Y: 1},
+			right: Vector2[float32]{X: 1, Y: 1},
+		},
+		"parallel left 1": {
+			center: Vector2[float32]{X: -1, Y: 1},
+			polygon: []Vector2[float32]{
+				{X: 0, Y: 1}, {X: 1, Y: 1}, {X: 1, Y: 2}, {X: 0, Y: 2},
+			},
+			left:  Vector2[float32]{X: 0, Y: 2},
+			right: Vector2[float32]{X: 0, Y: 1},
+		},
+		"parallel left 2": {
+			center: Vector2[float32]{X: -1, Y: 2},
+			polygon: []Vector2[float32]{
+				{X: 0, Y: 1}, {X: 1, Y: 1}, {X: 1, Y: 2}, {X: 0, Y: 2},
+			},
+			left:  Vector2[float32]{X: 1, Y: 2},
+			right: Vector2[float32]{X: 0, Y: 1},
+		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			left, right := ExtremePoints(test.center, test.polygon)
-			assert.Equal(t, test.left, left)
-			assert.Equal(t, test.right, right)
+			assert.Equal(t, test.left, left, "Left")
+			assert.Equal(t, test.right, right, "Right")
 		})
 	}
 }
