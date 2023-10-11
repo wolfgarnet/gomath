@@ -49,6 +49,18 @@ func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
 	return true
 }
 
+func AABB2AABB2[T gomath.Number](a, b gomath.AABB2[T]) bool {
+	if a.MinX > b.MaxX || a.MaxX < b.MinX {
+		return false
+	}
+
+	if a.MinY > b.MaxY || a.MaxY < b.MinY {
+		return false
+	}
+
+	return true
+}
+
 func AABBSquaredAABB[T gomath.Number](b1 gomath.AABB[T], b2 gomath.SquaredAABB2D[T]) bool {
 	if gomath.Abs(b1.Center.X-b2.Center.X) > (b1.HalfWidth + b2.HalfSize) {
 		return false

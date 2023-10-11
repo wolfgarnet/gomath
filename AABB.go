@@ -116,6 +116,22 @@ func ShortestDistance[T Float](a AABB[T], b AABB[T]) T {
 	return Sqrt(closest)
 }
 
+type AABB2[T Number] struct {
+	MaxX T
+	MinX T
+	MaxY T
+	MinY T
+}
+
+func NewAABB2[T Number](maxx, minx, maxy, miny T) AABB2[T] {
+	return AABB2[T]{
+		MaxX: maxx,
+		MinX: minx,
+		MaxY: maxy,
+		MinY: miny,
+	}
+}
+
 type SquaredAABB2D[T Number] struct {
 	Center   Vector2[T]
 	HalfSize T
