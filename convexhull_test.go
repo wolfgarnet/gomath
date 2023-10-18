@@ -74,6 +74,14 @@ func TestExtremePoints(t *testing.T) {
 			left:  Vector2[float32]{X: 1, Y: 2},
 			right: Vector2[float32]{X: 0, Y: 1},
 		},
+		"trhings": {
+			center: Vector2[float32]{X: 160, Y: 0},
+			polygon: []Vector2[float32]{
+				{X: -144, Y: -16}, {X: -112, Y: -16}, {X: -112, Y: 16}, {X: -144, Y: 16},
+			},
+			left:  Vector2[float32]{X: -112, Y: -16},
+			right: Vector2[float32]{X: -112, Y: 16},
+		},
 	}
 
 	for name, test := range tests {
