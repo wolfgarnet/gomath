@@ -18,6 +18,10 @@ func Sqrt[T Number](v T) T {
 
 func Sqr[T Number](x T) T { return x * x }
 
+func Pow[T Number](v T, y T) T {
+	return T(math.Pow(float64(v), float64(y)))
+}
+
 func Acos32(v float32) float32 {
 	return float32(math.Acos(float64(v)))
 }
