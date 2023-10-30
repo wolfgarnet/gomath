@@ -12,6 +12,13 @@ func NewCircle[T Number](x, y, radius T) Circle[T] {
 	}
 }
 
+func NewCircleWithCenter[T Number](center Vector2[T], radius T) Circle[T] {
+	return Circle[T]{
+		Center: center,
+		Radius: radius,
+	}
+}
+
 func (c Circle[T]) TangentLinePoints(p Vector2[T]) (t1, t2 Vector2[T], hasSolution bool) {
 	dxy := p.Sub(c.Center)
 	d2 := dxy.X*dxy.X + dxy.Y*dxy.Y
