@@ -221,6 +221,22 @@ func (v Vector2[T]) ApplyMatrix(m Matrix[T]) Vector2[T] {
 	return v
 }
 
+const (
+	pi180 = 180 / math.Pi
+)
+
+func RotateVectorAngle[T Float](v Vector2[T], phi T) (r Vector2[T]) {
+	return v.Rotate(phi / pi180)
+}
+
+// Rotate will rotate counterclockwise for positive phi (radian)
+func (v Vector2[T]) Rotate(phi T) (r Vector2[T]) {
+	r.X = v.X*Cos(phi) - v.Y*Sin(phi)
+	r.Y = v.X*Sin(phi) + v.Y*Cos(phi)
+
+	return r
+}
+
 // FindNormalVector returns a normalized normal vector which is perpendicular to the line segment given by the two vectors.
 func FindNormalVector[T Number](p1, p2 Vector2[T]) Vector2[T] {
 	p3, p4 := FindNormal(p1, p2)
