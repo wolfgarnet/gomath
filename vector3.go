@@ -221,13 +221,11 @@ func (v Vector3[T]) DistanceToSquared(v2 Vector3[T]) T {
 	return dx*dx + dy*dy
 }
 
-func (v Vector3[T]) ApplyMatrix(m Matrix[T]) Vector3[T] {
-	x := v.X
-	y := v.Y
-	v.X = m[0]*x + m[3]*y + m[6]
-	v.Y = m[1]*x + m[4]*y + m[7]
-
-	return v
+func (v Vector3[T]) ToVector2() Vector2[T] {
+	return Vector2[T]{
+		X: v.X,
+		Y: v.Y,
+	}
 }
 
 func (v Vector3[T]) String() string {

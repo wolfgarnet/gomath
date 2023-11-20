@@ -246,6 +246,14 @@ func (v Vector2[T]) Rotate(phi T) (r Vector2[T]) {
 	return r
 }
 
+func (v Vector2[T]) ToVector3(z T) Vector3[T] {
+	return Vector3[T]{
+		X: v.X,
+		Y: v.Y,
+		Z: z,
+	}
+}
+
 // FindNormalVector returns a normalized normal vector which is perpendicular to the line segment given by the two vectors.
 func FindNormalVector[T Number](p1, p2 Vector2[T]) Vector2[T] {
 	p3, p4 := FindNormal(p1, p2)
