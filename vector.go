@@ -171,6 +171,15 @@ func (v Vector2[T]) Length32() float32 {
 	return float32(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
 
+func (v Vector2[T]) SetLength(l T) Vector2[T] {
+	oldLength := v.Length()
+	if oldLength != 0 && l != oldLength {
+		v.MultiplyScalar(l / oldLength)
+	}
+
+	return v
+}
+
 func (v Vector2[T]) Normalize() Vector2[T] {
 	m := v.Length()
 
