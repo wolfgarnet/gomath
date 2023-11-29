@@ -290,3 +290,16 @@ func CCWOrigin[T Number](p2, p3 Vector2[T]) T {
 func (v Vector2[T]) String() string {
 	return fmt.Sprintf("Vector2(%v, %v)", v.X, v.Y)
 }
+
+func (v Vector2[T]) Limit(limit T) Vector2[T] {
+	l := v.Length()
+	if l > limit {
+		return v.Normalize().MultiplyScalar(limit)
+	}
+
+	return v
+}
+
+func (v Vector2[T]) DirectionTo(other Vector2[T]) Vector2[T] {
+	return other.Sub(v).Normalize()
+}

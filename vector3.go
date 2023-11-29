@@ -231,3 +231,12 @@ func (v Vector3[T]) ToVector2() Vector2[T] {
 func (v Vector3[T]) String() string {
 	return fmt.Sprintf("Vector3(%v, %v, %v)", v.X, v.Y, v.Z)
 }
+
+func (v Vector3[T]) Limit(limit T) Vector3[T] {
+	l := v.Length()
+	if l > limit {
+		return v.Normalize().MultiplyScalar(limit)
+	}
+
+	return v
+}
