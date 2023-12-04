@@ -162,7 +162,7 @@ func IntersectingAABB2[T gomath.Float](aabb gomath.AABB[T], other interface{}) (
 	case gomath.AABB[T]:
 		return AABB2DAABB2DWithPenetration(aabb, o)
 	case gomath.Circle[T]:
-		penetration, surfaceNormal, overlapping = CircleAABBWithPenetration(o, aabb)
+		penetration, surfaceNormal, overlapping = CircleAABBWithPenetration2(o, aabb)
 		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
 	default:
 		panic(fmt.Sprintf("Unsupported operand: %T", other))
@@ -176,7 +176,7 @@ func IntersectingCircle2[T gomath.Float](circle gomath.Circle[T], other interfac
 	case gomath.Circle[T]:
 		return CircleCircleWithPenetration(circle, o)
 	case gomath.AABB[T]:
-		penetration, surfaceNormal, overlapping = CircleAABBWithPenetration(circle, o)
+		penetration, surfaceNormal, overlapping = CircleAABBWithPenetration2(circle, o)
 		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
 	default:
 		panic(fmt.Sprintf("Unsupported operand: %T", other))

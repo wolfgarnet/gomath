@@ -136,3 +136,10 @@ func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.AABB[T]) (penetr
 		return py, gomath.Vector2[T]{X: 0, Y: 1}, true
 	}
 }
+
+func PointSideOfBox[T gomath.Number](p gomath.Vector2[T], ls1 gomath.LineSegment[T], ls2 gomath.LineSegment[T]) bool {
+	left := gomath.IsLeft(p, ls1.P1, ls2.P1)
+	right := gomath.IsLeft(p, ls1.P2, ls2.P2)
+
+	return left > 0 && right < 0
+}

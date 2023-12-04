@@ -78,3 +78,44 @@ func TestAABB2DAABB2D(t *testing.T) {
 		})
 	}
 }
+
+func TestPointSideOfBox(t *testing.T) {
+	tests := map[string]struct {
+		point     gomath.Vector2[float32]
+		ls1       gomath.LineSegment[float32]
+		ls2       gomath.LineSegment[float32]
+		contained bool
+	}{ // positive y is down...?
+		"left": {
+			point: gomath.Vector2[float32]{Y: 1},
+			ls1: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 1, Y: 1},
+				P2: gomath.Vector2[float32]{X: 1, Y: 3},
+			},
+			ls2: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 3, Y: 3},
+				P2: gomath.Vector2[float32]{X: 3, Y: 1},
+			},
+			contained: true,
+		},
+		"left upper": {
+			point: gomath.Vector2[float32]{Y: 4},
+			ls1: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 1, Y: 1},
+				P2: gomath.Vector2[float32]{X: 1, Y: 3},
+			},
+			ls2: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 3, Y: 3},
+				P2: gomath.Vector2[float32]{X: 3, Y: 1},
+			},
+			contained: false,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			contained := PointSideOfBox(test.point, test.ls1, test.ls2)
+			assert.Equal(t, test.contained, contained)
+		})
+	}
+}

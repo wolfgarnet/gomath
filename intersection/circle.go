@@ -146,3 +146,29 @@ func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.AAB
 
 	return max, normal, true
 }
+
+func CircleAABBWithPenetration2[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	if !CircleAABB(c, b) {
+		return 0, normal, false
+	}
+
+	var max T
+	sides := b.Sides()
+	//for _, side := range b.Sides() {
+	for i, side := range sides {
+		j := (i + 2) % 4
+		if !PointSideOfBox(c.Center, side, sides[j]) {
+			continue
+		}
+		p, ok := CircleLineSegmentWithPenetration(c, side)
+		if !ok {
+			continue
+		}
+		if p > max {
+			max = p
+			normal = side.Normal()
+		}
+	}
+
+	return max, normal, true
+}
