@@ -19,7 +19,31 @@ func NewCircleWithCenter[T Number](center Vector2[T], radius T) Circle[T] {
 	}
 }
 
-func (c Circle[T]) TangentLinePoints(p Vector2[T]) (t1, t2 Vector2[T], hasSolution bool) {
+func (c *Circle[T]) SetCenter(center Vector2[T]) {
+	c.Center = center
+}
+
+func (c *Circle[T]) GetCenter() Vector2[T] {
+	return c.Center
+}
+
+func (c *Circle[T]) GetHalfWidth() T {
+	return c.Radius
+}
+
+func (c *Circle[T]) GetHalfHeight() T {
+	return c.Radius
+}
+
+func (c *Circle[T]) SetHalfWidth(w T) {
+	c.Radius = w
+}
+
+func (c *Circle[T]) SetHalfHeight(h T) {
+	c.Radius = h
+}
+
+func (c *Circle[T]) TangentLinePoints(p Vector2[T]) (t1, t2 Vector2[T], hasSolution bool) {
 	dxy := p.Sub(c.Center)
 	d2 := dxy.X*dxy.X + dxy.Y*dxy.Y
 	d := Sqrt(d2)

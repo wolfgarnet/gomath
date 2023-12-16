@@ -85,14 +85,21 @@ func IntersectingLineSegment[T gomath.Float](segment gomath.LineSegment[T], othe
 
 func IntersectingPoint[T gomath.Float](vector gomath.Vector2[T], other interface{}) bool {
 	switch t := other.(type) {
+	// Pointer types
+	case *gomath.SquaredAABB2D[T]:
+		return SquaredAABBPoint(*t, vector)
+	case *gomath.Circle[T]:
+		return CirclePoint(*t, vector)
+	case *gomath.AABB[T]:
+		return AABBPoint(*t, vector)
+
+	// Values types
 	case gomath.SquaredAABB2D[T]:
 		return SquaredAABBPoint(t, vector)
 	case gomath.Circle[T]:
 		return CirclePoint(t, vector)
 	case gomath.AABB[T]:
 		return AABBPoint(t, vector)
-	//case gomath.LineSegment[T]:
-	//case gomath.Vector2[T]:
 	default:
 		panic(fmt.Sprintf("Unsupported operand: %T", other))
 	}
@@ -157,6 +164,16 @@ func IntersectingSquaredAABB2[T gomath.Float](aabb gomath.SquaredAABB2D[T], othe
 
 func IntersectingAABB2[T gomath.Float](aabb gomath.AABB[T], other interface{}) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
 	switch o := other.(type) {
+	// Pointer types
+	case *gomath.SquaredAABB2D[T]:
+		return AABBSquaredAABB2DWithPenetration(aabb, *o)
+	case *gomath.AABB[T]:
+		return AABB2DAABB2DWithPenetration(aabb, *o)
+	case *gomath.Circle[T]:
+		penetration, surfaceNormal, overlapping = CircleAABBWithPenetration2(*o, aabb)
+		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
+
+	// Value types
 	case gomath.SquaredAABB2D[T]:
 		return AABBSquaredAABB2DWithPenetration(aabb, o)
 	case gomath.AABB[T]:
@@ -171,6 +188,16 @@ func IntersectingAABB2[T gomath.Float](aabb gomath.AABB[T], other interface{}) (
 
 func IntersectingCircle2[T gomath.Float](circle gomath.Circle[T], other interface{}) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
 	switch o := other.(type) {
+	// Pointer types
+	case *gomath.SquaredAABB2D[T]:
+		return CircleSquaredAABBWithPenetration(circle, *o)
+	case *gomath.Circle[T]:
+		return CircleCircleWithPenetration(circle, *o)
+	case *gomath.AABB[T]:
+		penetration, surfaceNormal, overlapping = CircleAABBWithPenetration2(circle, *o)
+		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
+
+	// Value types
 	case gomath.SquaredAABB2D[T]:
 		return CircleSquaredAABBWithPenetration(circle, o)
 	case gomath.Circle[T]:
@@ -185,6 +212,15 @@ func IntersectingCircle2[T gomath.Float](circle gomath.Circle[T], other interfac
 
 func Intersecting2[T gomath.Float](first, second interface{}) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
 	switch f1 := first.(type) {
+	// Pointer types
+	case *gomath.SquaredAABB2D[T]:
+		return IntersectingSquaredAABB2(*f1, second)
+	case *gomath.AABB[T]:
+		return IntersectingAABB2(*f1, second)
+	case *gomath.Circle[T]:
+		return IntersectingCircle2(*f1, second)
+
+	// Value types
 	case gomath.SquaredAABB2D[T]:
 		return IntersectingSquaredAABB2(f1, second)
 	case gomath.AABB[T]:

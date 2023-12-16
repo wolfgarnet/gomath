@@ -19,6 +19,30 @@ func NewAABB[T Number](center Vector2[T], halfWidth T, halfHeight T) AABB[T] {
 	}
 }
 
+func (a *AABB[T]) SetCenter(c Vector2[T]) {
+	a.Center = c
+}
+
+func (a *AABB[T]) GetCenter() Vector2[T] {
+	return a.Center
+}
+
+func (a *AABB[T]) GetHalfWidth() T {
+	return a.HalfWidth
+}
+
+func (a *AABB[T]) GetHalfHeight() T {
+	return a.HalfHeight
+}
+
+func (a *AABB[T]) SetHalfWidth(t T) {
+	a.HalfWidth = t
+}
+
+func (a *AABB[T]) SetHalfHeight(t T) {
+	a.HalfHeight = t
+}
+
 func (a AABB[T]) Extend(w T) AABB[T] {
 	return AABB[T]{
 		Center:     a.Center,
@@ -27,7 +51,7 @@ func (a AABB[T]) Extend(w T) AABB[T] {
 	}
 }
 
-func (a AABB[T]) Sides() []LineSegment[T] {
+func (a *AABB[T]) Sides() []LineSegment[T] {
 	segments := make([]LineSegment[T], 4)
 
 	p1 := Vector2[T]{
@@ -55,7 +79,7 @@ func (a AABB[T]) Sides() []LineSegment[T] {
 	return segments
 }
 
-func (a AABB[T]) Polygon() Polygon[T] {
+func (a *AABB[T]) Polygon() Polygon[T] {
 	p1 := Vector2[T]{
 		X: a.Center.X - a.HalfWidth,
 		Y: a.Center.Y + a.HalfHeight,
@@ -75,11 +99,11 @@ func (a AABB[T]) Polygon() Polygon[T] {
 	return NewPolygon([]Vector2[T]{p1, p2, p3, p4})
 }
 
-func (a AABB[T]) String() string {
+func (a *AABB[T]) String() string {
 	return fmt.Sprintf("AABB[c=%v w=%v, g=%v]", a.Center, a.HalfWidth, a.HalfHeight)
 }
 
-func (a AABB[T]) Points() []Vector2[T] {
+func (a *AABB[T]) Points() []Vector2[T] {
 	p1 := Vector2[T]{
 		X: a.Center.X - a.HalfWidth,
 		Y: a.Center.Y + a.HalfHeight,
