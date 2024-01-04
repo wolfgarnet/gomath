@@ -51,3 +51,18 @@ func (l LineSegment[T]) Direction() Vector2[T] {
 func (l LineSegment[T]) Normal() Vector2[T] {
 	return FindNormalVector(l.P1, l.P2)
 }
+
+func GetClosestPointOnLineSegment[T Number](lineStart, lineEnd, point Vector2[T]) Vector2[T] {
+	lineVector := Vector2[T]{X: lineEnd.X - lineStart.X, Y: lineEnd.Y - lineStart.Y}
+	pointVector := Vector2[T]{X: point.X - lineStart.X, Y: point.Y - lineStart.Y}
+
+	t := (pointVector.X*lineVector.X + pointVector.Y*lineVector.Y) / (lineVector.X*lineVector.X + lineVector.Y*lineVector.Y)
+
+	if t < 0 {
+		return lineStart
+	} else if t > 1 {
+		return lineEnd
+	} else {
+		return Vector2[T]{X: lineStart.X + t*lineVector.X, Y: lineStart.Y + t*lineVector.Y}
+	}
+}
