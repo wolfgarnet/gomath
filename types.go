@@ -1,15 +1,20 @@
 package gomath
 
 type CenteredVolume[T Number] interface {
-	SetCenter(Vector2[T])
 	GetCenter() Vector2[T]
+}
+
+type SimpleVolume[T Number] interface {
+	CenteredVolume[T]
+
+	SetCenter(Vector2[T])
 	GetHalfWidth() T
 	GetHalfHeight() T
 	SetHalfWidth(T)
 	SetHalfHeight(T)
 }
 
-func CloneCenteredVolume[T Number](v CenteredVolume[T]) CenteredVolume[T] {
+func CloneSimpleVolume[T Number](v SimpleVolume[T]) SimpleVolume[T] {
 	switch v2 := v.(type) {
 	case *Circle[T]:
 		return &Circle[T]{

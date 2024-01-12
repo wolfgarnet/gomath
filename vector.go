@@ -45,6 +45,11 @@ func (v Vector2[T]) Set(x T, y T) Vector2[T] {
 	return v
 }
 
+// GetCenter is implemented just to satisfy the CenteredVolume interface
+func (v Vector2[T]) GetCenter() Vector2[T] {
+	return v
+}
+
 func (v Vector2[T]) Add(v2 Vector2[T]) Vector2[T] {
 	return Vector2[T]{
 		X: v.X + v2.X,

@@ -2,6 +2,10 @@ package intersection
 
 import "github.com/wolfgarnet/gomath"
 
+/*
+https://www.geeksforgeeks.org/check-if-a-point-is-inside-outside-or-on-the-ellipse/
+*/
+
 func EllipsoidPoint[T gomath.Number](point gomath.Vector2[T], ellipsoid gomath.Ellipsoid[T]) bool {
 	// Normalize the point in the ellipsoid's local space
 	normalizedPoint := gomath.Vector2[T]{X: point.X / ellipsoid.Radii.X, Y: point.Y / ellipsoid.Radii.Y}
