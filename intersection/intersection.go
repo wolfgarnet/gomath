@@ -31,6 +31,8 @@ func IntersectingSquaredAABB[T gomath.Float](saabb gomath.SquaredAABB2D[T], othe
 		return SquaredAABBSquaredAABB(saabb, o)
 	case gomath.Circle[T]:
 		return CircleSquaredAABB(o, saabb)
+	case *gomath.Circle[T]:
+		return CircleSquaredAABB(*o, saabb)
 	case gomath.AABB[T]:
 		return AABBSquaredAABB(o, saabb)
 	case gomath.LineSegment[T]:
@@ -51,6 +53,8 @@ func IntersectingCircle[T gomath.Number](circle gomath.Circle[T], other interfac
 		return CircleAABB(circle, t)
 	case gomath.Circle[T]:
 		return CircleCircle(circle, t)
+	case *gomath.Circle[T]:
+		return CircleCircle(circle, *t)
 	case gomath.LineSegment[T]:
 		return CircleLineSegment(circle, t)
 	case gomath.Vector2[T]:
