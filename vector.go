@@ -308,3 +308,7 @@ func (v Vector2[T]) Limit(limit T) Vector2[T] {
 func (v Vector2[T]) DirectionTo(other Vector2[T]) Vector2[T] {
 	return other.Sub(v).Normalize()
 }
+
+func (v Vector2[T]) IsZero() bool {
+	return v.X == 0 && v.Y == 0
+}
