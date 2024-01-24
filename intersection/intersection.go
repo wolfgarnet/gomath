@@ -72,8 +72,9 @@ func IntersectingLineSegment[T gomath.Float](segment gomath.LineSegment[T], othe
 	case gomath.Circle[T]:
 		return CircleLineSegment(t, segment)
 	case gomath.AABB[T]:
-		//return LineSegmentInsideOrIntersectsAABB(segment, t)
 		return LineBox(segment, t)
+	case *gomath.AABB[T]:
+		return LineBox(segment, *t)
 	case gomath.LineSegment[T]:
 		_, intersects := LineSegmentLineSegment2D(segment.P1, segment.P2, t.P1, t.P2)
 		return intersects
