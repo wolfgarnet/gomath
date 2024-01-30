@@ -312,3 +312,14 @@ func (v Vector2[T]) DirectionTo(other Vector2[T]) Vector2[T] {
 func (v Vector2[T]) IsZero() bool {
 	return v.X == 0 && v.Y == 0
 }
+
+func (v Vector2[T]) ScaleToLength(length T) Vector2[T] {
+	if length == 0 || v.IsZero() {
+		return v
+	}
+
+	oldLength := v.Length()
+	fraction := length / oldLength
+
+	return v.MultiplyScalar(fraction)
+}
