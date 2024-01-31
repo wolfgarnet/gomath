@@ -6,16 +6,6 @@ import (
 	"math"
 )
 
-type Vector32 struct {
-	Vector2[float32]
-}
-
-func NewVector32(x, y float32) Vector32 {
-	return Vector32{
-		Vector2[float32]{x, y},
-	}
-}
-
 const Epsilon = 0.00001
 
 type Number interface {
@@ -82,6 +72,7 @@ func (v Vector2[T]) AddScalars(x T, y T) Vector2[T] {
 	}
 }
 
+// Sub subtracts the coordinates of the given Vector2 from the coordinates of the current Vector2
 func (v Vector2[T]) Sub(v2 Vector2[T]) Vector2[T] {
 	return Vector2[T]{
 		X: v.X - v2.X,
@@ -103,6 +94,7 @@ func (v Vector2[T]) SubScalars(x T, y T) Vector2[T] {
 	}
 }
 
+// Mul multiplies the current vector by another vector element-wise and returns the result as a new Vector2.
 func (v Vector2[T]) Mul(v2 Vector2[T]) Vector2[T] {
 	return Vector2[T]{
 		X: v.X * v2.X,
@@ -110,6 +102,8 @@ func (v Vector2[T]) Mul(v2 Vector2[T]) Vector2[T] {
 	}
 }
 
+// MultiplyScalar multiplies the current vector by a scalar value.
+// It returns a new vector with the result of the multiplication.
 func (v Vector2[T]) MultiplyScalar(scalar T) Vector2[T] {
 	return Vector2[T]{
 		X: v.X * scalar,
@@ -142,12 +136,14 @@ func (v Vector2[T]) DivScalars(x T, y T) Vector2[T] {
 	}
 }
 
+// Distance calculates the Euclidean distance between two Vector2 points.
 func (v Vector2[T]) Distance(v2 Vector2[T]) float64 {
 	dx := v.X - v2.X
 	dy := v.Y - v2.Y
 	return math.Sqrt(float64(dx*dx + dy*dy))
 }
 
+// Dot returns the dot product of the given vector and `v2`.
 func (v Vector2[T]) Dot(v2 Vector2[T]) T {
 	return v.X*v2.X + v.Y*v2.Y
 }
@@ -210,6 +206,17 @@ func (v Vector2[T]) Equals(v2 Vector2[T]) bool {
 func (v Vector2[T]) AngleTo(v2 Vector2[T]) T {
 	theta := v.Dot(v2) / v.Length() * v2.Length()
 	return Acos(Clamp[T](theta, T(-1.0), 1))
+}
+
+func (v Vector2[T]) AngleToWithSign(v2 Vector2[T]) T {
+	theta := v.AngleTo(v2)
+	cross := v.X*v2.Y - v.Y*v2.X
+
+	if cross < 0 {
+		theta = -theta
+	}
+
+	return theta
 }
 
 // DistanceTo returns the distance to the given vector

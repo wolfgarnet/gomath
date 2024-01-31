@@ -3,6 +3,7 @@ package gomath
 import "math"
 
 const epsilon = 0.9
+const epsilon2 = 0.001
 
 func IsEpsilon[T Float](v T) bool {
 	return Abs(v) < epsilon
@@ -68,4 +69,13 @@ func Max[T Number](a, b T) T {
 func Min[T Number](a, b T) T {
 	min := math.Min(float64(a), float64(b))
 	return T(min)
+}
+
+func Round[T Number](n T) T {
+	return T(math.Round(float64(n)))
+}
+
+func Round2[T Number](n T, precision int) T {
+	output := T(math.Pow(10, float64(precision)))
+	return (Round(n * output)) / output
 }
