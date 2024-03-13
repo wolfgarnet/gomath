@@ -163,6 +163,19 @@ func (v Vector2[T]) MultiplyScalars(x T, y T) Vector2[T] {
 	}
 }
 
+func VectorMultiplyScalarsWith[T1 Number, T2 Number](v Vector2[T1], x T2, y T2) Vector2[T1] {
+	v.X *= T1(x)
+	v.Y *= T1(y)
+	return v
+}
+
+func VectorMultiplyScalarsAs[T1 Number, T2 Number](v Vector2[T1], x T1, y T1) Vector2[T2] {
+	return Vector2[T2]{
+		X: T2(v.X * x),
+		Y: T2(v.Y * y),
+	}
+}
+
 func (v *Vector2[T]) MultiplyScalarsp(x T, y T) {
 	v.X = v.X * x
 	v.Y = v.Y * y
