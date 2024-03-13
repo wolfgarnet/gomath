@@ -330,3 +330,10 @@ func (v Vector2[T]) ScaleToLength(length T) Vector2[T] {
 
 	return v.MultiplyScalar(fraction)
 }
+
+func VectorAs[T1 Number, T2 Number](v Vector2[T1]) Vector2[T2] {
+	return Vector2[T2]{
+		X: T2(v.X),
+		Y: T2(v.Y),
+	}
+}
