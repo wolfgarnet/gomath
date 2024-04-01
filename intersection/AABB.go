@@ -1,6 +1,7 @@
 package intersection
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"github.com/wolfgarnet/gomath"
 )
 
@@ -39,6 +40,7 @@ func SquaredAABBSquaredAABB[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) boo
 }
 
 func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
+	spew.Dump("COMPARING", b1, b2)
 	if gomath.Abs(b1.Center.X-b2.Center.X) > (b1.HalfWidth + b2.HalfWidth) {
 		return false
 	}
@@ -55,6 +57,18 @@ func AABB2AABB2[T gomath.Number](a, b gomath.AABB2[T]) bool {
 	}
 
 	if a.MinY > b.MaxY || a.MaxY < b.MinY {
+		return false
+	}
+
+	return true
+}
+
+func MinMaxVector[T gomath.Number](amin gomath.Vector2[T], bmin gomath.Vector2[T], amax gomath.Vector2[T], bmax gomath.Vector2[T]) bool {
+	if amin.X > bmax.X || amax.X < bmin.X {
+		return false
+	}
+
+	if amin.Y > bmax.Y || amax.Y < bmin.Y {
 		return false
 	}
 

@@ -9,10 +9,14 @@ func IntersectingAABB[T gomath.Float](aabb gomath.AABB[T], other interface{}) bo
 	switch o := other.(type) {
 	case gomath.AABB[T]:
 		return AABBAABB(aabb, o)
+	case *gomath.AABB[T]:
+		return AABBAABB(aabb, *o)
 	case gomath.SquaredAABB2D[T]:
 		return AABBSquaredAABB(aabb, o)
 	case gomath.Circle[T]:
 		return CircleAABB(o, aabb)
+	case *gomath.Circle[T]:
+		return CircleAABB(*o, aabb)
 	case gomath.LineSegment[T]:
 		//return LineSegmentInsideOrIntersectsAABB(o, aabb)
 		return LineBox(o, aabb)
@@ -35,6 +39,8 @@ func IntersectingSquaredAABB[T gomath.Float](saabb gomath.SquaredAABB2D[T], othe
 		return CircleSquaredAABB(*o, saabb)
 	case gomath.AABB[T]:
 		return AABBSquaredAABB(o, saabb)
+	case *gomath.AABB[T]:
+		return AABBSquaredAABB(*o, saabb)
 	case gomath.LineSegment[T]:
 		//return LineSegmentInsideOrIntersectsSquaredAABB(o, saabb)
 		return LineSquaredBox(o, saabb)

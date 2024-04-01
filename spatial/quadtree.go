@@ -396,6 +396,11 @@ func (qt *QuadTree[T]) QueryWithDrain(contained interface{}, drain chan BoundedI
 	return
 }
 
+func (qt *QuadTree[T]) QueryWithDrainBoth(contained interface{}, drain chan BoundedItem) {
+	qt.QueryWithDrain2(contained, true, drain)
+	return
+}
+
 func (qt *QuadTree[T]) QueryBoundedWithDrain2(contained BoundedItem, testMutual bool, drain chan BoundedItem) {
 	qt.QueryWithDrain2(contained.GetBounds(), testMutual, drain)
 }

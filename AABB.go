@@ -100,7 +100,7 @@ func (a *AABB[T]) Polygon() Polygon[T] {
 }
 
 func (a *AABB[T]) String() string {
-	return fmt.Sprintf("AABB[c=%v w=%v, g=%v]", a.Center, a.HalfWidth, a.HalfHeight)
+	return fmt.Sprintf("AABB[c=%v w=%v, h=%v]", a.Center, a.HalfWidth, a.HalfHeight)
 }
 
 func (a *AABB[T]) Points() []Vector2[T] {
