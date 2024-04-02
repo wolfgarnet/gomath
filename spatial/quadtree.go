@@ -7,25 +7,18 @@ import (
 	"strings"
 )
 
-type BoundedItem interface {
-	GetBounds() interface{}
-}
-
-type Containable[T gomath.Float] interface {
-	ContainedIn(d gomath.SquaredAABB2D[T]) bool
-}
-
 const (
 	NodeCapacity = 4
 )
 
-type QuadTree[T gomath.Float] struct {
+type QuadTree[T gomath.Number] struct {
 	Items     []BoundedItem
 	Boundary  gomath.SquaredAABB2D[T]
 	NorthEast *QuadTree[T]
 	SouthEast *QuadTree[T]
 	SouthWest *QuadTree[T]
 	NorthWest *QuadTree[T]
+	Checker   BoundsCheck
 
 	parent   *QuadTree[T]
 	maxDepth int
@@ -36,16 +29,21 @@ type QuadTree[T gomath.Float] struct {
 	mayExpand bool
 }
 
-func NewQuadTree[T gomath.Float](x, y, halfSize T) *QuadTree[T] {
-	return newQuadTree(x, y, halfSize, nil, 0, 8)
+func NewQuadTree[T gomath.Number](x, y, halfSize T) *QuadTree[T] {
+	return newQuadTree(x, y, halfSize, nil, 0, DefaultBoundsCheck{}, 8)
 }
 
-func newQuadTree[T gomath.Float](x, y, halfSize T, parent *QuadTree[T], depth, maxDepth int) *QuadTree[T] {
+func NewIntegerQuadTree[T gomath.Number](x, y, halfSize T) *QuadTree[T] {
+	return newQuadTree(x, y, halfSize, nil, 0, IntegerBoundsCheck{}, 8)
+}
+
+func newQuadTree[T gomath.Number](x, y, halfSize T, parent *QuadTree[T], depth int, checker BoundsCheck, maxDepth int) *QuadTree[T] {
 	qt := &QuadTree[T]{
 		parent:   parent,
 		Boundary: gomath.NewSquaredAABB2DXY(x, y, halfSize),
 		maxDepth: maxDepth,
 		depth:    depth,
+		Checker:  checker,
 	}
 
 	return qt
@@ -87,10 +85,10 @@ func (qt *QuadTree[T]) FindQuadTree(i BoundedItem) (*QuadTree[T], bool) {
 
 func (qt *QuadTree[T]) Subdivide() {
 	size := qt.Boundary.HalfSize / 2
-	qt.NorthEast = newQuadTree(qt.Boundary.Center.X+size, qt.Boundary.Center.Y+size, size, qt, qt.depth+1, qt.maxDepth)
-	qt.SouthEast = newQuadTree(qt.Boundary.Center.X+size, qt.Boundary.Center.Y-size, size, qt, qt.depth+1, qt.maxDepth)
-	qt.SouthWest = newQuadTree(qt.Boundary.Center.X-size, qt.Boundary.Center.Y-size, size, qt, qt.depth+1, qt.maxDepth)
-	qt.NorthWest = newQuadTree(qt.Boundary.Center.X-size, qt.Boundary.Center.Y+size, size, qt, qt.depth+1, qt.maxDepth)
+	qt.NorthEast = newQuadTree(qt.Boundary.Center.X+size, qt.Boundary.Center.Y+size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
+	qt.SouthEast = newQuadTree(qt.Boundary.Center.X+size, qt.Boundary.Center.Y-size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
+	qt.SouthWest = newQuadTree(qt.Boundary.Center.X-size, qt.Boundary.Center.Y-size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
+	qt.NorthWest = newQuadTree(qt.Boundary.Center.X-size, qt.Boundary.Center.Y+size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
 
 	// Re-arrange points
 	points := qt.Items
@@ -192,7 +190,7 @@ func (qt *QuadTree[T]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
 }
 
 func (qt *QuadTree[T]) Remove(item BoundedItem) bool {
-	if !intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds()) {
+	if !qt.Checker.Check(qt.Boundary, item.GetBounds()) {
 		return false
 	}
 
@@ -242,39 +240,39 @@ func (qt *QuadTree[T]) Expand() {
 	halfSize := oldSize / 2
 
 	// North West (south east)
-	newNorthWest := newQuadTree(qt.Boundary.Center.X-oldSize, qt.Boundary.Center.Y+oldSize, oldSize, qt, qt.depth+1, qt.maxDepth)
+	newNorthWest := newQuadTree(qt.Boundary.Center.X-oldSize, qt.Boundary.Center.Y+oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
 	qt.NorthWest.addDepth()
 	newNorthWest.SouthEast = qt.NorthWest
-	newNorthWest.SouthWest = newQuadTree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newNorthWest.NorthWest = newQuadTree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newNorthWest.NorthEast = newQuadTree(newNorthWest.Boundary.Center.X+halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
+	newNorthWest.SouthWest = newQuadTree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newNorthWest.NorthWest = newQuadTree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newNorthWest.NorthEast = newQuadTree(newNorthWest.Boundary.Center.X+halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
 	qt.NorthWest = newNorthWest
 
 	// North East (south west)
-	newNorthEast := newQuadTree(qt.Boundary.Center.X+oldSize, qt.Boundary.Center.Y+oldSize, oldSize, qt, qt.depth+1, qt.maxDepth)
+	newNorthEast := newQuadTree(qt.Boundary.Center.X+oldSize, qt.Boundary.Center.Y+oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
 	qt.NorthEast.addDepth()
 	newNorthEast.SouthWest = qt.NorthEast
-	newNorthEast.SouthEast = newQuadTree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newNorthEast.NorthWest = newQuadTree(newNorthEast.Boundary.Center.X-halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newNorthEast.NorthEast = newQuadTree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
+	newNorthEast.SouthEast = newQuadTree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newNorthEast.NorthWest = newQuadTree(newNorthEast.Boundary.Center.X-halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newNorthEast.NorthEast = newQuadTree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
 	qt.NorthEast = newNorthEast
 
 	// South East (north west)
-	newSouthEast := newQuadTree(qt.Boundary.Center.X+oldSize, qt.Boundary.Center.Y-oldSize, oldSize, qt, qt.depth+1, qt.maxDepth)
+	newSouthEast := newQuadTree(qt.Boundary.Center.X+oldSize, qt.Boundary.Center.Y-oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
 	qt.SouthEast.addDepth()
 	newSouthEast.NorthWest = qt.SouthEast
-	newSouthEast.SouthEast = newQuadTree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newSouthEast.SouthWest = newQuadTree(newSouthEast.Boundary.Center.X-halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newSouthEast.NorthEast = newQuadTree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
+	newSouthEast.SouthEast = newQuadTree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newSouthEast.SouthWest = newQuadTree(newSouthEast.Boundary.Center.X-halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newSouthEast.NorthEast = newQuadTree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
 	qt.SouthEast = newSouthEast
 
 	// South West (north east)
-	newSouthWest := newQuadTree(qt.Boundary.Center.X-oldSize, qt.Boundary.Center.Y-oldSize, oldSize, qt, qt.depth+1, qt.maxDepth)
+	newSouthWest := newQuadTree(qt.Boundary.Center.X-oldSize, qt.Boundary.Center.Y-oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
 	qt.SouthWest.addDepth()
 	newSouthWest.NorthEast = qt.SouthWest
-	newSouthWest.SouthEast = newQuadTree(newSouthWest.Boundary.Center.X+halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newSouthWest.SouthWest = newQuadTree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
-	newSouthWest.NorthWest = newQuadTree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.maxDepth)
+	newSouthWest.SouthEast = newQuadTree(newSouthWest.Boundary.Center.X+halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newSouthWest.SouthWest = newQuadTree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
+	newSouthWest.NorthWest = newQuadTree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
 	qt.SouthWest = newSouthWest
 }
 
@@ -291,7 +289,7 @@ func (qt *QuadTree[T]) addDepth() {
 
 func (qt *QuadTree[T]) Insert(item BoundedItem) bool {
 	// First, verify that the item belongs in this tree.
-	if !intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds()) {
+	if !qt.Checker.Check(qt.Boundary, item.GetBounds()) {
 		if qt.depth == 0 && qt.mayExpand {
 			qt.Expand()
 			return qt.Insert(item)
@@ -366,7 +364,8 @@ func (qt *QuadTree[T]) Clear() {
 }
 
 func (qt *QuadTree[T]) ContainedIn(item BoundedItem) bool {
-	return intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds())
+	//return intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds())
+	return qt.Checker.Check(qt.Boundary, item.GetBounds())
 }
 
 type QueryResultWrapper struct {
@@ -398,15 +397,18 @@ func (qt *QuadTree[T]) Query(contained BoundedItem) []BoundedItem {
 }
 
 func (qt *QuadTree[T]) Query2(contained BoundedItem, testMutual bool) []BoundedItem {
-	if !intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
+	//if !intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
+	if !qt.Checker.Check(qt.Boundary, contained.GetBounds()) {
 		return nil
 	}
 	// Leaf node
 	points := []BoundedItem{}
 	for _, p := range qt.Items {
-		if intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
+		//if intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
+		if qt.Checker.Check(qt.Boundary, contained.GetBounds()) {
 			if testMutual {
-				if intersection.Intersecting2D[T](p.GetBounds(), contained.GetBounds()) {
+				//if intersection.Intersecting2D[T](p.GetBounds(), contained.GetBounds()) {
+				if qt.Checker.Check(p.GetBounds(), contained.GetBounds()) {
 					points = append(points, p)
 				}
 			} else {
@@ -432,15 +434,18 @@ func (qt *QuadTree[T]) QueryGeometry(contained interface{}) []BoundedItem {
 }
 
 func (qt *QuadTree[T]) QueryGeometry2(contained interface{}, testMutual bool) []BoundedItem {
-	if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+	//if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+	if !qt.Checker.Check(qt.Boundary, contained) {
 		return nil
 	}
 	// Leaf node
 	points := []BoundedItem{}
 	for _, p := range qt.Items {
-		if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+		//if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+		if qt.Checker.Check(qt.Boundary, contained) {
 			if testMutual {
-				if intersection.Intersecting2D[T](p.GetBounds(), contained) {
+				//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
+				if qt.Checker.Check(qt.Boundary, contained) {
 					points = append(points, p)
 				}
 			} else {
@@ -481,14 +486,17 @@ func (qt *QuadTree[T]) QueryBoundedWithDrain2(contained BoundedItem, testMutual 
 }
 
 func (qt *QuadTree[T]) QueryWithDrain2(contained interface{}, testMutual bool, drain chan BoundedItem) {
-	if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+	//if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+	if !qt.Checker.Check(qt.Boundary, contained) {
 		return
 	}
 	// Leaf node
 	for _, p := range qt.Items {
-		if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+		//if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+		if qt.Checker.Check(qt.Boundary, contained) {
 			if testMutual {
-				if intersection.Intersecting2D[T](p.GetBounds(), contained) {
+				//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
+				if qt.Checker.Check(qt.Boundary, contained) {
 					drain <- p
 				}
 			} else {
