@@ -3,6 +3,7 @@ package spatial
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/wolfgarnet/gomath"
 	"math/rand"
 	"testing"
@@ -19,12 +20,24 @@ func (ti TestItem2D) GetBounds() interface{} {
 func TestQuadTree_insert_one_circle(t *testing.T) {
 	qt := NewQuadTree[float32](0.0, 0, 10)
 	inserted := qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](0.0, 0, 0.5)})
+	assert.True(t, inserted)
+	assert.Len(t, qt.Items, 1, "Should be one")
+}
 
-	fmt.Printf("Length: %v - %v\n", len(qt.Items), inserted)
+func TestQuadTree_insert_one_circle_outside(t *testing.T) {
+	qt := NewQuadTree[float32](0.0, 0, 10)
+	inserted := qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](15.0, 15.0, 0.5)})
+	assert.False(t, inserted)
+	assert.Len(t, qt.Items, 0, "Should be zero")
+}
 
-	if len(qt.Items) != 1 {
-		t.Errorf("Not the correct number of nodes.")
-	}
+func TestQuadTree_insert_one_circle_outside_allow_expand(t *testing.T) {
+	qt := NewQuadTree[float32](0.0, 0, 10)
+	qt.mayExpand = true
+	inserted := qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](15.0, 15.0, 0.5)})
+	assert.True(t, inserted)
+	assert.Len(t, qt.Items, 1, "Should be one")
+	assert.Equal(t, float32(20.0), qt.Boundary.HalfSize)
 }
 
 func TestQuadTree_insert_four_circles(t *testing.T) {
@@ -34,47 +47,83 @@ func TestQuadTree_insert_four_circles(t *testing.T) {
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](3, 3, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](4, 4, 0.5)})
 
-	fmt.Printf("Length: %v\n", len(qt.Items))
+	assert.Len(t, qt.Items, 4, "Not the correct number of nodes")
+}
 
-	if len(qt.Items) != 4 {
-		t.Errorf("Not the correct number of nodes.")
-	}
+func TestQuadTree_insert_four_circles_outside(t *testing.T) {
+	qt := NewQuadTree[float32](0.0, 0, 10)
+	qt.mayExpand = true
+	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](15, 1, 0.5)})
+	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2, 12, 0.5)})
+	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](-3, 3, 0.5)})
+	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](-25, 4, 0.5)})
+
+	assert.Len(t, qt.Items, 4, "Not the correct number of nodes.")
+	assert.Equal(t, float32(40.0), qt.Boundary.HalfSize)
 }
 
 func TestQuadTree_insert_points_circles(t *testing.T) {
 	qt := NewQuadTree[float32](0.0, 0, 10)
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{4, 4}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 4, Y: 4}})
 
-	fmt.Printf("Length: %v\n", len(qt.Items))
-
-	if len(qt.Items) != 4 {
-		t.Errorf("Not the correct number of nodes.")
-	}
+	assert.Len(t, qt.Items, 4, "Not the correct number of nodes.")
 }
 
 func TestQuadTree_insert_five(t *testing.T) {
 	qt := NewQuadTree[float32](0.0, 0, 10)
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{4, 4}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{6, 6}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 4, Y: 4}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 6, Y: 6}})
 
+	assert.Len(t, qt.Items, 0, "Should be empty")
 	fmt.Printf("Length: %v\n", len(qt.Items))
 	qt.Stringify()
 
-	if len(qt.NorthEast.SouthWest.Items) != 4 {
-		t.Errorf("Not the correct number of nodes.")
-	}
-	if len(qt.NorthEast.NorthEast.Items) != 1 {
-		t.Errorf("Not the correct number of nodes.")
-	}
-	if len(qt.NorthEast.SouthEast.Items) != 0 {
-		t.Errorf("Not the correct number of nodes.")
-	}
+	assertItems(t, qt.NorthEast, 1, 0, 0, 4)
+}
+
+func TestQuadTree_insert_five_outside(t *testing.T) {
+	qt := NewQuadTree[float32](0.0, 0, 10)
+	qt.mayExpand = true
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 4, Y: 4}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 15, Y: 6}})
+	assert.Equal(t, float32(20.0), qt.Boundary.HalfSize)
+
+	assert.Len(t, qt.Items, 0, "Should be empty")
+	fmt.Printf("Length: %v\n", len(qt.Items))
+	qt.Stringify()
+
+	assertItems(t, qt.NorthEast, 0, 0, 1, 4)
+}
+
+func TestQuadTree_insert_five_inside_one_outside(t *testing.T) {
+	qt := NewQuadTree[float32](0.0, 0, 10)
+	qt.mayExpand = true
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 4, Y: 4}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 6, Y: 6}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 15, Y: 6}})
+	assert.Equal(t, float32(20.0), qt.Boundary.HalfSize)
+
+	assert.Len(t, qt.Items, 0, "Should be empty")
+	fmt.Printf("Length: %v\n", len(qt.Items))
+	qt.Stringify()
+
+	assertItems(t, qt.NorthEast, 0, 0, 1, 0)
+	assertItems(t, qt.NorthWest, 0, 0, 0, 0)
+	assertItems(t, qt.SouthWest, 0, 0, 0, 0)
+	assertItems(t, qt.SouthEast, 0, 0, 0, 0)
+	assertItems(t, qt.NorthEast.SouthWest, 1, 0, 0, 4)
 }
 
 func TestQuadTree_insert_five_circles(t *testing.T) {
@@ -85,17 +134,14 @@ func TestQuadTree_insert_five_circles(t *testing.T) {
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](4, 4, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](6, 6, 0.5)})
 
+	assert.Len(t, qt.Items, 0, "Should be empty")
 	fmt.Printf("Length: %v\n", len(qt.Items))
+	qt.Stringify()
 
-	if len(qt.NorthEast.SouthWest.Items) != 4 {
-		t.Errorf("Not the correct number of nodes.")
-	}
-	if len(qt.NorthEast.NorthEast.Items) != 1 {
-		t.Errorf("Not the correct number of nodes.")
-	}
-	if len(qt.NorthEast.SouthEast.Items) != 0 {
-		t.Errorf("Not the correct number of nodes.")
-	}
+	assert.Len(t, qt.NorthEast.SouthWest.Items, 4, "Not the correct number of nodes.")
+	assert.Len(t, qt.NorthEast.NorthEast.Items, 1, "Not the correct number of nodes.")
+	assert.Len(t, qt.NorthEast.SouthEast.Items, 0, "Not the correct number of nodes.")
+	assert.Len(t, qt.NorthEast.NorthWest.Items, 0, "Not the correct number of nodes.")
 }
 
 func TestQuadTree_insert_five_aabb(t *testing.T) {
@@ -106,17 +152,14 @@ func TestQuadTree_insert_five_aabb(t *testing.T) {
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](6, 6, 0.5)})
 
+	assert.Len(t, qt.Items, 0, "Should be empty")
 	fmt.Printf("Length: %v\n", len(qt.Items))
+	qt.Stringify()
 
-	if len(qt.NorthEast.SouthWest.Items) != 4 {
-		t.Errorf("Not the correct number of nodes.")
-	}
-	if len(qt.NorthEast.NorthEast.Items) != 1 {
-		t.Errorf("Not the correct number of nodes.")
-	}
-	if len(qt.NorthEast.SouthEast.Items) != 0 {
-		t.Errorf("Not the correct number of nodes.")
-	}
+	assert.Len(t, qt.NorthEast.SouthWest.Items, 4, "Not the correct number of nodes")
+	assert.Len(t, qt.NorthEast.NorthEast.Items, 1, "Not the correct number of nodes")
+	assert.Len(t, qt.NorthEast.SouthEast.Items, 0, "Not the correct number of nodes")
+	assert.Len(t, qt.NorthEast.NorthWest.Items, 0, "Not the correct number of nodes")
 }
 
 func TestQuadTree_insert_four_aabb_crossing(t *testing.T) {
@@ -126,11 +169,7 @@ func TestQuadTree_insert_four_aabb_crossing(t *testing.T) {
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 1.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 1.5)})
 
-	fmt.Printf("Length: %v\n", len(qt.Items))
-
-	if len(qt.Items) != 4 {
-		t.Errorf("Not the correct number of nodes.")
-	}
+	assert.Len(t, qt.Items, 4, "Not the correct number of nodes")
 }
 
 func TestQuadTree_insert_five_aabb_crossing(t *testing.T) {
@@ -484,4 +523,12 @@ func quadTreeHasItems[T gomath.Float](qt *QuadTree[T], items ...BoundedItem) err
 	}
 
 	return nil
+}
+
+func assertItems[T gomath.Float](t *testing.T, qt *QuadTree[T], ne int, nw int, se int, sw int) {
+	require.NotNil(t, qt.NorthEast)
+	assert.Len(t, qt.SouthWest.Items, sw, "Incorrect number of items in south west node")
+	assert.Len(t, qt.NorthEast.Items, ne, "Incorrect number of items in north east node")
+	assert.Len(t, qt.SouthEast.Items, se, "Incorrect number of items in south east node")
+	assert.Len(t, qt.NorthWest.Items, nw, "Incorrect number of items in north west node")
 }

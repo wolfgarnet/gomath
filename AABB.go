@@ -160,9 +160,9 @@ type SquaredAABB2D[T Number] struct {
 	Center   Vector2[T]
 	HalfSize T
 
-	calculated bool
+	/*calculated bool
 	minx, miny T
-	maxx, maxy T
+	maxx, maxy T*/
 }
 
 func NewSquaredAABB2DXY[T Number](x, y, halfSize T) SquaredAABB2D[T] {
@@ -233,5 +233,5 @@ func (a SquaredAABB2D[T]) Polygon() Polygon[T] {
 }
 
 func (a SquaredAABB2D[T]) String() string {
-	return fmt.Sprintf("SquaredAABB[c=%v s=%v]", a.Center, a.HalfSize)
+	return fmt.Sprintf("SquaredAABB[c=%v hs=%v]", a.Center, a.HalfSize)
 }
