@@ -57,6 +57,8 @@ func IntersectingCircle[T gomath.Number](circle gomath.Circle[T], other interfac
 		return CircleSquaredAABB(circle, t)
 	case gomath.AABB[T]:
 		return CircleAABB(circle, t)
+	case *gomath.AABB[T]:
+		return CircleAABB(circle, *t)
 	case gomath.Circle[T]:
 		return CircleCircle(circle, t)
 	case *gomath.Circle[T]:
@@ -143,8 +145,12 @@ func Intersecting2D[T gomath.Float](first, second interface{}) bool {
 		return IntersectingSquaredAABB(f1, second)
 	case gomath.AABB[T]:
 		return IntersectingAABB(f1, second)
+	case *gomath.AABB[T]:
+		return IntersectingAABB(*f1, second)
 	case gomath.Circle[T]:
 		return IntersectingCircle(f1, second)
+	case *gomath.Circle[T]:
+		return IntersectingCircle(*f1, second)
 	case gomath.LineSegment[T]:
 		return IntersectingLineSegment(f1, second)
 	case gomath.Polygon[T]:
