@@ -2,6 +2,7 @@ package gomath
 
 import (
 	"fmt"
+	"image"
 	"math"
 )
 
@@ -9,6 +10,23 @@ type AABB[T Number] struct {
 	Center     Vector2[T]
 	HalfWidth  T
 	HalfHeight T
+}
+
+func NewAABBFromRectangle[T Number](rect image.Rectangle) AABB[T] {
+	// Make an AABB[T] out of the Rectangle rect
+	centerX := T(rect.Min.X+rect.Max.X) / 2
+	centerY := T(rect.Min.Y+rect.Max.Y) / 2
+
+	// Compute the half width and half height of the rectangle
+	halfWidth := T(rect.Max.X-rect.Min.X) / 2
+	halfHeight := T(rect.Max.Y-rect.Min.Y) / 2
+
+	// Create and return the AABB
+	return AABB[T]{
+		Center:     Vector2[T]{X: centerX, Y: centerY},
+		HalfWidth:  halfWidth,
+		HalfHeight: halfHeight,
+	}
 }
 
 func NewAABB[T Number](center Vector2[T], halfWidth T, halfHeight T) AABB[T] {
@@ -145,6 +163,15 @@ type AABB2[T Number] struct {
 	MinX T
 	MaxY T
 	MinY T
+}
+
+func NewAABB2FromRectangle[T Number](rect image.Rectangle) AABB2[T] {
+	return AABB2[T]{
+		MaxX: T(rect.Max.X),
+		MaxY: T(rect.Max.Y),
+		MinX: T(rect.Min.X),
+		MinY: T(rect.Min.Y),
+	}
 }
 
 func NewAABB2[T Number](maxx, minx, maxy, miny T) AABB2[T] {

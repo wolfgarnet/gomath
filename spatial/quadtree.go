@@ -11,6 +11,9 @@ const (
 	NodeCapacity = 4
 )
 
+// QuadTree represents a quadtree that may contain elements inside the bounds defined as its boundary.
+// The quadtree has a node capacity when exceeded it divides itself into four new sub-quadtrees.
+// An element can only be contained in one quadtree, the quadtree that contains the element completely.
 type QuadTree[T gomath.Number] struct {
 	Items     []BoundedItem
 	Boundary  gomath.SquaredAABB2D[T]
@@ -290,6 +293,7 @@ func (qt *QuadTree[T]) addDepth() {
 func (qt *QuadTree[T]) Insert(item BoundedItem) bool {
 	// First, verify that the item belongs in this tree.
 	if !qt.Checker.Check(qt.Boundary, item.GetBounds()) {
+		// If we're outside the bounds of the outermost quadtree, we might want to expand the quadtree.
 		if qt.depth == 0 && qt.mayExpand {
 			qt.Expand()
 			return qt.Insert(item)
@@ -456,7 +460,6 @@ func (qt *QuadTree[T]) QueryGeometry2(contained interface{}, testMutual bool) []
 
 	if qt.NorthEast == nil {
 		return points
-		return points
 	}
 
 	points = append(points, qt.NorthEast.QueryGeometry2(contained, testMutual)...)
@@ -486,33 +489,34 @@ func (qt *QuadTree[T]) QueryBoundedWithDrain2(contained BoundedItem, testMutual 
 }
 
 func (qt *QuadTree[T]) QueryWithDrain2(contained interface{}, testMutual bool, drain chan BoundedItem) {
-	//if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
+	// Determine if the contained is inside the quadtree boundary
 	if !qt.Checker.Check(qt.Boundary, contained) {
 		return
 	}
 	// Leaf node
 	for _, p := range qt.Items {
-		//if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
-		if qt.Checker.Check(qt.Boundary, contained) {
-			if testMutual {
-				//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
-				if qt.Checker.Check(qt.Boundary, contained) {
-					drain <- p
-				}
-			} else {
+		// Deter
+		//if qt.Checker.Check(qt.Boundary, contained) {
+		if testMutual {
+			//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
+			//if qt.Checker.Check(qt.Boundary, contained) {
+			if qt.Checker.Check(p.GetBounds(), contained) {
 				drain <- p
 			}
+		} else {
+			drain <- p
 		}
+		//}
 	}
 
 	if qt.NorthEast == nil {
 		return
 	}
 
-	qt.NorthEast.QueryWithDrain(contained, drain)
-	qt.SouthEast.QueryWithDrain(contained, drain)
-	qt.SouthWest.QueryWithDrain(contained, drain)
-	qt.NorthWest.QueryWithDrain(contained, drain)
+	qt.NorthEast.QueryWithDrain2(contained, testMutual, drain)
+	qt.SouthEast.QueryWithDrain2(contained, testMutual, drain)
+	qt.SouthWest.QueryWithDrain2(contained, testMutual, drain)
+	qt.NorthWest.QueryWithDrain2(contained, testMutual, drain)
 
 	return
 }

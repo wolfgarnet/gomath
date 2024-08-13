@@ -40,7 +40,6 @@ func SquaredAABBSquaredAABB[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) boo
 }
 
 func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
-	spew.Dump("COMPARING", b1, b2)
 	if gomath.Abs(b1.Center.X-b2.Center.X) > (b1.HalfWidth + b2.HalfWidth) {
 		return false
 	}
@@ -48,6 +47,7 @@ func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
 		return false
 	}
 
+	spew.Dump("Comparing AABBAABB", b1, b2, "HAS OVERLAP")
 	return true
 }
 
