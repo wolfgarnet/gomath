@@ -11,37 +11,37 @@ const (
 	NodeCapacity = 4
 )
 
-// QuadTree represents a quadtree that may contain elements inside the bounds defined as its boundary.
+// Quadtree represents a quadtree that may contain elements inside the bounds defined as its boundary.
 // The quadtree has a node capacity when exceeded it divides itself into four new sub-quadtrees.
 // An element can only be contained in one quadtree, the quadtree that contains the element completely.
-type QuadTree[T gomath.Number] struct {
+type Quadtree[T gomath.Number] struct {
 	Items     []BoundedItem
 	Boundary  gomath.SquaredAABB2D[T]
-	NorthEast *QuadTree[T]
-	SouthEast *QuadTree[T]
-	SouthWest *QuadTree[T]
-	NorthWest *QuadTree[T]
+	NorthEast *Quadtree[T]
+	SouthEast *Quadtree[T]
+	SouthWest *Quadtree[T]
+	NorthWest *Quadtree[T]
 	Checker   BoundsCheck
 
-	parent   *QuadTree[T]
+	parent   *Quadtree[T]
 	maxDepth int
 	depth    int
-	allItems map[BoundedItem]*QuadTree[T]
+	allItems map[BoundedItem]*Quadtree[T]
 
 	// mayExpand determines if the quad tree may expand itself
 	mayExpand bool
 }
 
-func NewQuadTree[T gomath.Number](x, y, halfSize T) *QuadTree[T] {
-	return newQuadTree(x, y, halfSize, nil, 0, DefaultBoundsCheck{}, 8)
+func NewQuadtree[T gomath.Number](x, y, halfSize T) *Quadtree[T] {
+	return newQuadtree(x, y, halfSize, nil, 0, DefaultBoundsCheck{}, 8)
 }
 
-func NewIntegerQuadTree[T gomath.Number](x, y, halfSize T) *QuadTree[T] {
-	return newQuadTree(x, y, halfSize, nil, 0, IntegerBoundsCheck{}, 8)
+func NewIntegerQuadtree[T gomath.Number](x, y, halfSize T) *Quadtree[T] {
+	return newQuadtree(x, y, halfSize, nil, 0, IntegerBoundsCheck{}, 8)
 }
 
-func newQuadTree[T gomath.Number](x, y, halfSize T, parent *QuadTree[T], depth int, checker BoundsCheck, maxDepth int) *QuadTree[T] {
-	qt := &QuadTree[T]{
+func newQuadtree[T gomath.Number](x, y, halfSize T, parent *Quadtree[T], depth int, checker BoundsCheck, maxDepth int) *Quadtree[T] {
+	qt := &Quadtree[T]{
 		parent:   parent,
 		Boundary: gomath.NewSquaredAABB2DXY(x, y, halfSize),
 		maxDepth: maxDepth,
@@ -54,15 +54,15 @@ func newQuadTree[T gomath.Number](x, y, halfSize T, parent *QuadTree[T], depth i
 
 // SetMayExpand sets whether the quad tree may expand itself if items outside its boundary is inserted.
 // Can only be set for the root tree.
-func (qt *QuadTree[T]) SetMayExpand(mayExpand bool) {
-	if qt.depth > 0 {
+func (tree *Quadtree[T]) SetMayExpand(mayExpand bool) {
+	if tree.depth > 0 {
 		return
 	}
-	qt.mayExpand = mayExpand
+	tree.mayExpand = mayExpand
 }
 
-func (qt *QuadTree[T]) Depth() (d int) {
-	subQT := qt
+func (tree *Quadtree[T]) Depth() (d int) {
+	subQT := tree
 	for subQT != nil {
 		subQT = subQT.NorthEast
 		d++
@@ -72,108 +72,108 @@ func (qt *QuadTree[T]) Depth() (d int) {
 }
 
 // FindQuadTree will find the quadtree storing the given item.
-func (qt *QuadTree[T]) FindQuadTree(i BoundedItem) (*QuadTree[T], bool) {
-	parent := qt.parent
+func (tree *Quadtree[T]) FindQuadTree(i BoundedItem) (*Quadtree[T], bool) {
+	parent := tree.parent
 	for parent != nil {
 		parent = parent.parent
 	}
 
 	if parent.allItems != nil {
-		v, ok := qt.allItems[i]
+		v, ok := tree.allItems[i]
 		return v, ok
 	}
 
 	return nil, false
 }
 
-func (qt *QuadTree[T]) Subdivide() {
-	size := qt.Boundary.HalfSize / 2
-	qt.NorthEast = newQuadTree(qt.Boundary.Center.X+size, qt.Boundary.Center.Y+size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
-	qt.SouthEast = newQuadTree(qt.Boundary.Center.X+size, qt.Boundary.Center.Y-size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
-	qt.SouthWest = newQuadTree(qt.Boundary.Center.X-size, qt.Boundary.Center.Y-size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
-	qt.NorthWest = newQuadTree(qt.Boundary.Center.X-size, qt.Boundary.Center.Y+size, size, qt, qt.depth+1, qt.Checker, qt.maxDepth)
+func (tree *Quadtree[T]) Subdivide() {
+	size := tree.Boundary.HalfSize / 2
+	tree.NorthEast = newQuadtree(tree.Boundary.Center.X+size, tree.Boundary.Center.Y+size, size, tree, tree.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthEast = newQuadtree(tree.Boundary.Center.X+size, tree.Boundary.Center.Y-size, size, tree, tree.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthWest = newQuadtree(tree.Boundary.Center.X-size, tree.Boundary.Center.Y-size, size, tree, tree.depth+1, tree.Checker, tree.maxDepth)
+	tree.NorthWest = newQuadtree(tree.Boundary.Center.X-size, tree.Boundary.Center.Y+size, size, tree, tree.depth+1, tree.Checker, tree.maxDepth)
 
 	// Re-arrange points
-	points := qt.Items
-	qt.Items = make([]BoundedItem, 0)
+	points := tree.Items
+	tree.Items = make([]BoundedItem, 0)
 	for _, p := range points {
-		qt.Insert(p)
+		tree.Insert(p)
 	}
 }
 
-func (qt *QuadTree[T]) Collapse() {
+func (tree *Quadtree[T]) Collapse() {
 	// Leaf node, don't collapse
-	if qt.NorthEast == nil {
+	if tree.NorthEast == nil {
 		return
 	}
 
 	collapse := false
 	// Make sure none of the sub quad tree have children.
-	if qt.NorthEast.NorthEast == nil && qt.SouthEast.NorthEast == nil && qt.SouthWest.NorthEast == nil && qt.NorthWest.NorthEast == nil &&
-		qt.Unique() <= NodeCapacity {
+	if tree.NorthEast.NorthEast == nil && tree.SouthEast.NorthEast == nil && tree.SouthWest.NorthEast == nil && tree.NorthWest.NorthEast == nil &&
+		tree.Unique() <= NodeCapacity {
 		collapse = true
 	}
 
 	if !collapse {
-		qt.NorthEast.Collapse()
-		qt.SouthEast.Collapse()
-		qt.SouthWest.Collapse()
-		qt.NorthWest.Collapse()
+		tree.NorthEast.Collapse()
+		tree.SouthEast.Collapse()
+		tree.SouthWest.Collapse()
+		tree.NorthWest.Collapse()
 	} else {
-		qt.collapse()
+		tree.collapse()
 	}
 }
 
-func (qt *QuadTree[T]) collapse() {
+func (tree *Quadtree[T]) collapse() {
 	// Gather all child items into this quadtrees items
-	qt.Items = append(qt.Items, qt.NorthEast.Items...)
-	qt.NorthEast = nil
-	qt.Items = append(qt.Items, qt.SouthEast.Items...)
-	qt.SouthEast = nil
-	qt.Items = append(qt.Items, qt.SouthWest.Items...)
-	qt.SouthWest = nil
-	qt.Items = append(qt.Items, qt.NorthWest.Items...)
-	qt.NorthWest = nil
+	tree.Items = append(tree.Items, tree.NorthEast.Items...)
+	tree.NorthEast = nil
+	tree.Items = append(tree.Items, tree.SouthEast.Items...)
+	tree.SouthEast = nil
+	tree.Items = append(tree.Items, tree.SouthWest.Items...)
+	tree.SouthWest = nil
+	tree.Items = append(tree.Items, tree.NorthWest.Items...)
+	tree.NorthWest = nil
 
 	// Only unique items
 	u := map[BoundedItem]struct{}{}
-	for _, i := range qt.Items {
+	for _, i := range tree.Items {
 		u[i] = struct{}{}
 	}
 
-	qt.Items = make([]BoundedItem, len(u))
+	tree.Items = make([]BoundedItem, len(u))
 	i := 0
 	for ui, _ := range u {
-		qt.Items[i] = ui
+		tree.Items[i] = ui
 		i++
 	}
 }
 
-func (qt *QuadTree[T]) Size() int {
-	if qt.NorthEast == nil {
-		return len(qt.Items)
+func (tree *Quadtree[T]) Size() int {
+	if tree.NorthEast == nil {
+		return len(tree.Items)
 	}
 
-	size := qt.NorthEast.Size()
-	size += qt.SouthEast.Size()
-	size += qt.SouthWest.Size()
-	size += qt.NorthWest.Size()
+	size := tree.NorthEast.Size()
+	size += tree.SouthEast.Size()
+	size += tree.SouthWest.Size()
+	size += tree.NorthWest.Size()
 
 	return size
 }
 
-func (qt *QuadTree[T]) Unique() int {
+func (tree *Quadtree[T]) Unique() int {
 	u := map[BoundedItem]struct{}{}
-	for _, i := range qt.NorthEast.Items {
+	for _, i := range tree.NorthEast.Items {
 		u[i] = struct{}{}
 	}
-	for _, i := range qt.SouthEast.Items {
+	for _, i := range tree.SouthEast.Items {
 		u[i] = struct{}{}
 	}
-	for _, i := range qt.SouthWest.Items {
+	for _, i := range tree.SouthWest.Items {
 		u[i] = struct{}{}
 	}
-	for _, i := range qt.NorthWest.Items {
+	for _, i := range tree.NorthWest.Items {
 		u[i] = struct{}{}
 	}
 
@@ -181,44 +181,44 @@ func (qt *QuadTree[T]) Unique() int {
 }
 
 // Update will update whether or not the item will be in a new quad
-func (qt *QuadTree[T]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
+func (tree *Quadtree[T]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
 	// Test to see if the update changes the quad
-	quad, ok := qt.FindQuadTree(item)
+	quad, ok := tree.FindQuadTree(item)
 	//if ok && quad.Boundary.Contains(newPos) {
 	if ok && intersection.SquaredAABBPoint(quad.Boundary, newPos) {
 		return
 	}
-	qt.Remove(item)
-	qt.Insert(item)
+	tree.Remove(item)
+	tree.Insert(item)
 }
 
-func (qt *QuadTree[T]) Remove(item BoundedItem) bool {
-	if !qt.Checker.Check(qt.Boundary, item.GetBounds()) {
+func (tree *Quadtree[T]) Remove(item BoundedItem) bool {
+	if !tree.Checker.Check(tree.Boundary, item.GetBounds()) {
 		return false
 	}
 
 	i := 0
 	wasRemoved := false
-	for _, pp := range qt.Items {
+	for _, pp := range tree.Items {
 		if pp == item {
 			wasRemoved = true
 			continue
 		}
 
-		qt.Items[i] = pp
+		tree.Items[i] = pp
 		i++
 	}
-	qt.Items = qt.Items[:i]
+	tree.Items = tree.Items[:i]
 
-	if qt.NorthEast != nil {
+	if tree.NorthEast != nil {
 		if !wasRemoved {
-			wasRemoved = qt.NorthEast.Remove(item)
+			wasRemoved = tree.NorthEast.Remove(item)
 			if !wasRemoved {
-				wasRemoved = qt.SouthEast.Remove(item)
+				wasRemoved = tree.SouthEast.Remove(item)
 				if !wasRemoved {
-					wasRemoved = qt.SouthWest.Remove(item)
+					wasRemoved = tree.SouthWest.Remove(item)
 					if !wasRemoved {
-						wasRemoved = qt.NorthWest.Remove(item)
+						wasRemoved = tree.NorthWest.Remove(item)
 					}
 				}
 			}
@@ -226,16 +226,16 @@ func (qt *QuadTree[T]) Remove(item BoundedItem) bool {
 	}
 
 	if wasRemoved {
-		qt.Collapse()
+		tree.Collapse()
 	}
 
 	return wasRemoved
 }
 
-func (qt *QuadTree[T]) Expand() {
-	oldSize := qt.Boundary.HalfSize
-	qt.Boundary.HalfSize *= 2
-	if qt.NorthEast == nil {
+func (tree *Quadtree[T]) Expand() {
+	oldSize := tree.Boundary.HalfSize
+	tree.Boundary.HalfSize *= 2
+	if tree.NorthEast == nil {
 		// No need to do more
 		return
 	}
@@ -243,111 +243,111 @@ func (qt *QuadTree[T]) Expand() {
 	halfSize := oldSize / 2
 
 	// North West (south east)
-	newNorthWest := newQuadTree(qt.Boundary.Center.X-oldSize, qt.Boundary.Center.Y+oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
-	qt.NorthWest.addDepth()
-	newNorthWest.SouthEast = qt.NorthWest
-	newNorthWest.SouthWest = newQuadTree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newNorthWest.NorthWest = newQuadTree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newNorthWest.NorthEast = newQuadTree(newNorthWest.Boundary.Center.X+halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	qt.NorthWest = newNorthWest
+	newNorthWest := newQuadtree(tree.Boundary.Center.X-oldSize, tree.Boundary.Center.Y+oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
+	tree.NorthWest.addDepth()
+	newNorthWest.SouthEast = tree.NorthWest
+	newNorthWest.SouthWest = newQuadtree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newNorthWest.NorthWest = newQuadtree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newNorthWest.NorthEast = newQuadtree(newNorthWest.Boundary.Center.X+halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	tree.NorthWest = newNorthWest
 
 	// North East (south west)
-	newNorthEast := newQuadTree(qt.Boundary.Center.X+oldSize, qt.Boundary.Center.Y+oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
-	qt.NorthEast.addDepth()
-	newNorthEast.SouthWest = qt.NorthEast
-	newNorthEast.SouthEast = newQuadTree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newNorthEast.NorthWest = newQuadTree(newNorthEast.Boundary.Center.X-halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newNorthEast.NorthEast = newQuadTree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	qt.NorthEast = newNorthEast
+	newNorthEast := newQuadtree(tree.Boundary.Center.X+oldSize, tree.Boundary.Center.Y+oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
+	tree.NorthEast.addDepth()
+	newNorthEast.SouthWest = tree.NorthEast
+	newNorthEast.SouthEast = newQuadtree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newNorthEast.NorthWest = newQuadtree(newNorthEast.Boundary.Center.X-halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newNorthEast.NorthEast = newQuadtree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	tree.NorthEast = newNorthEast
 
 	// South East (north west)
-	newSouthEast := newQuadTree(qt.Boundary.Center.X+oldSize, qt.Boundary.Center.Y-oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
-	qt.SouthEast.addDepth()
-	newSouthEast.NorthWest = qt.SouthEast
-	newSouthEast.SouthEast = newQuadTree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newSouthEast.SouthWest = newQuadTree(newSouthEast.Boundary.Center.X-halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newSouthEast.NorthEast = newQuadTree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	qt.SouthEast = newSouthEast
+	newSouthEast := newQuadtree(tree.Boundary.Center.X+oldSize, tree.Boundary.Center.Y-oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthEast.addDepth()
+	newSouthEast.NorthWest = tree.SouthEast
+	newSouthEast.SouthEast = newQuadtree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newSouthEast.SouthWest = newQuadtree(newSouthEast.Boundary.Center.X-halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newSouthEast.NorthEast = newQuadtree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthEast = newSouthEast
 
 	// South West (north east)
-	newSouthWest := newQuadTree(qt.Boundary.Center.X-oldSize, qt.Boundary.Center.Y-oldSize, oldSize, qt, qt.depth+1, qt.Checker, qt.maxDepth)
-	qt.SouthWest.addDepth()
-	newSouthWest.NorthEast = qt.SouthWest
-	newSouthWest.SouthEast = newQuadTree(newSouthWest.Boundary.Center.X+halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newSouthWest.SouthWest = newQuadTree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	newSouthWest.NorthWest = newQuadTree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, qt.Checker, qt.maxDepth)
-	qt.SouthWest = newSouthWest
+	newSouthWest := newQuadtree(tree.Boundary.Center.X-oldSize, tree.Boundary.Center.Y-oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthWest.addDepth()
+	newSouthWest.NorthEast = tree.SouthWest
+	newSouthWest.SouthEast = newQuadtree(newSouthWest.Boundary.Center.X+halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newSouthWest.SouthWest = newQuadtree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	newSouthWest.NorthWest = newQuadtree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthWest = newSouthWest
 }
 
-func (qt *QuadTree[T]) addDepth() {
-	qt.depth++
-	if qt.NorthEast == nil {
+func (tree *Quadtree[T]) addDepth() {
+	tree.depth++
+	if tree.NorthEast == nil {
 		return
 	}
-	qt.NorthEast.addDepth()
-	qt.NorthWest.addDepth()
-	qt.SouthWest.addDepth()
-	qt.SouthEast.addDepth()
+	tree.NorthEast.addDepth()
+	tree.NorthWest.addDepth()
+	tree.SouthWest.addDepth()
+	tree.SouthEast.addDepth()
 }
 
-func (qt *QuadTree[T]) Insert(item BoundedItem) bool {
+func (tree *Quadtree[T]) Insert(item BoundedItem) bool {
 	// First, verify that the item belongs in this tree.
-	if !qt.Checker.Check(qt.Boundary, item.GetBounds()) {
+	if !tree.Checker.Check(tree.Boundary, item.GetBounds()) {
 		// If we're outside the bounds of the outermost quadtree, we might want to expand the quadtree.
-		if qt.depth == 0 && qt.mayExpand {
-			qt.Expand()
-			return qt.Insert(item)
+		if tree.depth == 0 && tree.mayExpand {
+			tree.Expand()
+			return tree.Insert(item)
 		} else {
 			return false
 		}
 	}
 
 	// If max depth has been reached, just put it in!
-	if qt.depth == qt.maxDepth {
-		qt.Items = append(qt.Items, item)
+	if tree.depth == tree.maxDepth {
+		tree.Items = append(tree.Items, item)
 		return true
 	}
 
 	// No sub quad trees and more room, just plug it in
-	if qt.NorthEast == nil {
-		if len(qt.Items) < NodeCapacity {
-			qt.Items = append(qt.Items, item)
+	if tree.NorthEast == nil {
+		if len(tree.Items) < NodeCapacity {
+			tree.Items = append(tree.Items, item)
 			return true
 		}
 
 		// Obviously there wasn't any room
-		qt.Subdivide()
+		tree.Subdivide()
 	}
 
 	// Figure out which children the item can be in.
-	var insertInto *QuadTree[T]
+	var insertInto *Quadtree[T]
 	multiple := false
-	if qt.NorthEast.ContainedIn(item) {
-		insertInto = qt.NorthEast
+	if tree.NorthEast.ContainedIn(item) {
+		insertInto = tree.NorthEast
 	}
-	if qt.SouthEast.ContainedIn(item) {
+	if tree.SouthEast.ContainedIn(item) {
 		if insertInto != nil {
 			multiple = true
 		}
-		insertInto = qt.SouthEast
+		insertInto = tree.SouthEast
 	}
-	if qt.SouthWest.ContainedIn(item) {
+	if tree.SouthWest.ContainedIn(item) {
 		if insertInto != nil {
 			multiple = true
 		}
-		insertInto = qt.SouthWest
+		insertInto = tree.SouthWest
 	}
-	if qt.NorthWest.ContainedIn(item) {
+	if tree.NorthWest.ContainedIn(item) {
 		if insertInto != nil {
 			multiple = true
 		}
-		insertInto = qt.NorthWest
+		insertInto = tree.NorthWest
 	}
 
 	if multiple {
 		// The item can fit in multiple leafs,
 		// put it into the current sub tree.
-		qt.Items = append(qt.Items, item)
+		tree.Items = append(tree.Items, item)
 		return true
 	} else {
 		if insertInto != nil {
@@ -358,18 +358,18 @@ func (qt *QuadTree[T]) Insert(item BoundedItem) bool {
 	}
 }
 
-func (qt *QuadTree[T]) Clear() {
-	qt.NorthEast = nil
-	qt.NorthWest = nil
-	qt.SouthEast = nil
-	qt.SouthWest = nil
+func (tree *Quadtree[T]) Clear() {
+	tree.NorthEast = nil
+	tree.NorthWest = nil
+	tree.SouthEast = nil
+	tree.SouthWest = nil
 
-	qt.Items = nil
+	tree.Items = nil
 }
 
-func (qt *QuadTree[T]) ContainedIn(item BoundedItem) bool {
-	//return intersection.IntersectingSquaredAABB(qt.Boundary, item.GetBounds())
-	return qt.Checker.Check(qt.Boundary, item.GetBounds())
+func (tree *Quadtree[T]) ContainedIn(item BoundedItem) bool {
+	//return intersection.IntersectingSquaredAABB(tree.Boundary, item.GetBounds())
+	return tree.Checker.Check(tree.Boundary, item.GetBounds())
 }
 
 type QueryResultWrapper struct {
@@ -396,111 +396,111 @@ func (w *QueryResultWrapper) RemoveDuplicates() {
 	w.Items = w.Items[:i]
 }
 
-func (qt *QuadTree[T]) Query(contained BoundedItem) []BoundedItem {
-	return qt.Query2(contained, false)
+func (tree *Quadtree[T]) Query(contained BoundedItem) []BoundedItem {
+	return tree.Query2(contained, false)
 }
 
-func (qt *QuadTree[T]) Query2(contained BoundedItem, testMutual bool) []BoundedItem {
-	//if !intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
-	if !qt.Checker.Check(qt.Boundary, contained.GetBounds()) {
+func (tree *Quadtree[T]) Query2(contained BoundedItem, testMutual bool) []BoundedItem {
+	//if !intersection.IntersectingSquaredAABB(tree.Boundary, contained.GetBounds()) {
+	if !tree.Checker.Check(tree.Boundary, contained.GetBounds()) {
 		return nil
 	}
 	// Leaf node
 	points := []BoundedItem{}
-	for _, p := range qt.Items {
-		//if intersection.IntersectingSquaredAABB(qt.Boundary, contained.GetBounds()) {
-		if qt.Checker.Check(qt.Boundary, contained.GetBounds()) {
-			if testMutual {
-				//if intersection.Intersecting2D[T](p.GetBounds(), contained.GetBounds()) {
-				if qt.Checker.Check(p.GetBounds(), contained.GetBounds()) {
-					points = append(points, p)
-				}
-			} else {
+	for _, p := range tree.Items {
+		//if intersection.IntersectingSquaredAABB(tree.Boundary, contained.GetBounds()) {
+		//if tree.Checker.Check(tree.Boundary, contained.GetBounds()) {
+		if testMutual {
+			//if intersection.Intersecting2D[T](p.GetBounds(), contained.GetBounds()) {
+			if tree.Checker.Check(p.GetBounds(), contained.GetBounds()) {
 				points = append(points, p)
 			}
+		} else {
+			points = append(points, p)
 		}
+		//}
 	}
 
-	if qt.NorthEast == nil {
+	if tree.NorthEast == nil {
 		return points
 	}
 
-	points = append(points, qt.NorthEast.Query2(contained, testMutual)...)
-	points = append(points, qt.SouthEast.Query2(contained, testMutual)...)
-	points = append(points, qt.SouthWest.Query2(contained, testMutual)...)
-	points = append(points, qt.NorthWest.Query2(contained, testMutual)...)
+	points = append(points, tree.NorthEast.Query2(contained, testMutual)...)
+	points = append(points, tree.SouthEast.Query2(contained, testMutual)...)
+	points = append(points, tree.SouthWest.Query2(contained, testMutual)...)
+	points = append(points, tree.NorthWest.Query2(contained, testMutual)...)
 
 	return points
 }
 
-func (qt *QuadTree[T]) QueryGeometry(contained interface{}) []BoundedItem {
-	return qt.QueryGeometry2(contained, false)
+func (tree *Quadtree[T]) QueryGeometry(contained interface{}) []BoundedItem {
+	return tree.QueryGeometry2(contained, false)
 }
 
-func (qt *QuadTree[T]) QueryGeometry2(contained interface{}, testMutual bool) []BoundedItem {
-	//if !intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
-	if !qt.Checker.Check(qt.Boundary, contained) {
+func (tree *Quadtree[T]) QueryGeometry2(contained interface{}, testMutual bool) []BoundedItem {
+	//if !intersection.IntersectingSquaredAABB(tree.Boundary, contained) {
+	if !tree.Checker.Check(tree.Boundary, contained) {
 		return nil
 	}
 	// Leaf node
 	points := []BoundedItem{}
-	for _, p := range qt.Items {
-		//if intersection.IntersectingSquaredAABB(qt.Boundary, contained) {
-		if qt.Checker.Check(qt.Boundary, contained) {
-			if testMutual {
-				//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
-				if qt.Checker.Check(qt.Boundary, contained) {
-					points = append(points, p)
-				}
-			} else {
+	for _, p := range tree.Items {
+		//if intersection.IntersectingSquaredAABB(tree.Boundary, contained) {
+		//if tree.Checker.Check(tree.Boundary, contained) {
+		if testMutual {
+			//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
+			if tree.Checker.Check(p.GetBounds(), contained) {
 				points = append(points, p)
 			}
+		} else {
+			points = append(points, p)
 		}
+		//}
 	}
 
-	if qt.NorthEast == nil {
+	if tree.NorthEast == nil {
 		return points
 	}
 
-	points = append(points, qt.NorthEast.QueryGeometry2(contained, testMutual)...)
-	points = append(points, qt.SouthEast.QueryGeometry2(contained, testMutual)...)
-	points = append(points, qt.SouthWest.QueryGeometry2(contained, testMutual)...)
-	points = append(points, qt.NorthWest.QueryGeometry2(contained, testMutual)...)
+	points = append(points, tree.NorthEast.QueryGeometry2(contained, testMutual)...)
+	points = append(points, tree.SouthEast.QueryGeometry2(contained, testMutual)...)
+	points = append(points, tree.SouthWest.QueryGeometry2(contained, testMutual)...)
+	points = append(points, tree.NorthWest.QueryGeometry2(contained, testMutual)...)
 
 	return points
 }
 
-func (qt *QuadTree[T]) QueryBoundedWithDrain(contained BoundedItem, drain chan BoundedItem) {
-	qt.QueryWithDrain2(contained.GetBounds(), false, drain)
+func (tree *Quadtree[T]) QueryBoundedWithDrain(contained BoundedItem, drain chan BoundedItem) {
+	tree.QueryWithDrain2(contained.GetBounds(), false, drain)
 }
 
-func (qt *QuadTree[T]) QueryWithDrain(contained interface{}, drain chan BoundedItem) {
-	qt.QueryWithDrain2(contained, false, drain)
+func (tree *Quadtree[T]) QueryWithDrain(contained interface{}, drain chan BoundedItem) {
+	tree.QueryWithDrain2(contained, false, drain)
 	return
 }
 
-func (qt *QuadTree[T]) QueryWithDrainBoth(contained interface{}, drain chan BoundedItem) {
-	qt.QueryWithDrain2(contained, true, drain)
+func (tree *Quadtree[T]) QueryWithDrainBoth(contained interface{}, drain chan BoundedItem) {
+	tree.QueryWithDrain2(contained, true, drain)
 	return
 }
 
-func (qt *QuadTree[T]) QueryBoundedWithDrain2(contained BoundedItem, testMutual bool, drain chan BoundedItem) {
-	qt.QueryWithDrain2(contained.GetBounds(), testMutual, drain)
+func (tree *Quadtree[T]) QueryBoundedWithDrain2(contained BoundedItem, testMutual bool, drain chan BoundedItem) {
+	tree.QueryWithDrain2(contained.GetBounds(), testMutual, drain)
 }
 
-func (qt *QuadTree[T]) QueryWithDrain2(contained interface{}, testMutual bool, drain chan BoundedItem) {
+func (tree *Quadtree[T]) QueryWithDrain2(contained interface{}, testMutual bool, drain chan BoundedItem) {
 	// Determine if the contained is inside the quadtree boundary
-	if !qt.Checker.Check(qt.Boundary, contained) {
+	if !tree.Checker.Check(tree.Boundary, contained) {
 		return
 	}
 	// Leaf node
-	for _, p := range qt.Items {
+	for _, p := range tree.Items {
 		// Deter
-		//if qt.Checker.Check(qt.Boundary, contained) {
+		//if tree.Checker.Check(tree.Boundary, contained) {
 		if testMutual {
 			//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
-			//if qt.Checker.Check(qt.Boundary, contained) {
-			if qt.Checker.Check(p.GetBounds(), contained) {
+			//if tree.Checker.Check(tree.Boundary, contained) {
+			if tree.Checker.Check(p.GetBounds(), contained) {
 				drain <- p
 			}
 		} else {
@@ -509,64 +509,64 @@ func (qt *QuadTree[T]) QueryWithDrain2(contained interface{}, testMutual bool, d
 		//}
 	}
 
-	if qt.NorthEast == nil {
+	if tree.NorthEast == nil {
 		return
 	}
 
-	qt.NorthEast.QueryWithDrain2(contained, testMutual, drain)
-	qt.SouthEast.QueryWithDrain2(contained, testMutual, drain)
-	qt.SouthWest.QueryWithDrain2(contained, testMutual, drain)
-	qt.NorthWest.QueryWithDrain2(contained, testMutual, drain)
+	tree.NorthEast.QueryWithDrain2(contained, testMutual, drain)
+	tree.SouthEast.QueryWithDrain2(contained, testMutual, drain)
+	tree.SouthWest.QueryWithDrain2(contained, testMutual, drain)
+	tree.NorthWest.QueryWithDrain2(contained, testMutual, drain)
 
 	return
 }
 
-func (qt *QuadTree[T]) Clone() *QuadTree[T] {
-	newQT := NewQuadTree(qt.Boundary.Center.X, qt.Boundary.Center.Y, qt.Boundary.HalfSize)
-	if qt.NorthEast != nil {
-		newQT.NorthEast = qt.NorthEast.Clone()
-		newQT.SouthEast = qt.SouthEast.Clone()
-		newQT.SouthWest = qt.SouthWest.Clone()
-		newQT.NorthWest = qt.NorthWest.Clone()
+func (tree *Quadtree[T]) Clone() *Quadtree[T] {
+	newQT := NewQuadtree(tree.Boundary.Center.X, tree.Boundary.Center.Y, tree.Boundary.HalfSize)
+	if tree.NorthEast != nil {
+		newQT.NorthEast = tree.NorthEast.Clone()
+		newQT.SouthEast = tree.SouthEast.Clone()
+		newQT.SouthWest = tree.SouthWest.Clone()
+		newQT.NorthWest = tree.NorthWest.Clone()
 	} else {
-		newQT.Items = make([]BoundedItem, len(qt.Items))
-		for i, item := range qt.Items {
+		newQT.Items = make([]BoundedItem, len(tree.Items))
+		for i, item := range tree.Items {
 			newQT.Items[i] = item
 		}
 	}
 	return newQT
 }
 
-func (qt *QuadTree[T]) Stringify() {
-	qt.stringify(0)
+func (tree *Quadtree[T]) Stringify() {
+	tree.stringify(0)
 }
 
-func (qt *QuadTree[T]) stringify(lvl int) {
+func (tree *Quadtree[T]) stringify(lvl int) {
 	indent := fmt.Sprintf("%s", strings.Repeat(" ", lvl*2))
-	//fmt.Printf("%sBounds: %v, depth: %d, points: %v\n", indent, qt.Boundary, qt.depth, qt.Items)
-	fmt.Printf("Bounds: %v, depth: %d, points: %v\n", qt.Boundary, qt.depth, qt.Items)
-	if qt.NorthEast != nil {
+	//fmt.Printf("%sBounds: %v, depth: %d, points: %v\n", indent, tree.Boundary, tree.depth, tree.Items)
+	fmt.Printf("Bounds: %v, depth: %d, points: %v\n", tree.Boundary, tree.depth, tree.Items)
+	if tree.NorthEast != nil {
 		fmt.Printf("%s* North east: ", indent)
-		qt.NorthEast.stringify(lvl + 1)
+		tree.NorthEast.stringify(lvl + 1)
 		fmt.Printf("%s* South east: ", indent)
-		qt.SouthEast.stringify(lvl + 1)
+		tree.SouthEast.stringify(lvl + 1)
 		fmt.Printf("%s* South west: ", indent)
-		qt.SouthWest.stringify(lvl + 1)
+		tree.SouthWest.stringify(lvl + 1)
 		fmt.Printf("%s* North west: ", indent)
-		qt.NorthWest.stringify(lvl + 1)
+		tree.NorthWest.stringify(lvl + 1)
 	} else {
 		//fmt.Printf("%sNo sub division\n", indent)
 	}
 }
 
-func (qt *QuadTree[T]) Visit(cb func(tree *QuadTree[T])) {
-	cb(qt)
-	if qt.NorthEast == nil {
+func (tree *Quadtree[T]) Visit(cb func(tree *Quadtree[T])) {
+	cb(tree)
+	if tree.NorthEast == nil {
 		return
 	}
 
-	qt.NorthEast.Visit(cb)
-	qt.SouthEast.Visit(cb)
-	qt.SouthWest.Visit(cb)
-	qt.NorthWest.Visit(cb)
+	tree.NorthEast.Visit(cb)
+	tree.SouthEast.Visit(cb)
+	tree.SouthWest.Visit(cb)
+	tree.NorthWest.Visit(cb)
 }
