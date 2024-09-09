@@ -66,6 +66,16 @@ func LineSegmentLineSegment2D2[T gomath.Number](l1P1, l1P2, l2P1, l2P2 gomath.Ve
 	return nil, false
 }
 
+func LineSquaredBoxContains[T gomath.Number](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
+	// Determine if the line segment is completely inside the bounding box
+	if SquaredAABBPoint(bb, ls.P1) || SquaredAABBPoint(bb, ls.P2) {
+		return true
+	}
+
+	return LineSquaredBox(ls, bb)
+}
+
+// LineSquaredBox determines whether the sides of the bounding box intersects with the line segment.
 func LineSquaredBox[T gomath.Number](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {
 	for _, side := range bb.Sides() {
 		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, ls.P1, ls.P2)

@@ -4,6 +4,7 @@ import "github.com/wolfgarnet/gomath"
 
 // QueryQuadtree queries the quadtree given a containing geometry compatible with intersection.Intersecting2D[T]().
 // The resulting items are piped into the drain channel.
+// When checking the intersection of items and the containing geometry, it should be a 2d geometry with. Ie. not a point or line.
 func QueryQuadtree[T gomath.Number](tree *Quadtree[T], containing interface{}, drain chan BoundedItem) {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
@@ -24,6 +25,11 @@ func QueryQuadtree[T gomath.Number](tree *Quadtree[T], containing interface{}, d
 	QueryQuadtree(tree.SouthEast, containing, drain)
 	QueryQuadtree(tree.SouthWest, containing, drain)
 	QueryQuadtree(tree.NorthWest, containing, drain)
+}
+
+// QueryQuadtreeWithBoundedItem as QueryQuadtree, but with a bounded it.
+func QueryQuadtreeWithBoundedItem[T gomath.Number](tree *Quadtree[T], containing BoundedItem, drain chan BoundedItem) {
+	QueryQuadtree(tree, containing.GetBounds(), drain)
 }
 
 // QueryQuadtreeWithResult does the same as QueryQuadtree, but returns a result slice.
@@ -51,10 +57,7 @@ func QueryQuadtreeWithResult[T gomath.Number](tree *Quadtree[T], containing inte
 	return items
 }
 
-func QueryQuadtreeWithBoundedItem[T gomath.Number](tree *Quadtree[T], containing BoundedItem, drain chan BoundedItem) {
-	QueryQuadtree(tree, containing.GetBounds(), drain)
-}
-
+// QueryQuadtreeWithBoundedItemWithResult as QueryQuadtreeWithResult, but with a bounded item.
 func QueryQuadtreeWithBoundedItemWithResult[T gomath.Number](tree *Quadtree[T], containing BoundedItem) (items []BoundedItem) {
 	return QueryQuadtreeWithResult(tree, containing.GetBounds())
 }
@@ -82,6 +85,10 @@ func QueryQuadtreeWithoutCheck[T gomath.Number](tree *Quadtree[T], containing in
 	QueryQuadtreeWithoutCheck(tree.NorthWest, containing, drain)
 }
 
+func QueryQuadtreeWithoutCheckWithBoundedItem[T gomath.Number](tree *Quadtree[T], containing BoundedItem, drain chan BoundedItem) {
+	QueryQuadtreeWithoutCheck(tree, containing.GetBounds(), drain)
+}
+
 // QueryQuadtreeWithoutCheckWithResult does the same as QueryQuadtreeWithoutCheck, but returns a result slice.
 func QueryQuadtreeWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], containing interface{}) (items []BoundedItem) {
 	// Determine if the contained is inside the quadtree boundary
@@ -97,16 +104,12 @@ func QueryQuadtreeWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], con
 		return
 	}
 
-	items = append(items, QueryQuadtreeWithResult(tree.NorthEast, containing)...)
-	items = append(items, QueryQuadtreeWithResult(tree.SouthEast, containing)...)
-	items = append(items, QueryQuadtreeWithResult(tree.SouthWest, containing)...)
-	items = append(items, QueryQuadtreeWithResult(tree.NorthWest, containing)...)
+	items = append(items, QueryQuadtreeWithoutCheckWithResult(tree.NorthEast, containing)...)
+	items = append(items, QueryQuadtreeWithoutCheckWithResult(tree.SouthEast, containing)...)
+	items = append(items, QueryQuadtreeWithoutCheckWithResult(tree.SouthWest, containing)...)
+	items = append(items, QueryQuadtreeWithoutCheckWithResult(tree.NorthWest, containing)...)
 
 	return items
-}
-
-func QueryQuadtreeWithoutCheckWithBoundedItem[T gomath.Number](tree *Quadtree[T], containing BoundedItem, drain chan BoundedItem) {
-	QueryQuadtreeWithoutCheck(tree, containing.GetBounds(), drain)
 }
 
 func QueryQuadtreeWithBoundedItemWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], containing BoundedItem) (items []BoundedItem) {
