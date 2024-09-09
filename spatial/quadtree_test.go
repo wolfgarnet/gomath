@@ -404,7 +404,7 @@ func TestQuadtree_Query_simple(t *testing.T) {
 	qt.Insert(item4)
 
 	ls := TestItem2D{bounds: gomath.NewLineSegmentXY[float32](0, 0, 5, 5)}
-	list := qt.Query(ls)
+	list := QueryQuadtreeWithResult(qt, ls)
 	if len(list) != 4 {
 		t.Errorf("Not the correct size, should have been 4")
 		return
@@ -440,7 +440,7 @@ func TestQuadtree_Query_simple2(t *testing.T) {
 
 	expected := []BoundedItem{item1, item2, item3, item4, item5}
 	ls := TestItem2D{bounds: gomath.NewLineSegmentXY[float32](1, 1, 4, 4)}
-	list := qt.Query(ls)
+	list := QueryQuadtreeWithBoundedItemWithoutCheckWithResult(qt, ls)
 	expected = checkItems(list, expected)
 	if len(list) != 5 {
 		t.Errorf("Size should have been 5, not %v", len(list))
@@ -451,7 +451,7 @@ func TestQuadtree_Query_simple2(t *testing.T) {
 
 	expected = []BoundedItem{item1, item2, item3, item4, item5, item6, item7, item8, item9}
 	ls = TestItem2D{bounds: gomath.NewLineSegmentXY[float32](1, 1, 6, 6)}
-	list = qt.Query(ls)
+	list = QueryQuadtreeWithBoundedItemWithResult(qt, ls)
 	expected = checkItems(list, expected)
 	if len(list) != 9 {
 		t.Errorf("Size should have been 5, not %v", len(list))
@@ -462,7 +462,7 @@ func TestQuadtree_Query_simple2(t *testing.T) {
 
 	expected = []BoundedItem{item6, item7, item8, item9}
 	ls = TestItem2D{bounds: gomath.NewLineSegmentXY[float32](6, 6, 9, 9)}
-	list = qt.Query(ls)
+	list = QueryQuadtreeWithBoundedItemWithResult(qt, ls)
 	expected = checkItems(list, expected)
 	if len(list) != 4 {
 		t.Errorf("Size should have been 4, not %v", len(list))

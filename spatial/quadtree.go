@@ -21,7 +21,10 @@ type Quadtree[T gomath.Number] struct {
 	SouthEast *Quadtree[T]
 	SouthWest *Quadtree[T]
 	NorthWest *Quadtree[T]
-	Checker   BoundsCheck
+
+	// Checker determines the specific bounds check for the quadtree.
+	// By default, the bounds check is using floating points, but is can be set to use integer as well.
+	Checker BoundsCheck
 
 	parent   *Quadtree[T]
 	maxDepth int
@@ -394,131 +397,6 @@ func (w *QueryResultWrapper) RemoveDuplicates() {
 		i++
 	}
 	w.Items = w.Items[:i]
-}
-
-func (tree *Quadtree[T]) Query(contained BoundedItem) []BoundedItem {
-	return tree.Query2(contained, false)
-}
-
-func (tree *Quadtree[T]) Query2(contained BoundedItem, testMutual bool) []BoundedItem {
-	//if !intersection.IntersectingSquaredAABB(tree.Boundary, contained.GetBounds()) {
-	if !tree.Checker.Check(tree.Boundary, contained.GetBounds()) {
-		return nil
-	}
-	// Leaf node
-	points := []BoundedItem{}
-	for _, p := range tree.Items {
-		//if intersection.IntersectingSquaredAABB(tree.Boundary, contained.GetBounds()) {
-		//if tree.Checker.Check(tree.Boundary, contained.GetBounds()) {
-		if testMutual {
-			//if intersection.Intersecting2D[T](p.GetBounds(), contained.GetBounds()) {
-			if tree.Checker.Check(p.GetBounds(), contained.GetBounds()) {
-				points = append(points, p)
-			}
-		} else {
-			points = append(points, p)
-		}
-		//}
-	}
-
-	if tree.NorthEast == nil {
-		return points
-	}
-
-	points = append(points, tree.NorthEast.Query2(contained, testMutual)...)
-	points = append(points, tree.SouthEast.Query2(contained, testMutual)...)
-	points = append(points, tree.SouthWest.Query2(contained, testMutual)...)
-	points = append(points, tree.NorthWest.Query2(contained, testMutual)...)
-
-	return points
-}
-
-func (tree *Quadtree[T]) QueryGeometry(contained interface{}) []BoundedItem {
-	return tree.QueryGeometry2(contained, false)
-}
-
-func (tree *Quadtree[T]) QueryGeometry2(contained interface{}, testMutual bool) []BoundedItem {
-	//if !intersection.IntersectingSquaredAABB(tree.Boundary, contained) {
-	if !tree.Checker.Check(tree.Boundary, contained) {
-		return nil
-	}
-	// Leaf node
-	points := []BoundedItem{}
-	for _, p := range tree.Items {
-		//if intersection.IntersectingSquaredAABB(tree.Boundary, contained) {
-		//if tree.Checker.Check(tree.Boundary, contained) {
-		if testMutual {
-			//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
-			if tree.Checker.Check(p.GetBounds(), contained) {
-				points = append(points, p)
-			}
-		} else {
-			points = append(points, p)
-		}
-		//}
-	}
-
-	if tree.NorthEast == nil {
-		return points
-	}
-
-	points = append(points, tree.NorthEast.QueryGeometry2(contained, testMutual)...)
-	points = append(points, tree.SouthEast.QueryGeometry2(contained, testMutual)...)
-	points = append(points, tree.SouthWest.QueryGeometry2(contained, testMutual)...)
-	points = append(points, tree.NorthWest.QueryGeometry2(contained, testMutual)...)
-
-	return points
-}
-
-func (tree *Quadtree[T]) QueryBoundedWithDrain(contained BoundedItem, drain chan BoundedItem) {
-	tree.QueryWithDrain2(contained.GetBounds(), false, drain)
-}
-
-func (tree *Quadtree[T]) QueryWithDrain(contained interface{}, drain chan BoundedItem) {
-	tree.QueryWithDrain2(contained, false, drain)
-	return
-}
-
-func (tree *Quadtree[T]) QueryWithDrainBoth(contained interface{}, drain chan BoundedItem) {
-	tree.QueryWithDrain2(contained, true, drain)
-	return
-}
-
-func (tree *Quadtree[T]) QueryBoundedWithDrain2(contained BoundedItem, testMutual bool, drain chan BoundedItem) {
-	tree.QueryWithDrain2(contained.GetBounds(), testMutual, drain)
-}
-
-func (tree *Quadtree[T]) QueryWithDrain2(contained interface{}, testMutual bool, drain chan BoundedItem) {
-	// Determine if the contained is inside the quadtree boundary
-	if !tree.Checker.Check(tree.Boundary, contained) {
-		return
-	}
-	// Leaf node
-	for _, p := range tree.Items {
-		// Deter
-		//if tree.Checker.Check(tree.Boundary, contained) {
-		if testMutual {
-			//if intersection.Intersecting2D[T](p.GetBounds(), contained) {
-			//if tree.Checker.Check(tree.Boundary, contained) {
-			if tree.Checker.Check(p.GetBounds(), contained) {
-				drain <- p
-			}
-		} else {
-			drain <- p
-		}
-		//}
-	}
-
-	if tree.NorthEast == nil {
-		return
-	}
-
-	tree.NorthEast.QueryWithDrain2(contained, testMutual, drain)
-	tree.SouthEast.QueryWithDrain2(contained, testMutual, drain)
-	tree.SouthWest.QueryWithDrain2(contained, testMutual, drain)
-	tree.NorthWest.QueryWithDrain2(contained, testMutual, drain)
-
-	return
 }
 
 func (tree *Quadtree[T]) Clone() *Quadtree[T] {

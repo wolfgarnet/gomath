@@ -8,7 +8,7 @@ func ForeachElement(tree *Quadtree[float32], position gomath.Vector2[float32], h
 	aabb := gomath.NewSquaredAABB2D[float32](position, halfSize)
 	drain := make(chan BoundedItem, 16)
 	go func() {
-		tree.QueryWithDrain(aabb, drain)
+		QueryQuadtree(tree, aabb, drain)
 		close(drain)
 	}()
 
