@@ -32,13 +32,33 @@ func DistanceTo[T Number](o1 any, o2 any) T {
 		return DistanceFromPoint(v1, o2)
 	case *Vector2[T]:
 		return DistanceFromPoint(*v1, o2)
+
 	case AABB[T]:
 		return DistanceFromAABB(v1, o2)
 	case *AABB[T]:
 		return DistanceFromAABB(*v1, o2)
 
+	case Circle[T]:
+		return DistanceFromCircle(v1, o2)
+	case *Circle[T]:
+		return DistanceFromCircle(*v1, o2)
+
 	default:
 		panic(fmt.Sprintf("unknown type: %T", o1))
+	}
+}
+
+func DistanceFromCircle[T Number](circle Circle[T], o2 any) T {
+	switch v2 := o2.(type) {
+	case Vector2[T]:
+		return DistanceFromPointToCircle(v2, circle)
+	case *Vector2[T]:
+		return DistanceFromPointToCircle(*v2, circle)
+
+	case AABB[T]:
+		return DistanceFromCircleToAABB(circle, v2)
+	case *AABB[T]:
+		return DistanceFromCircleToAABB(circle, *v2)
 	}
 }
 
@@ -48,6 +68,12 @@ func DistanceFromAABB[T Number](aabb AABB[T], o2 any) T {
 		return DistanceFromPointToAABB(v2, aabb)
 	case *Vector2[T]:
 		return DistanceFromPointToAABB(*v2, aabb)
+
+	case Circle[T]:
+		return DistanceFromCircleToAABB(v2, aabb)
+	case *Circle[T]:
+		return DistanceFromCircleToAABB(*v2, aabb)
+
 	/*case AABB[T]:
 		return DistanceFromPointToAABB(point, v2)
 	case *AABB[T]:
@@ -72,6 +98,14 @@ func DistanceFromPoint[T Number](point Vector2[T], o2 any) T {
 	default:
 		panic(fmt.Sprintf("unknown type: %T", o2))
 	}
+}
+
+func DistanceFromPointToCircle[T Number](point Vector2[T], circle Circle[T]) T {
+	return point.DistanceTo(circle.Center) - circle.Radius
+}
+
+func DistanceFromCircleToAABB[T Number](circle Circle[T], aabb AABB[T]) T {
+	return DistanceFromPointToAABB(circle.Center, aabb) - circle.Radius
 }
 
 func DistanceFromPointToAABB[T Number](point Vector2[T], aabb AABB[T]) T {
