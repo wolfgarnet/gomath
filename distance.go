@@ -59,6 +59,9 @@ func DistanceFromCircle[T Number](circle Circle[T], o2 any) T {
 		return DistanceFromCircleToAABB(circle, v2)
 	case *AABB[T]:
 		return DistanceFromCircleToAABB(circle, *v2)
+
+	default:
+		panic(fmt.Sprintf("unknown type: %T", o2))
 	}
 }
 
