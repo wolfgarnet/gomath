@@ -19,6 +19,10 @@ func NewCircleWithCenter[T Number](center Vector2[T], radius T) Circle[T] {
 	}
 }
 
+func (c *Circle[T]) Scale(scale T) {
+	c.Radius *= scale
+}
+
 func (c *Circle[T]) SetCenter(center Vector2[T]) {
 	c.Center = center
 }

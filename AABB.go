@@ -37,6 +37,11 @@ func NewAABB[T Number](center Vector2[T], halfWidth T, halfHeight T) AABB[T] {
 	}
 }
 
+func (a *AABB[T]) Scale(scale T) {
+	a.HalfHeight *= scale
+	a.HalfWidth *= scale
+}
+
 func (a *AABB[T]) SetCenter(c Vector2[T]) {
 	a.Center = c
 }
