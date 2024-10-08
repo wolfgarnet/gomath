@@ -22,3 +22,9 @@ func (r Ray[T]) AtDistance(distance T, length T, segment *LineSegment[T]) {
 	segment.P1 = r.Origin.Add(r.Direction.MultiplyScalar(distance))
 	segment.P2 = segment.P1.Add(r.Direction.MultiplyScalar(length))
 }
+
+func (r Ray[T]) AtDistance2(distance T, length T) (segment LineSegment[T]) {
+	segment.P1 = r.Origin.Add(r.Direction.MultiplyScalar(distance))
+	segment.P2 = segment.P1.Add(r.Direction.MultiplyScalar(length))
+	return segment
+}

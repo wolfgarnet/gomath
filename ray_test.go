@@ -28,3 +28,26 @@ func TestRay_AtDistance(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkRay_AtDistance(b *testing.B) {
+	b.Run("inlined", func(b *testing.B) {
+		ray := NewRay[float32](Vector2[float32]{}, Vector2[float32]{X: 10})
+		segment := LineSegment[float32]{}
+		length := 10 / float32(b.N)
+		for i := 0; i < b.N; i++ {
+			step := float32(i) * length
+			ray.AtDistance(step, length, &segment)
+			_ = segment
+		}
+	})
+
+	b.Run("returned", func(b *testing.B) {
+		ray := NewRay[float32](Vector2[float32]{}, Vector2[float32]{X: 10})
+		length := 10 / float32(b.N)
+		for i := 0; i < b.N; i++ {
+			step := float32(i) * length
+			segment := ray.AtDistance2(step, length)
+			_ = segment
+		}
+	})
+}
