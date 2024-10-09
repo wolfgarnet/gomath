@@ -66,11 +66,6 @@ func (a *AABB[T]) SetHalfHeight(t T) {
 	a.HalfHeight = t
 }
 
-func (a *AABB[T]) Scale(s T) {
-	a.HalfWidth *= s
-	a.HalfHeight *= s
-}
-
 func (a AABB[T]) Extend(w T) AABB[T] {
 	return AABB[T]{
 		Center:     a.Center,
