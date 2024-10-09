@@ -5,6 +5,10 @@ import "math"
 const epsilon = 0.9
 const epsilon2 = 0.001
 
+func IsNearlyEqual[T Float](a, b T) bool {
+	return Abs(a-b) < epsilon2
+}
+
 func IsEpsilon[T Float](v T) bool {
 	return Abs(v) < epsilon
 }

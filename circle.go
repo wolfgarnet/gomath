@@ -23,6 +23,10 @@ func (c *Circle[T]) SetCenter(center Vector2[T]) {
 	c.Center = center
 }
 
+func (c *Circle[T]) Scale(s T) {
+	c.Radius *= s
+}
+
 func (c *Circle[T]) GetCenter() Vector2[T] {
 	return c.Center
 }
