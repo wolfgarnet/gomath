@@ -17,3 +17,14 @@ func NewRay[T Number](origin, direction Vector2[T]) Ray[T] {
 func (r Ray[T]) String() string {
 	return fmt.Sprintf("%v->%v", r.Origin, r.Direction)
 }
+
+func (r Ray[T]) AtDistance(distance T, length T, segment *LineSegment[T]) {
+	segment.P1 = r.Origin.Add(r.Direction.MultiplyScalar(distance))
+	segment.P2 = segment.P1.Add(r.Direction.MultiplyScalar(length))
+}
+
+func (r Ray[T]) AtDistance2(distance T, length T) (segment LineSegment[T]) {
+	segment.P1 = r.Origin.Add(r.Direction.MultiplyScalar(distance))
+	segment.P2 = segment.P1.Add(r.Direction.MultiplyScalar(length))
+	return segment
+}

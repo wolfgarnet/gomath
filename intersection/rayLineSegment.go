@@ -6,8 +6,11 @@ func RayLineSegment2[T gomath.Float](ray gomath.Ray[T], lineSegment gomath.LineS
 	return RayLineSegment(ray, lineSegment.P1, lineSegment.P2)
 }
 
-func RayLineSegment[T gomath.Float](ray gomath.Ray[T], P1, P2 gomath.Vector2[T]) (rayRatio, lineRatio T, intersects bool) {
-	seg := P2.Sub(P1) //l2 - l1
+// RayLineSegment determines if a ray intersects with a line segment.
+// The rayRatio determines how far along the ray, it intersects with the line segment. It is multiples of the direction vector, which is typically normalized.
+// The lineRatio determines the ratio of the line segment where it intersects with the ray, beginning from p1.
+func RayLineSegment[T gomath.Float](ray gomath.Ray[T], p1, p2 gomath.Vector2[T]) (rayRatio, lineRatio T, intersects bool) {
+	seg := p2.Sub(p1) //l2 - l1
 	segPerp := gomath.NewVector2(seg.Y, -seg.X)
 	perpDotd := ray.Direction.Dot(segPerp) //Vector2.Dot(rd, segPerp);
 
@@ -19,7 +22,7 @@ func RayLineSegment[T gomath.Float](ray gomath.Ray[T], P1, P2 gomath.Vector2[T])
 	}
 
 	//Vector2 d = l1 - ro;
-	d := P1.Sub(ray.Origin)
+	d := p1.Sub(ray.Origin)
 
 	//t = Vector2.Dot(segPerp, d) / perpDotd;
 	rayRatio = segPerp.Dot(d) / perpDotd

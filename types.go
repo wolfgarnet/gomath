@@ -13,7 +13,7 @@ type SimpleVolume[T Number] interface {
 	SetHalfWidth(T)
 	SetHalfHeight(T)
 
-	Scale(T)
+	Scale(scale T)
 }
 
 func CloneSimpleVolume[T Number](v SimpleVolume[T]) SimpleVolume[T] {

@@ -511,3 +511,19 @@ func VectorAs[T1 Number, T2 Number](v Vector2[T1]) Vector2[T2] {
 		Y: T2(v.Y),
 	}
 }
+
+// Volume stuff
+
+func (v Vector2[T]) SetCenter(c Vector2[T]) {
+	v.X = c.X
+	v.Y = c.Y
+}
+
+func (v Vector2[T]) GetHalfWidth() T {
+	return 1
+}
+func (v Vector2[T]) GetHalfHeight() T {
+	return 1
+}
+func (v Vector2[T]) SetHalfWidth(T)  {}
+func (v Vector2[T]) SetHalfHeight(T) {}
