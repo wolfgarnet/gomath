@@ -35,6 +35,10 @@ func Acos[T Number](v T) T {
 	return T(math.Acos(float64(v)))
 }
 
+func Atan2[T Number](x, y T) T {
+	return T(math.Atan2(float64(x), float64(y)))
+}
+
 func Abs[T Number](v T) T {
 	return T(math.Abs(float64(v)))
 }

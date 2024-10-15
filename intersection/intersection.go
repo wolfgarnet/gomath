@@ -133,6 +133,8 @@ func IntersectingRay[T gomath.Float](ray gomath.Ray[T], other interface{}) bool 
 	switch t := other.(type) {
 	case gomath.AABB[T]:
 		return RayAABB(ray, t)
+	case *gomath.AABB[T]:
+		return RayAABB(ray, *t)
 	case gomath.LineSegment[T]:
 		_, _, intersects := RayLineSegment(ray, t.P1, t.P2)
 		return intersects

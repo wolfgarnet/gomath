@@ -1,6 +1,8 @@
 package gomath
 
-import "errors"
+import (
+	"errors"
+)
 
 // Matrix is 3x3 matrix column matrix
 type Matrix[T Number] [9]T
@@ -41,8 +43,22 @@ func (m *Matrix[T]) SetPosition(x, y T) {
 	m[7] = y
 }
 
+func (m *Matrix[T]) SetDirection(x, y T) {
+	m[0] = x
+	m[1] = y
+}
+
 func (m *Matrix[T]) GetPosition() Vector2[T] {
 	return Vector2[T]{X: m[6], Y: m[7]}
+}
+
+func (m *Matrix[T]) GetDirection() Vector2[T] {
+	return Vector2[T]{X: m[0], Y: m[1]}
+}
+
+// Angle returns the angle of the matrix in radians.
+func (m *Matrix[T]) Angle() T {
+	return Atan2(m[1], m[0])
 }
 
 func (m *Matrix[T]) Multiply(b *Matrix[T]) {
