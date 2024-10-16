@@ -55,6 +55,9 @@ func TestMatrix_SetDirection(t *testing.T) {
 		"up right": {
 			direction: Vector2[float32]{1, 1},
 		},
+		"left": {
+			direction: Vector2[float32]{-1, 0},
+		},
 	}
 
 	for name, test := range tests {

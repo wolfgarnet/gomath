@@ -43,9 +43,10 @@ func (m *Matrix[T]) SetPosition(x, y T) {
 	m[7] = y
 }
 
+// SetDirection sets the direction of the matrix as a unit vector.
+// It bases the angle of the matrix on the right vector.
 func (m *Matrix[T]) SetDirection(newDirection Vector2[T]) {
-	currentDirection := m.GetDirection()
-	angle := currentDirection.AngleToWithSign(newDirection)
+	angle := Vector2[T]{X: 1}.AngleToWithSign(newDirection)
 	m.Rotation(angle)
 }
 
@@ -53,9 +54,9 @@ func (m *Matrix[T]) GetPosition() Vector2[T] {
 	return Vector2[T]{X: m[6], Y: m[7]}
 }
 
+// GetDirection returns the direction of the matrix as a unit vector.
 func (m *Matrix[T]) GetDirection() Vector2[T] {
 	angle := m.Angle()
-	//return Vector2[T]{X: Cos(angle), Y: Sin(angle)}
 	return Vector2[T]{X: 1, Y: 0}.Rotate(angle)
 }
 
