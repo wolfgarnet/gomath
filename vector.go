@@ -341,7 +341,7 @@ func (v *Vector2[T]) AngleTop(v2 *Vector2[T]) T {
 	return Acos(Clamp[T](theta, T(-1.0), 1))
 }
 
-func (v Vector2[T]) AngleToWithSign(v2 Vector2[T]) T {
+func (v Vector2[T]) AngleToWithSignAcos(v2 Vector2[T]) T {
 	theta := v.AngleTo(v2)
 	cross := v.X*v2.Y - v.Y*v2.X
 
@@ -350,6 +350,13 @@ func (v Vector2[T]) AngleToWithSign(v2 Vector2[T]) T {
 	}
 
 	return theta
+}
+
+func (v Vector2[T]) AngleToWithSign(v2 Vector2[T]) T {
+	dot := v.Dot(v2)
+	cross := v.X*v2.Y - v.Y*v2.X
+
+	return Atan2(cross, dot)
 }
 
 func (v *Vector2[T]) AngleToWithSignp(v2 *Vector2[T]) T {

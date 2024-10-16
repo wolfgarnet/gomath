@@ -43,9 +43,10 @@ func (m *Matrix[T]) SetPosition(x, y T) {
 	m[7] = y
 }
 
-func (m *Matrix[T]) SetDirection(x, y T) {
-	m[0] = x
-	m[1] = y
+func (m *Matrix[T]) SetDirection(newDirection Vector2[T]) {
+	currentDirection := m.GetDirection()
+	angle := currentDirection.AngleToWithSign(newDirection)
+	m.Rotation(angle)
 }
 
 func (m *Matrix[T]) GetPosition() Vector2[T] {
@@ -53,7 +54,9 @@ func (m *Matrix[T]) GetPosition() Vector2[T] {
 }
 
 func (m *Matrix[T]) GetDirection() Vector2[T] {
-	return Vector2[T]{X: m[0], Y: m[1]}
+	angle := m.Angle()
+	//return Vector2[T]{X: Cos(angle), Y: Sin(angle)}
+	return Vector2[T]{X: 1, Y: 0}.Rotate(angle)
 }
 
 // Angle returns the angle of the matrix in radians.
@@ -175,7 +178,7 @@ func (m *Matrix[T]) Rotation(theta T) {
 	s := Sin(theta)
 
 	m[0] = c
-	m[1] = -s
-	m[3] = s
+	m[1] = s
+	m[3] = -s
 	m[4] = c
 }

@@ -140,3 +140,24 @@ func TestVector2_AngleToWithSign(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkVectorAngle(b *testing.B) {
+	b.Run("Angle atan2", func(b *testing.B) {
+		v1 := Vector2[float64]{X: 1, Y: 0}
+		v2 := Vector2[float64]{X: 0, Y: 1}
+		for i := 0; i < b.N; i++ {
+			a := v1.AngleToWithSign(v2)
+			_ = a
+		}
+	})
+
+	b.Run("Angle acos", func(b *testing.B) {
+		v1 := Vector2[float64]{X: 1, Y: 0}
+		v2 := Vector2[float64]{X: 0, Y: 1}
+		for i := 0; i < b.N; i++ {
+			a := v1.AngleToWithSignAcos(v2)
+			_ = a
+		}
+	})
+
+}
