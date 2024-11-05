@@ -60,6 +60,13 @@ func DistanceFromCircle[T Number](circle Circle[T], o2 any) T {
 	case *AABB[T]:
 		return DistanceFromCircleToAABB(circle, *v2)
 
+	case Circle[T]:
+		dist := circle.Center.DistanceTo(v2.Center)
+		return dist - circle.Radius - v2.Radius
+	case *Circle[T]:
+		dist := circle.Center.DistanceTo(v2.Center)
+		return dist - circle.Radius - v2.Radius
+
 	default:
 		panic(fmt.Sprintf("unknown type: %T", o2))
 	}
