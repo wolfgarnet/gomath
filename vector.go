@@ -410,6 +410,16 @@ func (v *Vector2[T]) ApplyMatrixp(m *Matrix[T]) {
 	v.Y = m[1]*x + m[4]*y + m[7]
 }
 
+// NormalCounterClockwise calculates the counterclockwise normal of the vector
+func (v *Vector2[T]) NormalCounterClockwise() Vector2[T] {
+	return Vector2[T]{X: -v.Y, Y: v.X}
+}
+
+// NormalClockwise calculates the clockwise normal of the vector
+func (v *Vector2[T]) NormalClockwise() Vector2[T] {
+	return Vector2[T]{X: v.Y, Y: -v.X}
+}
+
 const (
 	pi180 = 180 / math.Pi
 )
