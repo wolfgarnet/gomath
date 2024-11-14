@@ -6,7 +6,7 @@ import (
 
 // CircleCircle determines if the two circles are intersecting
 func CircleCircle[T gomath.Number](a, b gomath.Circle[T]) bool {
-	dist := T(b.Center.Sub(a.Center).Length())
+	dist := b.Center.Sub(a.Center).Length()
 	return dist < a.Radius+b.Radius
 }
 

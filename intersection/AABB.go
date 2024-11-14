@@ -1,7 +1,6 @@
 package intersection
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"github.com/wolfgarnet/gomath"
 )
 
@@ -47,7 +46,7 @@ func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
 		return false
 	}
 
-	spew.Dump("Comparing AABBAABB", b1, b2, "HAS OVERLAP")
+	//spew.Dump("Comparing AABBAABB", b1, b2, "HAS OVERLAP")
 	return true
 }
 

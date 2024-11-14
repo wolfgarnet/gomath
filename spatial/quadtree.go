@@ -162,7 +162,7 @@ func (tree *Quadtree[T]) Size() int {
 	size += tree.SouthWest.Size()
 	size += tree.NorthWest.Size()
 
-	return size
+	return size + len(tree.Items)
 }
 
 func (tree *Quadtree[T]) Unique() int {

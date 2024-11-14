@@ -16,3 +16,15 @@ func ForeachElement(tree *Quadtree[float32], position gomath.Vector2[float32], h
 		f(item)
 	}
 }
+
+func ForeachElementWithBounds(tree *Quadtree[float32], bounds any, f func(element BoundedItem)) {
+	drain := make(chan BoundedItem, 16)
+	go func() {
+		QueryQuadtree(tree, bounds, drain)
+		close(drain)
+	}()
+
+	for item := range drain {
+		f(item)
+	}
+}
