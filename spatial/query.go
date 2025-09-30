@@ -1,6 +1,10 @@
 package spatial
 
-import "github.com/wolfgarnet/gomath"
+import (
+	"iter"
+
+	"github.com/wolfgarnet/gomath"
+)
 
 // QueryQuadtree queries the quadtree given a containing geometry compatible with intersection.Intersecting2D[T]().
 // The resulting items are piped into the drain channel.
@@ -114,4 +118,58 @@ func QueryQuadtreeWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], con
 
 func QueryQuadtreeWithBoundedItemWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], containing BoundedItem) (items []BoundedItem) {
 	return QueryQuadtreeWithoutCheckWithResult(tree, containing.GetBounds())
+}
+
+func Iterator[T gomath.Number](tree *Quadtree[T], containing any) iter.Seq[BoundedItem] {
+	return func(yield func(BoundedItem) bool) {
+		IterateQuadTree(tree, containing, func(b BoundedItem) bool {
+			return yield(b)
+		})
+	}
+}
+
+func IterateQuadTree[T gomath.Number](tree *Quadtree[T], containing any, yield func(item BoundedItem) bool) {
+	// Determine if the contained is inside the quadtree boundary
+	if !tree.Checker.Check(tree.Boundary, containing) {
+		return
+	}
+	// Leaf node
+	for _, item := range tree.Items {
+		if tree.Checker.Check(item.GetBounds(), containing) {
+			if !yield(item) {
+				return
+			}
+		}
+	}
+
+	if tree.NorthEast == nil {
+		return
+	}
+
+	IterateQuadTree(tree.NorthEast, containing, yield)
+	IterateQuadTree(tree.SouthEast, containing, yield)
+	IterateQuadTree(tree.SouthWest, containing, yield)
+	IterateQuadTree(tree.NorthWest, containing, yield)
+}
+
+func IterateQuadTreeWithoutCheck[T gomath.Number](tree *Quadtree[T], containing any, yield func(item BoundedItem) bool) {
+	// Determine if the contained is inside the quadtree boundary
+	if !tree.Checker.Check(tree.Boundary, containing) {
+		return
+	}
+	// Leaf node
+	for _, item := range tree.Items {
+		if !yield(item) {
+			return
+		}
+	}
+
+	if tree.NorthEast == nil {
+		return
+	}
+
+	IterateQuadTree(tree.NorthEast, containing, yield)
+	IterateQuadTree(tree.SouthEast, containing, yield)
+	IterateQuadTree(tree.SouthWest, containing, yield)
+	IterateQuadTree(tree.NorthWest, containing, yield)
 }

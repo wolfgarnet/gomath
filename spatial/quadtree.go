@@ -2,9 +2,11 @@ package spatial
 
 import (
 	"fmt"
+	"iter"
+	"strings"
+
 	"github.com/wolfgarnet/gomath"
 	"github.com/wolfgarnet/gomath/intersection"
-	"strings"
 )
 
 const (
@@ -447,4 +449,28 @@ func (tree *Quadtree[T]) Visit(cb func(tree *Quadtree[T])) {
 	tree.SouthEast.Visit(cb)
 	tree.SouthWest.Visit(cb)
 	tree.NorthWest.Visit(cb)
+}
+
+func (tree *Quadtree[T]) IteratorWithBoundedItem(item BoundedItem) iter.Seq[BoundedItem] {
+	return func(yield func(BoundedItem) bool) {
+		IterateQuadTree(tree, item.GetBounds(), func(b BoundedItem) bool {
+			return yield(b)
+		})
+	}
+}
+
+func (tree *Quadtree[T]) Iterator(containing any) iter.Seq[BoundedItem] {
+	return func(yield func(BoundedItem) bool) {
+		IterateQuadTree(tree, containing, func(b BoundedItem) bool {
+			return yield(b)
+		})
+	}
+}
+
+func (tree *Quadtree[T]) IteratorWithoutCheck(containing any) iter.Seq[BoundedItem] {
+	return func(yield func(BoundedItem) bool) {
+		IterateQuadTree(tree, containing, func(b BoundedItem) bool {
+			return yield(b)
+		})
+	}
 }
