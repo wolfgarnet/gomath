@@ -16,37 +16,37 @@ const (
 // Quadtree represents a quadtree that may contain elements inside the bounds defined as its boundary.
 // The quadtree has a node capacity when exceeded it divides itself into four new sub-quadtrees.
 // An element can only be contained in one quadtree, the quadtree that contains the element completely.
-type Quadtree[T gomath.Number] struct {
-	Items     []BoundedItem
+type Quadtree[T gomath.Number, I BoundedItem] struct {
+	Items     []I
 	Boundary  gomath.SquaredAABB2D[T]
-	NorthEast *Quadtree[T]
-	SouthEast *Quadtree[T]
-	SouthWest *Quadtree[T]
-	NorthWest *Quadtree[T]
+	NorthEast *Quadtree[T, I]
+	SouthEast *Quadtree[T, I]
+	SouthWest *Quadtree[T, I]
+	NorthWest *Quadtree[T, I]
 
 	// Checker determines the specific bounds check for the quadtree.
 	// By default, the bounds check is using floating points, but is can be set to use integer as well.
 	Checker BoundsCheck
 
-	parent   *Quadtree[T]
+	parent   *Quadtree[T, I]
 	maxDepth int
 	depth    int
-	allItems map[BoundedItem]*Quadtree[T]
+	allItems map[BoundedItem]*Quadtree[T, I]
 
 	// mayExpand determines if the quad tree may expand itself
 	mayExpand bool
 }
 
-func NewQuadtree[T gomath.Number](x, y, halfSize T) *Quadtree[T] {
-	return newQuadtree(x, y, halfSize, nil, 0, DefaultBoundsCheck{}, 8)
+func NewQuadtree[T gomath.Number, I BoundedItem](x, y, halfSize T) *Quadtree[T, I] {
+	return newQuadtree[T, I](x, y, halfSize, nil, 0, DefaultBoundsCheck{}, 8)
 }
 
-func NewIntegerQuadtree[T gomath.Number](x, y, halfSize T) *Quadtree[T] {
-	return newQuadtree(x, y, halfSize, nil, 0, IntegerBoundsCheck{}, 8)
+func NewIntegerQuadtree[T gomath.Number, I BoundedItem](x, y, halfSize T) *Quadtree[T, I] {
+	return newQuadtree[T, I](x, y, halfSize, nil, 0, IntegerBoundsCheck{}, 8)
 }
 
-func newQuadtree[T gomath.Number](x, y, halfSize T, parent *Quadtree[T], depth int, checker BoundsCheck, maxDepth int) *Quadtree[T] {
-	qt := &Quadtree[T]{
+func newQuadtree[T gomath.Number, I BoundedItem](x, y, halfSize T, parent *Quadtree[T, I], depth int, checker BoundsCheck, maxDepth int) *Quadtree[T, I] {
+	qt := &Quadtree[T, I]{
 		parent:   parent,
 		Boundary: gomath.NewSquaredAABB2DXY(x, y, halfSize),
 		maxDepth: maxDepth,
@@ -59,14 +59,14 @@ func newQuadtree[T gomath.Number](x, y, halfSize T, parent *Quadtree[T], depth i
 
 // SetMayExpand sets whether the quad tree may expand itself if items outside its boundary is inserted.
 // Can only be set for the root tree.
-func (tree *Quadtree[T]) SetMayExpand(mayExpand bool) {
+func (tree *Quadtree[T, I]) SetMayExpand(mayExpand bool) {
 	if tree.depth > 0 {
 		return
 	}
 	tree.mayExpand = mayExpand
 }
 
-func (tree *Quadtree[T]) Depth() (d int) {
+func (tree *Quadtree[T, I]) Depth() (d int) {
 	subQT := tree
 	for subQT != nil {
 		subQT = subQT.NorthEast
@@ -77,7 +77,7 @@ func (tree *Quadtree[T]) Depth() (d int) {
 }
 
 // FindQuadTree will find the quadtree storing the given item.
-func (tree *Quadtree[T]) FindQuadTree(i BoundedItem) (*Quadtree[T], bool) {
+func (tree *Quadtree[T, I]) FindQuadTree(i BoundedItem) (*Quadtree[T], bool) {
 	parent := tree.parent
 	for parent != nil {
 		parent = parent.parent
@@ -91,7 +91,7 @@ func (tree *Quadtree[T]) FindQuadTree(i BoundedItem) (*Quadtree[T], bool) {
 	return nil, false
 }
 
-func (tree *Quadtree[T]) Subdivide() {
+func (tree *Quadtree[T, I]) Subdivide() {
 	size := tree.Boundary.HalfSize / 2
 	tree.NorthEast = newQuadtree(tree.Boundary.Center.X+size, tree.Boundary.Center.Y+size, size, tree, tree.depth+1, tree.Checker, tree.maxDepth)
 	tree.SouthEast = newQuadtree(tree.Boundary.Center.X+size, tree.Boundary.Center.Y-size, size, tree, tree.depth+1, tree.Checker, tree.maxDepth)
@@ -100,13 +100,13 @@ func (tree *Quadtree[T]) Subdivide() {
 
 	// Re-arrange points
 	points := tree.Items
-	tree.Items = make([]BoundedItem, 0)
+	tree.Items = make([]I, 0)
 	for _, p := range points {
 		tree.Insert(p)
 	}
 }
 
-func (tree *Quadtree[T]) Collapse() {
+func (tree *Quadtree[T, I]) Collapse() {
 	// Leaf node, don't collapse
 	if tree.NorthEast == nil {
 		return
@@ -129,7 +129,7 @@ func (tree *Quadtree[T]) Collapse() {
 	}
 }
 
-func (tree *Quadtree[T]) collapse() {
+func (tree *Quadtree[T, I]) collapse() {
 	// Gather all child items into this quadtrees items
 	tree.Items = append(tree.Items, tree.NorthEast.Items...)
 	tree.NorthEast = nil
@@ -146,7 +146,7 @@ func (tree *Quadtree[T]) collapse() {
 		u[i] = struct{}{}
 	}
 
-	tree.Items = make([]BoundedItem, len(u))
+	tree.Items = make([]I, len(u))
 	i := 0
 	for ui, _ := range u {
 		tree.Items[i] = ui
@@ -154,7 +154,7 @@ func (tree *Quadtree[T]) collapse() {
 	}
 }
 
-func (tree *Quadtree[T]) Size() int {
+func (tree *Quadtree[T, I]) Size() int {
 	if tree.NorthEast == nil {
 		return len(tree.Items)
 	}
@@ -167,7 +167,7 @@ func (tree *Quadtree[T]) Size() int {
 	return size + len(tree.Items)
 }
 
-func (tree *Quadtree[T]) Unique() int {
+func (tree *Quadtree[T, I]) Unique() int {
 	u := map[BoundedItem]struct{}{}
 	for _, i := range tree.NorthEast.Items {
 		u[i] = struct{}{}
@@ -186,7 +186,7 @@ func (tree *Quadtree[T]) Unique() int {
 }
 
 // Update will update whether or not the item will be in a new quad
-func (tree *Quadtree[T]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
+func (tree *Quadtree[T, I]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
 	// Test to see if the update changes the quad
 	quad, ok := tree.FindQuadTree(item)
 	//if ok && quad.Boundary.Contains(newPos) {
@@ -197,7 +197,7 @@ func (tree *Quadtree[T]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
 	tree.Insert(item)
 }
 
-func (tree *Quadtree[T]) Remove(item BoundedItem) bool {
+func (tree *Quadtree[T, I]) Remove(item BoundedItem) bool {
 	if !tree.Checker.Check(tree.Boundary, item.GetBounds()) {
 		return false
 	}
@@ -237,7 +237,7 @@ func (tree *Quadtree[T]) Remove(item BoundedItem) bool {
 	return wasRemoved
 }
 
-func (tree *Quadtree[T]) Expand() {
+func (tree *Quadtree[T, I]) Expand() {
 	oldSize := tree.Boundary.HalfSize
 	tree.Boundary.HalfSize *= 2
 	if tree.NorthEast == nil {
@@ -284,7 +284,7 @@ func (tree *Quadtree[T]) Expand() {
 	tree.SouthWest = newSouthWest
 }
 
-func (tree *Quadtree[T]) addDepth() {
+func (tree *Quadtree[T, I]) addDepth() {
 	tree.depth++
 	if tree.NorthEast == nil {
 		return
@@ -295,7 +295,7 @@ func (tree *Quadtree[T]) addDepth() {
 	tree.SouthEast.addDepth()
 }
 
-func (tree *Quadtree[T]) Insert(item BoundedItem) bool {
+func (tree *Quadtree[T, I]) Insert(item BoundedItem) bool {
 	// First, verify that the item belongs in this tree.
 	if !tree.Checker.Check(tree.Boundary, item.GetBounds()) {
 		// If we're outside the bounds of the outermost quadtree, we might want to expand the quadtree.
@@ -363,7 +363,7 @@ func (tree *Quadtree[T]) Insert(item BoundedItem) bool {
 	}
 }
 
-func (tree *Quadtree[T]) Clear() {
+func (tree *Quadtree[T, I]) Clear() {
 	tree.NorthEast = nil
 	tree.NorthWest = nil
 	tree.SouthEast = nil
@@ -401,8 +401,8 @@ func (w *QueryResultWrapper) RemoveDuplicates() {
 	w.Items = w.Items[:i]
 }
 
-func (tree *Quadtree[T]) Clone() *Quadtree[T] {
-	newQT := NewQuadtree(tree.Boundary.Center.X, tree.Boundary.Center.Y, tree.Boundary.HalfSize)
+func (tree *Quadtree[T, I]) Clone() *Quadtree[T, I] {
+	newQT := NewQuadtree[T, I](tree.Boundary.Center.X, tree.Boundary.Center.Y, tree.Boundary.HalfSize)
 	if tree.NorthEast != nil {
 		newQT.NorthEast = tree.NorthEast.Clone()
 		newQT.SouthEast = tree.SouthEast.Clone()
@@ -417,11 +417,11 @@ func (tree *Quadtree[T]) Clone() *Quadtree[T] {
 	return newQT
 }
 
-func (tree *Quadtree[T]) Stringify() {
+func (tree *Quadtree[T, I]) Stringify() {
 	tree.stringify(0)
 }
 
-func (tree *Quadtree[T]) stringify(lvl int) {
+func (tree *Quadtree[T, I]) stringify(lvl int) {
 	indent := fmt.Sprintf("%s", strings.Repeat(" ", lvl*2))
 	//fmt.Printf("%sBounds: %v, depth: %d, points: %v\n", indent, tree.Boundary, tree.depth, tree.Items)
 	fmt.Printf("Bounds: %v, depth: %d, points: %v\n", tree.Boundary, tree.depth, tree.Items)
@@ -439,7 +439,7 @@ func (tree *Quadtree[T]) stringify(lvl int) {
 	}
 }
 
-func (tree *Quadtree[T]) Visit(cb func(tree *Quadtree[T])) {
+func (tree *Quadtree[T, I]) Visit(cb func(tree *Quadtree[T, I])) {
 	cb(tree)
 	if tree.NorthEast == nil {
 		return
@@ -451,25 +451,25 @@ func (tree *Quadtree[T]) Visit(cb func(tree *Quadtree[T])) {
 	tree.NorthWest.Visit(cb)
 }
 
-func (tree *Quadtree[T]) IteratorWithBoundedItem(item BoundedItem) iter.Seq[BoundedItem] {
-	return func(yield func(BoundedItem) bool) {
-		IterateQuadTree(tree, item.GetBounds(), func(b BoundedItem) bool {
+func (tree *Quadtree[T, I]) IteratorWithBoundedItem(item BoundedItem) iter.Seq[I] {
+	return func(yield func(I) bool) {
+		IterateQuadtree[T, I](tree, item.GetBounds(), func(b I) bool {
 			return yield(b)
 		})
 	}
 }
 
-func (tree *Quadtree[T]) Iterator(containing any) iter.Seq[BoundedItem] {
-	return func(yield func(BoundedItem) bool) {
-		IterateQuadTree(tree, containing, func(b BoundedItem) bool {
+func (tree *Quadtree[T, I]) Iterator(containing any) iter.Seq[I] {
+	return func(yield func(I) bool) {
+		IterateQuadtree[T, I](tree, containing, func(b I) bool {
 			return yield(b)
 		})
 	}
 }
 
-func (tree *Quadtree[T]) IteratorWithoutCheck(containing any) iter.Seq[BoundedItem] {
-	return func(yield func(BoundedItem) bool) {
-		IterateQuadTree(tree, containing, func(b BoundedItem) bool {
+func (tree *Quadtree[T, I]) IteratorWithoutCheck(containing any) iter.Seq[I] {
+	return func(yield func(I) bool) {
+		IterateQuadtree[T, I](tree, containing, func(b I) bool {
 			return yield(b)
 		})
 	}

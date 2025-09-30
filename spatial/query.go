@@ -9,7 +9,7 @@ import (
 // QueryQuadtree queries the quadtree given a containing geometry compatible with intersection.Intersecting2D[T]().
 // The resulting items are piped into the drain channel.
 // When checking the intersection of items and the containing geometry, it should be a 2d geometry with. Ie. not a point or line.
-func QueryQuadtree[T gomath.Number](tree *Quadtree[T], containing interface{}, drain chan BoundedItem) {
+func QueryQuadtree[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing interface{}, drain chan BoundedItem) {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
 		return
@@ -32,12 +32,12 @@ func QueryQuadtree[T gomath.Number](tree *Quadtree[T], containing interface{}, d
 }
 
 // QueryQuadtreeWithBoundedItem as QueryQuadtree, but with a bounded it.
-func QueryQuadtreeWithBoundedItem[T gomath.Number](tree *Quadtree[T], containing BoundedItem, drain chan BoundedItem) {
+func QueryQuadtreeWithBoundedItem[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing BoundedItem, drain chan BoundedItem) {
 	QueryQuadtree(tree, containing.GetBounds(), drain)
 }
 
 // QueryQuadtreeWithResult does the same as QueryQuadtree, but returns a result slice.
-func QueryQuadtreeWithResult[T gomath.Number](tree *Quadtree[T], containing interface{}) (items []BoundedItem) {
+func QueryQuadtreeWithResult[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing interface{}) (items []BoundedItem) {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
 		return
@@ -62,14 +62,14 @@ func QueryQuadtreeWithResult[T gomath.Number](tree *Quadtree[T], containing inte
 }
 
 // QueryQuadtreeWithBoundedItemWithResult as QueryQuadtreeWithResult, but with a bounded item.
-func QueryQuadtreeWithBoundedItemWithResult[T gomath.Number](tree *Quadtree[T], containing BoundedItem) (items []BoundedItem) {
+func QueryQuadtreeWithBoundedItemWithResult[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing BoundedItem) (items []BoundedItem) {
 	return QueryQuadtreeWithResult(tree, containing.GetBounds())
 }
 
 // QueryQuadtreeWithoutCheck queries the quadtree given a containing geometry compatible with intersection.Intersecting2D[T]().
 // But, it will not check the individual items against the containing object.
 // Thus returning all the items of the sub quadtrees the containing object overlaps.
-func QueryQuadtreeWithoutCheck[T gomath.Number](tree *Quadtree[T], containing interface{}, drain chan BoundedItem) {
+func QueryQuadtreeWithoutCheck[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing interface{}, drain chan BoundedItem) {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
 		return
@@ -89,12 +89,12 @@ func QueryQuadtreeWithoutCheck[T gomath.Number](tree *Quadtree[T], containing in
 	QueryQuadtreeWithoutCheck(tree.NorthWest, containing, drain)
 }
 
-func QueryQuadtreeWithoutCheckWithBoundedItem[T gomath.Number](tree *Quadtree[T], containing BoundedItem, drain chan BoundedItem) {
+func QueryQuadtreeWithoutCheckWithBoundedItem[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing BoundedItem, drain chan BoundedItem) {
 	QueryQuadtreeWithoutCheck(tree, containing.GetBounds(), drain)
 }
 
 // QueryQuadtreeWithoutCheckWithResult does the same as QueryQuadtreeWithoutCheck, but returns a result slice.
-func QueryQuadtreeWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], containing interface{}) (items []BoundedItem) {
+func QueryQuadtreeWithoutCheckWithResult[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing interface{}) (items []BoundedItem) {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
 		return
@@ -116,19 +116,19 @@ func QueryQuadtreeWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], con
 	return items
 }
 
-func QueryQuadtreeWithBoundedItemWithoutCheckWithResult[T gomath.Number](tree *Quadtree[T], containing BoundedItem) (items []BoundedItem) {
+func QueryQuadtreeWithBoundedItemWithoutCheckWithResult[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing BoundedItem) (items []BoundedItem) {
 	return QueryQuadtreeWithoutCheckWithResult(tree, containing.GetBounds())
 }
 
-func Iterator[T gomath.Number](tree *Quadtree[T], containing any) iter.Seq[BoundedItem] {
-	return func(yield func(BoundedItem) bool) {
-		IterateQuadTree(tree, containing, func(b BoundedItem) bool {
+func Iterator[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing any) iter.Seq[I] {
+	return func(yield func(I) bool) {
+		IterateQuadtree(tree, containing, func(b I) bool {
 			return yield(b)
 		})
 	}
 }
 
-func IterateQuadTree[T gomath.Number](tree *Quadtree[T], containing any, yield func(item BoundedItem) bool) {
+func IterateQuadtree[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing any, yield func(item I) bool) {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
 		return
@@ -146,13 +146,13 @@ func IterateQuadTree[T gomath.Number](tree *Quadtree[T], containing any, yield f
 		return
 	}
 
-	IterateQuadTree(tree.NorthEast, containing, yield)
-	IterateQuadTree(tree.SouthEast, containing, yield)
-	IterateQuadTree(tree.SouthWest, containing, yield)
-	IterateQuadTree(tree.NorthWest, containing, yield)
+	IterateQuadtree(tree.NorthEast, containing, yield)
+	IterateQuadtree(tree.SouthEast, containing, yield)
+	IterateQuadtree(tree.SouthWest, containing, yield)
+	IterateQuadtree(tree.NorthWest, containing, yield)
 }
 
-func IterateQuadTreeWithoutCheck[T gomath.Number](tree *Quadtree[T], containing any, yield func(item BoundedItem) bool) {
+func IterateQuadtreeWithoutCheck[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing any, yield func(item I) bool) {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
 		return
@@ -168,8 +168,8 @@ func IterateQuadTreeWithoutCheck[T gomath.Number](tree *Quadtree[T], containing 
 		return
 	}
 
-	IterateQuadTree(tree.NorthEast, containing, yield)
-	IterateQuadTree(tree.SouthEast, containing, yield)
-	IterateQuadTree(tree.SouthWest, containing, yield)
-	IterateQuadTree(tree.NorthWest, containing, yield)
+	IterateQuadtree(tree.NorthEast, containing, yield)
+	IterateQuadtree(tree.SouthEast, containing, yield)
+	IterateQuadtree(tree.SouthWest, containing, yield)
+	IterateQuadtree(tree.NorthWest, containing, yield)
 }

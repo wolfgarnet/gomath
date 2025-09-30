@@ -2,11 +2,12 @@ package spatial
 
 import (
 	"fmt"
+	"math/rand"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wolfgarnet/gomath"
-	"math/rand"
-	"testing"
 )
 
 type TestItem2D struct {
@@ -18,21 +19,21 @@ func (ti TestItem2D) GetBounds() interface{} {
 }
 
 func TestQuadtree_insert_one_circle(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	inserted := qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](0.0, 0, 0.5)})
 	assert.True(t, inserted)
 	assert.Len(t, qt.Items, 1, "Should be one")
 }
 
 func TestQuadtree_insert_one_circle_outside(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	inserted := qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](15.0, 15.0, 0.5)})
 	assert.False(t, inserted)
 	assert.Len(t, qt.Items, 0, "Should be zero")
 }
 
 func TestQuadtree_insert_one_circle_outside_allow_expand(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.mayExpand = true
 	inserted := qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](15.0, 15.0, 0.5)})
 	assert.True(t, inserted)
@@ -41,7 +42,7 @@ func TestQuadtree_insert_one_circle_outside_allow_expand(t *testing.T) {
 }
 
 func TestQuadtree_insert_four_circles(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](1, 1, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2, 2, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](3, 3, 0.5)})
@@ -51,7 +52,7 @@ func TestQuadtree_insert_four_circles(t *testing.T) {
 }
 
 func TestQuadtree_insert_four_circles_outside(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.mayExpand = true
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](15, 1, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2, 12, 0.5)})
@@ -63,7 +64,7 @@ func TestQuadtree_insert_four_circles_outside(t *testing.T) {
 }
 
 func TestQuadtree_insert_points_circles(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
@@ -73,7 +74,7 @@ func TestQuadtree_insert_points_circles(t *testing.T) {
 }
 
 func TestQuadtree_insert_five(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
@@ -88,7 +89,7 @@ func TestQuadtree_insert_five(t *testing.T) {
 }
 
 func TestQuadtree_insert_five_outside(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.mayExpand = true
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
@@ -105,7 +106,7 @@ func TestQuadtree_insert_five_outside(t *testing.T) {
 }
 
 func TestQuadtree_insert_five_inside_one_outside(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.mayExpand = true
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
@@ -127,7 +128,7 @@ func TestQuadtree_insert_five_inside_one_outside(t *testing.T) {
 }
 
 func TestQuadtree_insert_five_circles(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](1, 1, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2, 2, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](3, 3, 0.5)})
@@ -145,7 +146,7 @@ func TestQuadtree_insert_five_circles(t *testing.T) {
 }
 
 func TestQuadtree_insert_five_aabb(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)})
@@ -163,7 +164,7 @@ func TestQuadtree_insert_five_aabb(t *testing.T) {
 }
 
 func TestQuadtree_insert_four_aabb_crossing(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 1.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 1.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 1.5)})
@@ -173,7 +174,7 @@ func TestQuadtree_insert_four_aabb_crossing(t *testing.T) {
 }
 
 func TestQuadtree_insert_five_aabb_crossing(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 1.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 1.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 1.5)})
@@ -188,7 +189,7 @@ func TestQuadtree_insert_five_aabb_crossing(t *testing.T) {
 }
 
 func TestQuadtree_insert_five_circles_overlapping(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](1, 1, 1.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2, 2, 1.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](3, 3, 1.5)})
@@ -203,7 +204,7 @@ func TestQuadtree_insert_five_circles_overlapping(t *testing.T) {
 }
 
 func TestQuadtree_insert_five_circles_overlapping2(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2, 2, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2.1, 2.1, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewCircle[float32](2.2, 2.2, 0.5)})
@@ -233,7 +234,7 @@ func TestQuadtree_insert_five_circles_overlapping2(t *testing.T) {
 }
 
 func TestQuadtree_insert2(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
@@ -254,7 +255,7 @@ func TestQuadtree_insert2(t *testing.T) {
 }
 
 func TestQuadtree_remove(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
@@ -285,7 +286,7 @@ func TestQuadtree_remove(t *testing.T) {
 }
 
 func TestQuadtree_remove_five_aabb(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)})
 	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)})
@@ -304,7 +305,7 @@ func TestQuadtree_remove_five_aabb(t *testing.T) {
 }
 
 func TestQuadtree_remove_five_aabb_nocrossing(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	item1 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)}
 	qt.Insert(item1)
 	item2 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)}
@@ -334,7 +335,7 @@ func TestQuadtree_remove_five_aabb_nocrossing(t *testing.T) {
 }
 
 func TestQuadtree_remove_five_aabb_crossing(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	item1 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)}
 	qt.Insert(item1)
 	item2 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)}
@@ -364,7 +365,7 @@ func TestQuadtree_remove_five_aabb_crossing(t *testing.T) {
 }
 
 func TestQuadtree_remove2(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
@@ -392,7 +393,7 @@ func TestQuadtree_remove2(t *testing.T) {
 }
 
 func TestQuadtree_Query_simple(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	item1 := TestItem2D{bounds: gomath.Vector2[float32]{1, 1}}
 	item2 := TestItem2D{bounds: gomath.Vector2[float32]{2, 2}}
 	item3 := TestItem2D{bounds: gomath.Vector2[float32]{3, 3}}
@@ -418,7 +419,7 @@ func TestQuadtree_Query_simple(t *testing.T) {
 }
 
 func TestQuadtree_Query_simple2(t *testing.T) {
-	qt := NewQuadtree[float32](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
 	item1 := TestItem2D{bounds: gomath.Vector2[float32]{1, 1}}
 	item2 := TestItem2D{bounds: gomath.Vector2[float32]{2, 2}}
 	item3 := TestItem2D{bounds: gomath.Vector2[float32]{3, 3}}
@@ -481,7 +482,7 @@ func TestDepth(t *testing.T) {
 		aabbs[i] = TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](rand.Float32()*QTSizeDouble-QTSize, rand.Float32()*QTSizeDouble-QTSize, 0.1)}
 	}
 
-	qt := NewQuadtree[float32](0, 0, QTSize)
+	qt := NewQuadtree[float32, TestItem2D](0, 0, QTSize)
 	for _, aabb := range aabbs {
 		qt.Insert(aabb)
 	}
@@ -508,24 +509,24 @@ func checkItems(items, expected []BoundedItem) []BoundedItem {
 	return expected
 }
 
-func quadTreeHasItems[T gomath.Float](qt *Quadtree[T], items ...BoundedItem) error {
+func quadTreeHasItems[T gomath.Float, I BoundedItem](qt *Quadtree[T, I], items ...I) error {
 	for _, i := range items {
 		hasItem := false
 		for _, p := range qt.Items {
-			if p == i {
+			if p.GetBounds() == i.GetBounds() {
 				hasItem = true
 			}
 		}
 
 		if !hasItem {
-			return fmt.Errorf("Quad tree does not have item, %v", i)
+			return fmt.Errorf("quad tree does not have item, %v", i)
 		}
 	}
 
 	return nil
 }
 
-func assertItems[T gomath.Float](t *testing.T, qt *Quadtree[T], ne int, nw int, se int, sw int) {
+func assertItems[T gomath.Float, I BoundedItem](t *testing.T, qt *Quadtree[T, I], ne int, nw int, se int, sw int) {
 	require.NotNil(t, qt.NorthEast)
 	assert.Len(t, qt.SouthWest.Items, sw, "Incorrect number of items in south west node")
 	assert.Len(t, qt.NorthEast.Items, ne, "Incorrect number of items in north east node")

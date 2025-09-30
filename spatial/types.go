@@ -6,7 +6,7 @@ import (
 )
 
 type BoundedItem interface {
-	GetBounds() interface{}
+	GetBounds() any
 }
 
 type Containable[T gomath.Float] interface {
