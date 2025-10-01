@@ -372,23 +372,23 @@ func (tree *Quadtree[T, I]) Clear() {
 	tree.Items = nil
 }
 
-func (tree *Quadtree[T, I]) ContainedIn(item BoundedItem) bool {
+func (tree *Quadtree[T, I]) ContainedIn(item I) bool {
 	//return intersection.IntersectingSquaredAABB(tree.Boundary, item.GetBounds())
 	return tree.Checker.Check(tree.Boundary, item.GetBounds())
 }
 
-type QueryResultWrapper struct {
-	Items []BoundedItem
+type QueryResultWrapper[I BoundedItem] struct {
+	Items []I
 }
 
-func NewQueryResultWrapper(items []BoundedItem) *QueryResultWrapper {
-	return &QueryResultWrapper{items}
+func NewQueryResultWrapper[I BoundedItem](items []I) *QueryResultWrapper[I] {
+	return &QueryResultWrapper[I]{items}
 }
 
 // RemoveDuplicates will remove duplicates.
 // Remember to use the wrapped result.
-func (w *QueryResultWrapper) RemoveDuplicates() {
-	u := map[BoundedItem]struct{}{}
+func (w *QueryResultWrapper[I]) RemoveDuplicates() {
+	u := map[I]struct{}{}
 	for _, i := range w.Items {
 		u[i] = struct{}{}
 	}
@@ -451,7 +451,7 @@ func (tree *Quadtree[T, I]) Visit(cb func(tree *Quadtree[T, I])) {
 	tree.NorthWest.Visit(cb)
 }
 
-func (tree *Quadtree[T, I]) IteratorWithBoundedItem(item BoundedItem) iter.Seq[I] {
+func (tree *Quadtree[T, I]) IteratorWithBoundedItem(item I) iter.Seq[I] {
 	return func(yield func(I) bool) {
 		IterateQuadtree[T, I](tree, item.GetBounds(), func(b I) bool {
 			return yield(b)
