@@ -32,7 +32,7 @@ func QueryQuadtree[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], contain
 }
 
 // QueryQuadtreeWithBoundedItem as QueryQuadtree, but with a bounded it.
-func QueryQuadtreeWithBoundedItem[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing BoundedItem, drain chan I) {
+func QueryQuadtreeWithBoundedItem[T gomath.Number, I BoundedItem](tree *Quadtree[T, I], containing I, drain chan I) {
 	QueryQuadtree(tree, containing.GetBounds(), drain)
 }
 

@@ -6,6 +6,7 @@ import (
 )
 
 type BoundedItem interface {
+	comparable
 	GetBounds() any
 }
 

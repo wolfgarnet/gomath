@@ -31,7 +31,7 @@ type Quadtree[T gomath.Number, I BoundedItem] struct {
 	parent   *Quadtree[T, I]
 	maxDepth int
 	depth    int
-	allItems map[BoundedItem]*Quadtree[T, I]
+	allItems map[I]*Quadtree[T, I]
 
 	// mayExpand determines if the quad tree may expand itself
 	mayExpand bool
@@ -77,7 +77,7 @@ func (tree *Quadtree[T, I]) Depth() (d int) {
 }
 
 // FindQuadTree will find the quadtree storing the given item.
-func (tree *Quadtree[T, I]) FindQuadTree(i BoundedItem) (*Quadtree[T], bool) {
+func (tree *Quadtree[T, I]) FindQuadTree(i I) (*Quadtree[T, I], bool) {
 	parent := tree.parent
 	for parent != nil {
 		parent = parent.parent
@@ -141,7 +141,7 @@ func (tree *Quadtree[T, I]) collapse() {
 	tree.NorthWest = nil
 
 	// Only unique items
-	u := map[BoundedItem]struct{}{}
+	u := make(map[I]struct{}, len(tree.Items))
 	for _, i := range tree.Items {
 		u[i] = struct{}{}
 	}
@@ -168,7 +168,7 @@ func (tree *Quadtree[T, I]) Size() int {
 }
 
 func (tree *Quadtree[T, I]) Unique() int {
-	u := map[BoundedItem]struct{}{}
+	u := map[I]struct{}{}
 	for _, i := range tree.NorthEast.Items {
 		u[i] = struct{}{}
 	}
@@ -186,7 +186,7 @@ func (tree *Quadtree[T, I]) Unique() int {
 }
 
 // Update will update whether or not the item will be in a new quad
-func (tree *Quadtree[T, I]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
+func (tree *Quadtree[T, I]) Update(item I, newPos gomath.Vector2[T]) {
 	// Test to see if the update changes the quad
 	quad, ok := tree.FindQuadTree(item)
 	//if ok && quad.Boundary.Contains(newPos) {
@@ -197,7 +197,7 @@ func (tree *Quadtree[T, I]) Update(item BoundedItem, newPos gomath.Vector2[T]) {
 	tree.Insert(item)
 }
 
-func (tree *Quadtree[T, I]) Remove(item BoundedItem) bool {
+func (tree *Quadtree[T, I]) Remove(item I) bool {
 	if !tree.Checker.Check(tree.Boundary, item.GetBounds()) {
 		return false
 	}
@@ -295,7 +295,7 @@ func (tree *Quadtree[T, I]) addDepth() {
 	tree.SouthEast.addDepth()
 }
 
-func (tree *Quadtree[T, I]) Insert(item BoundedItem) bool {
+func (tree *Quadtree[T, I]) Insert(item I) bool {
 	// First, verify that the item belongs in this tree.
 	if !tree.Checker.Check(tree.Boundary, item.GetBounds()) {
 		// If we're outside the bounds of the outermost quadtree, we might want to expand the quadtree.
@@ -325,7 +325,7 @@ func (tree *Quadtree[T, I]) Insert(item BoundedItem) bool {
 	}
 
 	// Figure out which children the item can be in.
-	var insertInto *Quadtree[T]
+	var insertInto *Quadtree[T, I]
 	multiple := false
 	if tree.NorthEast.ContainedIn(item) {
 		insertInto = tree.NorthEast
@@ -372,7 +372,7 @@ func (tree *Quadtree[T, I]) Clear() {
 	tree.Items = nil
 }
 
-func (tree *Quadtree[T]) ContainedIn(item BoundedItem) bool {
+func (tree *Quadtree[T, I]) ContainedIn(item BoundedItem) bool {
 	//return intersection.IntersectingSquaredAABB(tree.Boundary, item.GetBounds())
 	return tree.Checker.Check(tree.Boundary, item.GetBounds())
 }
@@ -409,7 +409,7 @@ func (tree *Quadtree[T, I]) Clone() *Quadtree[T, I] {
 		newQT.SouthWest = tree.SouthWest.Clone()
 		newQT.NorthWest = tree.NorthWest.Clone()
 	} else {
-		newQT.Items = make([]BoundedItem, len(tree.Items))
+		newQT.Items = make([]I, len(tree.Items))
 		for i, item := range tree.Items {
 			newQT.Items[i] = item
 		}
