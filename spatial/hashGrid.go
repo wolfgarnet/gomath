@@ -2,6 +2,7 @@ package spatial
 
 import (
 	"fmt"
+	"iter"
 
 	"github.com/wolfgarnet/gomath"
 )
@@ -42,7 +43,7 @@ func NewHashGridFromWorldSize[T gomath.Number, I PositionedItem[T, ID], ID compa
 	grid := NewHashGrid[T, I, ID](width, height, cellSize)
 	grid.offsetX = worldWidth / 2
 	grid.offsetY = worldHeight / 2
-	
+
 	return grid
 }
 
@@ -103,6 +104,97 @@ func (grid *HashGrid[T, I, ID]) initialize() {
 	}
 }
 
+func (grid *HashGrid[T, I, ID]) IteratorForHash(hash uint64) iter.Seq[I] {
+	return func(yield func(I) bool) {
+		for _, item := range grid.grid[hash].items {
+			if yield(item) {
+				return
+			}
+		}
+	}
+}
+
+func (grid *HashGrid[T, I, ID]) Iterator(hash uint64) iter.Seq[I] {
+	return func(yield func(I) bool) {
+		for _, item := range grid.grid[hash].items {
+			if yield(item) {
+				return
+			}
+		}
+		for _, neighbour := range grid.grid[hash].neighbours {
+			for _, item := range neighbour.items {
+				if yield(item) {
+					return
+				}
+			}
+		}
+	}
+}
+
+func (grid *HashGrid[T, I, ID]) IteratorWithYield(hash uint64, yield func(I) bool) {
+	for _, item := range grid.grid[hash].items {
+		if !yield(item) {
+			return
+		}
+	}
+	for _, neighbour := range grid.grid[hash].neighbours {
+		for _, item := range neighbour.items {
+			if !yield(item) {
+				return
+			}
+		}
+	}
+}
+
+func (grid *HashGrid[T, I, ID]) HashValuesForSquared(position gomath.Vector2[T], radius T) (startHash uint64, offsetX uint64, offsetY uint64) {
+	topX := position.X - radius
+	topY := position.Y - radius
+	bottomX := position.X + radius
+	bottomY := position.Y + radius
+
+	startX, startY := grid.HashPosition(topX, topY)
+	endX, endY := grid.HashPosition(bottomX, bottomY)
+
+	offsetX = endX - startX + 1
+	offsetY = endY - startY + 1
+
+	startHash = startX + startY*grid.width
+
+	return startHash, offsetX, offsetY
+}
+
+func (grid *HashGrid[T, I, ID]) SquaredIterator(position gomath.Vector2[T], radius T) iter.Seq[I] {
+	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
+	return func(yield func(I) bool) {
+		for y := uint64(0); y < offsetY; y++ {
+			hashOffset := hash + y*grid.width
+			for x := uint64(0); x < offsetX; x++ {
+				currentHash := hashOffset + x
+				for _, item := range grid.grid[currentHash].items {
+					if yield(item) {
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
+func (grid *HashGrid[T, I, ID]) SquaredAABBIteratorWithYield(position gomath.Vector2[T], radius T, yield func(I) bool) {
+	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
+	for y := uint64(0); y < offsetY; y++ {
+		hashOffset := hash + y*grid.width
+		for x := uint64(0); x < offsetX; x++ {
+			currentHash := hashOffset + x
+			for _, item := range grid.grid[currentHash].items {
+				if !yield(item) {
+					return
+				}
+			}
+		}
+	}
+}
+
 // AddItem adds an item to the grid and returns the hash of the cell it was added to
 func (grid *HashGrid[T, I, ID]) AddItem(item I) (hash uint64) {
 	p := item.Position()
@@ -110,6 +202,10 @@ func (grid *HashGrid[T, I, ID]) AddItem(item I) (hash uint64) {
 	grid.grid[hash].items = append(grid.grid[hash].items, item)
 
 	return hash
+}
+
+func (grid *HashGrid[T, I, ID]) AddItemAtCellIndex(item I, hash uint64) {
+	grid.grid[hash].items = append(grid.grid[hash].items, item)
 }
 
 // RemoveItemAtCellIndex removes an item from the grid at the given cell index
@@ -220,6 +316,10 @@ func (grid *HashGrid[T, I, ID]) Neighbours(index uint64) []*GridCell[T, I, ID] {
 func (grid *HashGrid[T, I, ID]) GetCell(index uint64) *GridCell[T, I, ID] {
 	cell, _ := grid.grid[index]
 	return cell
+}
+
+func (grid *HashGrid[T, I, ID]) HashPositionIndexVector(position gomath.Vector2[T]) uint64 {
+	return grid.HashPositionIndex(position.X, position.Y)
 }
 
 func (grid *HashGrid[T, I, ID]) HashPositionIndex(worldPositionX T, worldPositionY T) uint64 {
