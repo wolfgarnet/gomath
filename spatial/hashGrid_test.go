@@ -37,6 +37,7 @@ func TestHashPosition(t *testing.T) {
 
 	tests := map[string]struct {
 		x, y     float64
+		offset   float64
 		ix, iy   uint64
 		expected uint64
 	}{
@@ -61,12 +62,50 @@ func TestHashPosition(t *testing.T) {
 			iy:       0,
 			expected: 2,
 		},
-		"negative_x": {
+		"positive_x - last": {
+			x:        79,
+			y:        0,
+			ix:       7,
+			iy:       0,
+			expected: 7,
+		},
+		"positive_x - last 2": {
+			x:        80,
+			y:        0,
+			ix:       0,
+			iy:       0,
+			expected: 0,
+		},
+		"negative_x - wrapped": {
 			x:        -5,
 			y:        0,
 			ix:       7,
 			iy:       0,
 			expected: 7,
+		},
+		"origin - offset": {
+			x:        0,
+			y:        0,
+			offset:   40,
+			ix:       4,
+			iy:       4,
+			expected: 20,
+		},
+		"upper left - offset": {
+			x:        -20,
+			y:        -20,
+			offset:   40,
+			ix:       2,
+			iy:       2,
+			expected: 21,
+		},
+		"lower right - offset": {
+			x:        20,
+			y:        20,
+			offset:   40,
+			ix:       6,
+			iy:       6,
+			expected: 50,
 		},
 		"negative_x2": {
 			x:        -15,
@@ -147,13 +186,16 @@ func TestHashPosition(t *testing.T) {
 		}, // Extreme case
 	}
 
-	for name, tt := range tests {
+	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			result := grid.HashPositionIndex(tt.x, tt.y)
-			assert.Equal(t, tt.expected, result, "Hash")
-			ix, iy := grid.HashPosition(tt.x, tt.y)
-			assert.Equal(t, tt.ix, ix, "Grid x")
-			assert.Equal(t, tt.iy, iy, "Grid y")
+			grid.offsetX = test.offset
+			grid.offsetY = test.offset
+
+			result := grid.HashPositionIndex(test.x, test.y)
+			assert.Equal(t, test.expected, result, "Hash")
+			ix, iy := grid.HashPosition(test.x, test.y)
+			assert.Equal(t, test.ix, ix, "Grid x")
+			assert.Equal(t, test.iy, iy, "Grid y")
 		})
 	}
 }

@@ -5,6 +5,11 @@ import (
 	intersection "github.com/wolfgarnet/gomath/intersection"
 )
 
+type PositionedItem[T gomath.Number, ID comparable] interface {
+	ID() ID
+	Position() gomath.Vector2[T]
+}
+
 type BoundedItem[ID comparable] interface {
 	GetBounds() any
 	ID() ID
