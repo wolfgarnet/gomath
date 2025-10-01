@@ -36,6 +36,16 @@ type HashGrid[T gomath.Number, I PositionedItem[T, ID], ID comparable] struct {
 	yHashMask uint64
 }
 
+func NewHashGridFromWorldSize[T gomath.Number, I PositionedItem[T, ID], ID comparable](worldWidth, worldHeight, cellSize T) *HashGrid[T, I, ID] {
+	width := gomath.NextPowerOfTwo(uint64(worldWidth / cellSize))
+	height := gomath.NextPowerOfTwo(uint64(worldHeight / cellSize))
+	grid := NewHashGrid[T, I, ID](width, height, cellSize)
+	grid.offsetX = worldWidth / 2
+	grid.offsetY = worldHeight / 2
+	
+	return grid
+}
+
 func NewHashGrid[T gomath.Number, I PositionedItem[T, ID], ID comparable](width, height uint64, cellSize T) *HashGrid[T, I, ID] {
 	width = gomath.NextPowerOfTwo(width)
 	height = gomath.NextPowerOfTwo(height)
