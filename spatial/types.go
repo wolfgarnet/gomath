@@ -5,9 +5,9 @@ import (
 	intersection "github.com/wolfgarnet/gomath/intersection"
 )
 
-type BoundedItem interface {
-	comparable
+type BoundedItem[ID comparable] interface {
 	GetBounds() any
+	ID() ID
 }
 
 type Containable[T gomath.Float] interface {
