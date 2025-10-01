@@ -378,25 +378,25 @@ func (tree *Quadtree[T, I, ID]) ContainedIn(item I) bool {
 	return tree.Checker.Check(tree.Boundary, item.GetBounds())
 }
 
-type QueryResultWrapper[I BoundedItem] struct {
+type QueryResultWrapper[I BoundedItem[ID], ID comparable] struct {
 	Items []I
 }
 
-func NewQueryResultWrapper[I BoundedItem](items []I) *QueryResultWrapper[I] {
-	return &QueryResultWrapper[I]{items}
+func NewQueryResultWrapper[I BoundedItem[ID], ID comparable](items []I) *QueryResultWrapper[I, ID] {
+	return &QueryResultWrapper[I, ID]{items}
 }
 
 // RemoveDuplicates will remove duplicates.
 // Remember to use the wrapped result.
-func (w *QueryResultWrapper[I]) RemoveDuplicates() {
-	u := map[I]struct{}{}
+func (w *QueryResultWrapper[I, ID]) RemoveDuplicates() {
+	u := map[ID]I{}
 	for _, i := range w.Items {
-		u[i] = struct{}{}
+		u[i.ID()] = i
 	}
 
 	i := 0
-	for ui, _ := range u {
-		w.Items[i] = ui
+	for _, it := range u {
+		w.Items[i] = it
 		i++
 	}
 	w.Items = w.Items[:i]

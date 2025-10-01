@@ -12,10 +12,15 @@ import (
 
 type TestItem2D struct {
 	bounds interface{}
+	id     uint64
 }
 
 func (ti TestItem2D) GetBounds() interface{} {
 	return ti.bounds
+}
+
+func (ti TestItem2D) ID() uint64 {
+	return ti.id
 }
 
 func TestQuadtree_insert_one_circle(t *testing.T) {
@@ -74,7 +79,7 @@ func TestQuadtree_insert_points_circles(t *testing.T) {
 }
 
 func TestQuadtree_insert_five(t *testing.T) {
-	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D, uint64](0.0, 0, 10)
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
 	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
@@ -393,12 +398,12 @@ func TestQuadtree_remove2(t *testing.T) {
 }
 
 func TestQuadtree_Query_simple(t *testing.T) {
-	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D, uint64](0.0, 0, 10)
 	item1 := TestItem2D{bounds: gomath.Vector2[float32]{1, 1}}
 	item2 := TestItem2D{bounds: gomath.Vector2[float32]{2, 2}}
 	item3 := TestItem2D{bounds: gomath.Vector2[float32]{3, 3}}
 	item4 := TestItem2D{bounds: gomath.Vector2[float32]{4, 4}}
-	expected := []BoundedItem{item1, item2, item3, item4}
+	expected := []TestItem2D{item1, item2, item3, item4}
 	qt.Insert(item1)
 	qt.Insert(item2)
 	qt.Insert(item3)
@@ -419,7 +424,7 @@ func TestQuadtree_Query_simple(t *testing.T) {
 }
 
 func TestQuadtree_Query_simple2(t *testing.T) {
-	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
+	qt := NewQuadtree[float32, TestItem2D, uint64](0.0, 0, 10)
 	item1 := TestItem2D{bounds: gomath.Vector2[float32]{1, 1}}
 	item2 := TestItem2D{bounds: gomath.Vector2[float32]{2, 2}}
 	item3 := TestItem2D{bounds: gomath.Vector2[float32]{3, 3}}
@@ -439,7 +444,7 @@ func TestQuadtree_Query_simple2(t *testing.T) {
 	qt.Insert(item8)
 	qt.Insert(item9)
 
-	expected := []BoundedItem{item1, item2, item3, item4, item5}
+	expected := []TestItem2D{item1, item2, item3, item4, item5}
 	ls := TestItem2D{bounds: gomath.NewLineSegmentXY[float32](1, 1, 4, 4)}
 	list := QueryQuadtreeWithBoundedItemWithoutCheckWithResult(qt, ls)
 	expected = checkItems(list, expected)
@@ -450,7 +455,7 @@ func TestQuadtree_Query_simple2(t *testing.T) {
 		t.Errorf("All items should have been removed")
 	}
 
-	expected = []BoundedItem{item1, item2, item3, item4, item5, item6, item7, item8, item9}
+	expected = []TestItem2D{item1, item2, item3, item4, item5, item6, item7, item8, item9}
 	ls = TestItem2D{bounds: gomath.NewLineSegmentXY[float32](1, 1, 6, 6)}
 	list = QueryQuadtreeWithBoundedItemWithoutCheckWithResult(qt, ls)
 	expected = checkItems(list, expected)
@@ -461,7 +466,7 @@ func TestQuadtree_Query_simple2(t *testing.T) {
 		t.Errorf("All items should have been removed")
 	}
 
-	expected = []BoundedItem{item6, item7, item8, item9}
+	expected = []TestItem2D{item6, item7, item8, item9}
 	ls = TestItem2D{bounds: gomath.NewLineSegmentXY[float32](6, 6, 9, 9)}
 	list = QueryQuadtreeWithBoundedItemWithoutCheckWithResult(qt, ls)
 	expected = checkItems(list, expected)
@@ -492,7 +497,7 @@ func TestDepth(t *testing.T) {
 
 // HELPERS
 
-func checkItems(items, expected []BoundedItem) []BoundedItem {
+func checkItems(items, expected []TestItem2D) []TestItem2D {
 	for _, i := range items {
 		c := 0
 		for _, i2 := range expected {
@@ -509,7 +514,7 @@ func checkItems(items, expected []BoundedItem) []BoundedItem {
 	return expected
 }
 
-func quadTreeHasItems[T gomath.Float, I BoundedItem](qt *Quadtree[T, I], items ...I) error {
+func quadTreeHasItems[T gomath.Float, I BoundedItem[ID], ID comparable](qt *Quadtree[T, I, ID], items ...I) error {
 	for _, i := range items {
 		hasItem := false
 		for _, p := range qt.Items {
@@ -526,7 +531,7 @@ func quadTreeHasItems[T gomath.Float, I BoundedItem](qt *Quadtree[T, I], items .
 	return nil
 }
 
-func assertItems[T gomath.Float, I BoundedItem](t *testing.T, qt *Quadtree[T, I], ne int, nw int, se int, sw int) {
+func assertItems[T gomath.Float, I BoundedItem[ID], ID comparable](t *testing.T, qt *Quadtree[T, I, ID], ne int, nw int, se int, sw int) {
 	require.NotNil(t, qt.NorthEast)
 	assert.Len(t, qt.SouthWest.Items, sw, "Incorrect number of items in south west node")
 	assert.Len(t, qt.NorthEast.Items, ne, "Incorrect number of items in north east node")

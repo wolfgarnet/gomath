@@ -2,8 +2,9 @@ package gomath
 
 import (
 	"fmt"
-	"golang.org/x/exp/constraints"
 	"math"
+
+	"golang.org/x/exp/constraints"
 )
 
 const Epsilon = 0.00001
