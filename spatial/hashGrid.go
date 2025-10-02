@@ -117,13 +117,13 @@ func (grid *HashGrid[T, I, ID]) IteratorForHash(hash uint64) iter.Seq[I] {
 func (grid *HashGrid[T, I, ID]) Iterator(hash uint64) iter.Seq[I] {
 	return func(yield func(I) bool) {
 		for _, item := range grid.grid[hash].items {
-			if yield(item) {
+			if !yield(item) {
 				return
 			}
 		}
 		for _, neighbour := range grid.grid[hash].neighbours {
 			for _, item := range neighbour.items {
-				if yield(item) {
+				if !yield(item) {
 					return
 				}
 			}

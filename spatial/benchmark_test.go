@@ -41,6 +41,15 @@ func generateRandomTestItems(count int, halfBounds float32) []*testItem {
 	return items
 }
 
+func generateRandomPosition(count int, halfBounds float32) []gomath.Vector2[float32] {
+	items := make([]gomath.Vector2[float32], count)
+	for i := 0; i < count; i++ {
+		item := gomath.Vector2[float32]{X: rand.Float32()*halfBounds*2 - halfBounds, Y: rand.Float32()*halfBounds*2 - halfBounds}
+		items[i] = item
+	}
+	return items
+}
+
 func BenchmarkQuadtreeAddItem(b *testing.B) {
 	tree := NewQuadtree[float32, *testItem, uint64](0, 0, 250)
 	items := generateRandomTestItems(100000, 250)
@@ -59,6 +68,45 @@ func BenchmarkHashGridAddItem(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		for _, item := range items {
 			grid.AddItem(item)
+		}
+	}
+}
+
+func BenchmarkHashGridQueryItem(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 10.0)
+	items := generateRandomTestItems(100000, 320)
+	for _, item := range items {
+		grid.AddItem(item)
+	}
+
+	positions := generateRandomPosition(100000, 320)
+
+	for n := 0; n < b.N; n++ {
+		for i := range positions {
+			hash := grid.HashPositionIndex(positions[i].X, positions[i].Y)
+			for it := range grid.Iterator(hash) {
+				_ = it
+			}
+		}
+	}
+}
+
+func BenchmarkQuadtreeQueryItem(b *testing.B) {
+	tree := NewQuadtree[float32, *testItem, uint64](0, 0, 250)
+	items := generateRandomTestItems(100000, 250)
+	for _, item := range items {
+		tree.Insert(item)
+	}
+
+	positions := generateRandomPosition(100000, 320)
+
+	circle := gomath.Circle[float32]{Center: gomath.Vector2[float32]{}, Radius: 1}
+	for n := 0; n < b.N; n++ {
+		for i := range positions {
+			circle.Center = positions[i]
+			for it := range tree.Iterator(circle) {
+				_ = it
+			}
 		}
 	}
 }
