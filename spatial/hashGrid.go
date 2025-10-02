@@ -407,6 +407,20 @@ func (grid *HashGrid[T, I, ID]) HashPosition(worldPositionX T, worldPositionY T)
 	return xHash, yHash
 }
 
+func (grid *HashGrid[T, I, ID]) HashPositionIndexOffset(worldPositionX T, worldPositionY T) uint64 {
+	worldPositionX += grid.offsetX
+	worldPositionY += grid.offsetY
+
+	xIndex := worldPositionX * grid.inverseCellSize
+	xHash := uint64(xIndex) & grid.xHashMask
+
+	yIndex := worldPositionY * grid.inverseCellSize
+	yHash := uint64(yIndex) & grid.yHashMask
+
+	hash := xHash + yHash*grid.width
+	return hash
+}
+
 func (grid *HashGrid[T, I, ID]) HashToCell(hash uint64) (uint64, uint64) {
 	return hash % grid.width, hash / grid.width
 }

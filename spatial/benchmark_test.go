@@ -110,3 +110,19 @@ func BenchmarkQuadtreeQueryItem(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkHashGridHashPositionIndex(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 10.0)
+	for n := 0; n < b.N; n++ {
+		hash := grid.HashPositionIndex(0, 0)
+		_ = hash
+	}
+}
+
+func BenchmarkHashGridHashPositionOffset(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 10.0)
+	for n := 0; n < b.N; n++ {
+		hash := grid.HashPositionIndexOffset(0, 0)
+		_ = hash
+	}
+}
