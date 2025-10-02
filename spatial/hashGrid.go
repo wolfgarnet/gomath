@@ -163,8 +163,42 @@ func (grid *HashGrid[T, I, ID]) HashValuesForSquared(position gomath.Vector2[T],
 	return startHash, offsetX, offsetY
 }
 
+func (grid *HashGrid[T, I, ID]) HashValuesForRectangle(position gomath.Vector2[T], halfWidth T, halfHeight T) (startHash uint64, offsetX uint64, offsetY uint64) {
+	topX := position.X - halfWidth
+	topY := position.Y - halfHeight
+	bottomX := position.X + halfWidth
+	bottomY := position.Y + halfHeight
+
+	startX, startY := grid.HashPosition(topX, topY)
+	endX, endY := grid.HashPosition(bottomX, bottomY)
+
+	offsetX = endX - startX + 1
+	offsetY = endY - startY + 1
+
+	startHash = startX + startY*grid.width
+
+	return startHash, offsetX, offsetY
+}
+
 func (grid *HashGrid[T, I, ID]) SquaredIterator(position gomath.Vector2[T], radius T) iter.Seq[I] {
 	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
+	return func(yield func(I) bool) {
+		for y := uint64(0); y < offsetY; y++ {
+			hashOffset := hash + y*grid.width
+			for x := uint64(0); x < offsetX; x++ {
+				currentHash := hashOffset + x
+				for _, item := range grid.grid[currentHash].items {
+					if yield(item) {
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
+func (grid *HashGrid[T, I, ID]) RectangleIterator(position gomath.Vector2[T], halfWidth T, halfHeight T) iter.Seq[I] {
+	hash, offsetX, offsetY := grid.HashValuesForRectangle(position, halfWidth, halfHeight)
 	return func(yield func(I) bool) {
 		for y := uint64(0); y < offsetY; y++ {
 			hashOffset := hash + y*grid.width
