@@ -33,11 +33,11 @@ import (
 }*/
 
 func TestHashPosition(t *testing.T) {
-	grid := NewHashGrid[float64, TestItem2D, uint64](8, 8, 10.0)
+	grid := NewHashGrid[float32, *testItem, uint64](8, 8, 10.0)
 
 	tests := map[string]struct {
-		x, y     float64
-		offset   float64
+		x, y     float32
+		offset   float32
 		ix, iy   uint64
 		expected uint64
 	}{
@@ -157,14 +157,14 @@ func TestHashPosition(t *testing.T) {
 			expected: 28,
 		},
 		"max_x": {
-			x:        math.MaxFloat64,
+			x:        math.MaxFloat32,
 			y:        0,
 			ix:       0,
 			iy:       0,
 			expected: 0,
 		}, // Extreme case
 		"min_x": {
-			x:        -math.MaxFloat64,
+			x:        -math.MaxFloat32,
 			y:        0,
 			ix:       7,
 			iy:       0,
@@ -172,14 +172,14 @@ func TestHashPosition(t *testing.T) {
 		}, // Extreme case
 		"max_y": {
 			x:        0,
-			y:        math.MaxFloat64,
+			y:        math.MaxFloat32,
 			ix:       0,
 			iy:       0,
 			expected: 0,
 		}, // Extreme case
 		"min_y": {
 			x:        0,
-			y:        -math.MaxFloat64,
+			y:        -math.MaxFloat32,
 			ix:       0,
 			iy:       7,
 			expected: 56,
@@ -201,9 +201,9 @@ func TestHashPosition(t *testing.T) {
 }
 
 func TestHashGrid_HashToCell(t *testing.T) {
-	grid := NewHashGrid[float64, TestItem2D, uint64](8, 8, 10.0)
+	grid := NewHashGrid[float32, *testItem, uint64](8, 8, 10.0)
 	tests := map[string]struct {
-		x, y                         float64
+		x, y                         float32
 		expectedHash                 uint64
 		expectedCellX, expectedCellY uint64
 		expectedNeighboursPair       [][2]uint64
