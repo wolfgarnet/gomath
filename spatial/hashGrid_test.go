@@ -56,11 +56,39 @@ func TestHashValuesForSquared(t *testing.T) {
 			offsetX:  17,
 			offsetY:  17,
 		},
+		"origin": {
+			position: gomath.Vector2[float32]{X: 128, Y: 128},
+			radius:   128,
+			hash:     0,
+			offsetX:  17,
+			offsetY:  17,
+		},
+		"origin++": {
+			position: gomath.Vector2[float32]{X: 130, Y: 130},
+			radius:   128,
+			hash:     0,
+			offsetX:  17,
+			offsetY:  17,
+		},
+		"origin almost next": {
+			position: gomath.Vector2[float32]{X: 143, Y: 143},
+			radius:   128,
+			hash:     0,
+			offsetX:  17,
+			offsetY:  17,
+		},
+		"origin next": {
+			position: gomath.Vector2[float32]{X: 144, Y: 144},
+			radius:   128,
+			hash:     65,
+			offsetX:  17,
+			offsetY:  17,
+		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			hash, offsetX, offsetY := grid.HashValuesForSquaredWithBoundsCheck(test.position, test.radius)
+			hash, offsetX, offsetY := grid.HashValuesForSquared(test.position, test.radius)
 			assert.Equalf(t, test.hash, hash, "Hash: %d not %d", hash, test.hash)
 			assert.Equalf(t, test.offsetX, offsetX, "OffsetX: %d not %d", offsetX, test.offsetX)
 			assert.Equalf(t, test.offsetY, offsetY, "OffsetY: %d not %d", offsetY, test.offsetY)
@@ -73,7 +101,6 @@ func TestHashPosition(t *testing.T) {
 
 	tests := map[string]struct {
 		x, y     float32
-		offset   float32
 		ix, iy   uint64
 		expected uint64
 	}{
@@ -122,7 +149,6 @@ func TestHashPosition(t *testing.T) {
 		"origin - offset": {
 			x:        0,
 			y:        0,
-			offset:   40,
 			ix:       4,
 			iy:       4,
 			expected: 36,
@@ -130,7 +156,6 @@ func TestHashPosition(t *testing.T) {
 		"upper left - offset": {
 			x:        -20,
 			y:        -20,
-			offset:   40,
 			ix:       2,
 			iy:       2,
 			expected: 18,
@@ -138,7 +163,6 @@ func TestHashPosition(t *testing.T) {
 		"lower right - offset": {
 			x:        20,
 			y:        20,
-			offset:   40,
 			ix:       6,
 			iy:       6,
 			expected: 54,
@@ -224,8 +248,6 @@ func TestHashPosition(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			grid.offsetX = test.offset
-			grid.offsetY = test.offset
 
 			result := grid.HashPositionIndex(test.x, test.y)
 			assert.Equalf(t, test.expected, result, "Hash %d not %d", result, test.expected)
