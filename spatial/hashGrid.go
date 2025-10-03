@@ -7,10 +7,22 @@ import (
 	"github.com/wolfgarnet/gomath"
 )
 
+const (
+	upNeighbour        = 0
+	upRightNeighbour   = 1
+	rightNeighbour     = 2
+	downRightNeighbour = 3
+	downNeighbour      = 4
+	downLeftNeighbour  = 5
+	leftNeighbour      = 6
+	upLeftNeighbour    = 7
+)
+
 type GridCell[T gomath.Number, I PositionedItem[T, ID], ID comparable] struct {
 	neighbours []*GridCell[T, I, ID]
 	items      []I
 }
+
 type HashGrid[T gomath.Number, I PositionedItem[T, ID], ID comparable] struct {
 	grid map[uint64]*GridCell[T, I, ID]
 
@@ -93,7 +105,7 @@ func (grid *HashGrid[T, I, ID]) Display() string {
 func (grid *HashGrid[T, I, ID]) initialize() {
 	for i := uint64(0); i < grid.size; i++ {
 		grid.grid[i] = &GridCell[T, I, ID]{
-			neighbours: make([]*GridCell[T, I, ID], 0, 8),
+			neighbours: make([]*GridCell[T, I, ID], 8),
 			items:      make([]I, 0, 8),
 		}
 	}
@@ -108,22 +120,22 @@ func (grid *HashGrid[T, I, ID]) initialize() {
 		cell := grid.grid[i]
 		x, y := grid.HashToCell(i)
 
-		// Top
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x, y-1)])
-		// Top-right
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x+1, y-1)])
-		// Right
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x+1, y)])
-		// Bottom-right
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x+1, y+1)])
-		// Bottom
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x, y+1)])
-		// Bottom-left
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x-1, y+1)])
-		// Left
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x-1, y)])
-		// Top-left
-		cell.neighbours = append(cell.neighbours, grid.grid[idx(x-1, y-1)])
+		// Top 0
+		cell.neighbours[upNeighbour] = grid.grid[idx(x, y-1)]
+		// Top-right 1
+		cell.neighbours[upRightNeighbour] = grid.grid[idx(x+1, y-1)]
+		// Right 2
+		cell.neighbours[rightNeighbour] = grid.grid[idx(x+1, y)]
+		// Bottom-right 3
+		cell.neighbours[downRightNeighbour] = grid.grid[idx(x+1, y+1)]
+		// Bottom 4
+		cell.neighbours[downNeighbour] = grid.grid[idx(x, y+1)]
+		// Bottom-left 5
+		cell.neighbours[downLeftNeighbour] = grid.grid[idx(x-1, y+1)]
+		// Left 6
+		cell.neighbours[leftNeighbour] = grid.grid[idx(x-1, y)]
+		// Top-left 7
+		cell.neighbours[upLeftNeighbour] = grid.grid[idx(x-1, y-1)]
 	}
 }
 
@@ -195,38 +207,36 @@ func (grid *HashGrid[T, I, ID]) HashValuesForRectangle(position gomath.Vector2[T
 	return startHash, offsetX, offsetY
 }
 
-func (grid *HashGrid[T, I, ID]) SquaredIterator(position gomath.Vector2[T], radius T) iter.Seq[I] {
-	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
+//go:inline
+func (grid *HashGrid[T, I, ID]) rectangleIterator(hash uint64, offsetX uint64, offsetY uint64) iter.Seq[I] {
 	return func(yield func(I) bool) {
+		cell := grid.grid[hash]
 		for y := uint64(0); y < offsetY; y++ {
-			hashOffset := hash + y*grid.width
+			xCell := cell
 			for x := uint64(0); x < offsetX; x++ {
-				currentHash := hashOffset + x
-				for _, item := range grid.grid[currentHash].items {
+				for _, item := range cell.items {
 					if yield(item) {
 						return
 					}
 				}
+				// Move the cell pointer one to the right
+				xCell = xCell.neighbours[rightNeighbour]
 			}
+
+			// Move the cell pointer one down
+			cell = cell.neighbours[downNeighbour]
 		}
 	}
 }
 
+func (grid *HashGrid[T, I, ID]) SquaredIterator(position gomath.Vector2[T], radius T) iter.Seq[I] {
+	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
+	return grid.rectangleIterator(hash, offsetX, offsetY)
+}
+
 func (grid *HashGrid[T, I, ID]) RectangleIterator(position gomath.Vector2[T], halfWidth T, halfHeight T) iter.Seq[I] {
 	hash, offsetX, offsetY := grid.HashValuesForRectangle(position, halfWidth, halfHeight)
-	return func(yield func(I) bool) {
-		for y := uint64(0); y < offsetY; y++ {
-			hashOffset := hash + y*grid.width
-			for x := uint64(0); x < offsetX; x++ {
-				currentHash := hashOffset + x
-				for _, item := range grid.grid[currentHash].items {
-					if yield(item) {
-						return
-					}
-				}
-			}
-		}
-	}
+	return grid.rectangleIterator(hash, offsetX, offsetY)
 }
 
 func (grid *HashGrid[T, I, ID]) SquaredAABBIteratorWithYield(position gomath.Vector2[T], radius T, yield func(I) bool) {
