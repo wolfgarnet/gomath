@@ -19,8 +19,10 @@ const (
 )
 
 type GridCell[T gomath.Number, I PositionedItem[T, ID], ID comparable] struct {
-	neighbours []*GridCell[T, I, ID]
-	items      []I
+	neighbours      [8]*GridCell[T, I, ID]
+	neighbourHashes [8]uint64
+	hash            uint64
+	items           []I
 }
 
 type HashGrid[T gomath.Number, I PositionedItem[T, ID], ID comparable] struct {
@@ -105,8 +107,10 @@ func (grid *HashGrid[T, I, ID]) Display() string {
 func (grid *HashGrid[T, I, ID]) initialize() {
 	for i := uint64(0); i < grid.size; i++ {
 		grid.grid[i] = &GridCell[T, I, ID]{
-			neighbours: make([]*GridCell[T, I, ID], 8),
-			items:      make([]I, 0, 8),
+			neighbours:      [8]*GridCell[T, I, ID]{},
+			neighbourHashes: [8]uint64{},
+			items:           make([]I, 0, 8),
+			hash:            i,
 		}
 	}
 
@@ -122,20 +126,28 @@ func (grid *HashGrid[T, I, ID]) initialize() {
 
 		// Top 0
 		cell.neighbours[upNeighbour] = grid.grid[idx(x, y-1)]
+		cell.neighbourHashes[upNeighbour] = idx(x, y-1)
 		// Top-right 1
 		cell.neighbours[upRightNeighbour] = grid.grid[idx(x+1, y-1)]
+		cell.neighbourHashes[upRightNeighbour] = idx(x+1, y-1)
 		// Right 2
 		cell.neighbours[rightNeighbour] = grid.grid[idx(x+1, y)]
+		cell.neighbourHashes[rightNeighbour] = idx(x+1, y)
 		// Bottom-right 3
 		cell.neighbours[downRightNeighbour] = grid.grid[idx(x+1, y+1)]
+		cell.neighbourHashes[downRightNeighbour] = idx(x+1, y+1)
 		// Bottom 4
 		cell.neighbours[downNeighbour] = grid.grid[idx(x, y+1)]
+		cell.neighbourHashes[downNeighbour] = idx(x, y+1)
 		// Bottom-left 5
 		cell.neighbours[downLeftNeighbour] = grid.grid[idx(x-1, y+1)]
+		cell.neighbourHashes[downLeftNeighbour] = idx(x-1, y+1)
 		// Left 6
 		cell.neighbours[leftNeighbour] = grid.grid[idx(x-1, y)]
+		cell.neighbourHashes[leftNeighbour] = idx(x-1, y)
 		// Top-left 7
 		cell.neighbours[upLeftNeighbour] = grid.grid[idx(x-1, y-1)]
+		cell.neighbourHashes[upLeftNeighbour] = idx(x-1, y-1)
 	}
 }
 
@@ -367,7 +379,7 @@ func (grid *HashGrid[T, I, ID]) NeighbourHashesPair(index uint64) (pairs [][2]ui
 	return pairs
 }
 
-func (grid *HashGrid[T, I, ID]) Neighbours(index uint64) []*GridCell[T, I, ID] {
+func (grid *HashGrid[T, I, ID]) Neighbours(index uint64) [8]*GridCell[T, I, ID] {
 	cell, _ := grid.grid[index]
 	return cell.neighbours
 }
@@ -430,4 +442,12 @@ func (grid *HashGrid[T, I, ID]) HashPosition(worldPositionX T, worldPositionY T)
 
 func (grid *HashGrid[T, I, ID]) HashToCell(hash uint64) (uint64, uint64) {
 	return hash % grid.width, hash / grid.width
+}
+
+func (grid *HashGrid[T, I, ID]) HashToWorldCoordinate(hash uint64) gomath.Vector2[T] {
+	x, y := grid.HashToCell(hash)
+	return gomath.Vector2[T]{
+		X: T(x) * grid.cellSize, // + grid.cellSize*0.5,
+		Y: T(y) * grid.cellSize, // + grid.cellSize*0.5,
+	}
 }

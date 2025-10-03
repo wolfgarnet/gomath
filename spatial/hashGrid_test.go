@@ -9,29 +9,30 @@ import (
 	"github.com/wolfgarnet/gomath"
 )
 
-/*func TestHashGridCalculateNeighbourHashIndexes(t *testing.T) {
-	grid := NewHashGrid[float64, TestItem2D, uint64](8, 8, 10.0)
+func TestHashGridCalculateNeighbourHashIndexes(t *testing.T) {
+	grid := NewHashGrid[float32, *testItem, uint64](8, 8, 10.0)
 	tests := map[string]struct {
-		x float64
-		y float64
+		x float32
+		y float32
 	}{
 		"0,0": {
-			x: 0,
-			y: 0,
+			x: 10,
+			y: 10,
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			hash := grid.HashPositionIndex(test.x, test.y)
-			n := grid.CalculateNeighbourHashIndexes(hash)
+			n := grid.NeighbourHashes(hash)
 			for _, cellHash := range n {
-				x, y := grid.HashToCell(cellHash)
-				spew.Dump(x, y)
+				assert.Contains(t, grid.grid[hash].neighbourHashes, cellHash, "Hash %d not in grid", cellHash)
+				//neighbour := grid.grid[cellHash]
+				//assert.Contains(t, grid.grid[hash].neighbours, cellHash, "Hash %d not in grid", cellHash)
 			}
 		})
 	}
-}*/
+}
 
 func TestHashValuesForSquared(t *testing.T) {
 	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
@@ -244,6 +245,13 @@ func TestHashPosition(t *testing.T) {
 			iy:       7,
 			expected: 56,
 		}, // Extreme case
+		"1,1": {
+			x:        9,
+			y:        9,
+			ix:       0,
+			iy:       0,
+			expected: 0,
+		},
 	}
 
 	for name, test := range tests {
