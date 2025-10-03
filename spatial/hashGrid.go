@@ -35,6 +35,9 @@ type HashGrid[T gomath.Number, I PositionedItem[T, ID], ID comparable] struct {
 	// xHashMask and yHashMask are used to mask the x and y hash values to the width and height of the grid
 	xHashMask uint64
 	yHashMask uint64
+
+	zeroMaskX uint64
+	zeroMaskY uint64
 }
 
 func NewHashGridFromWorldSize[T gomath.Number, I PositionedItem[T, ID], ID comparable](worldWidth, worldHeight, cellSize T) *HashGrid[T, I, ID] {
@@ -61,10 +64,40 @@ func NewHashGrid[T gomath.Number, I PositionedItem[T, ID], ID comparable](width,
 		yHashMask:       height - 1,
 	}
 
+	grid.zeroMaskX = ^(uint64(0) * (width << grid.size)) // all 1s if x<size, else 0
+	grid.zeroMaskY = ^(uint64(0) * (height << grid.size))
 	grid.grid = make(map[uint64]*GridCell[T, I, ID])
 	grid.initialize()
 
 	return grid
+}
+
+func (grid *HashGrid[T, I, ID]) Size() uint64 {
+	return grid.size
+}
+
+func (grid *HashGrid[T, I, ID]) Width() uint64 {
+	return grid.width
+}
+
+func (grid *HashGrid[T, I, ID]) Height() uint64 {
+	return grid.height
+}
+
+func (grid *HashGrid[T, I, ID]) CellSize() T {
+	return grid.cellSize
+}
+
+func (grid *HashGrid[T, I, ID]) NumberOfElements() uint64 {
+	var count uint64
+	for _, cell := range grid.grid {
+		count += uint64(len(cell.items))
+	}
+	return count
+}
+
+func (grid *HashGrid[T, I, ID]) Display() string {
+	return fmt.Sprintf("HashGrid: %d x %d, %d cells, %d items", grid.width, grid.height, grid.size, grid.NumberOfElements())
 }
 
 func (grid *HashGrid[T, I, ID]) initialize() {
@@ -154,6 +187,36 @@ func (grid *HashGrid[T, I, ID]) HashValuesForSquared(position gomath.Vector2[T],
 
 	startX, startY := grid.HashPosition(topX, topY)
 	endX, endY := grid.HashPosition(bottomX, bottomY)
+	/*endX &= grid.width
+	endY &= grid.height*/
+
+	offsetX = endX - startX + 1
+	offsetY = endY - startY + 1
+
+	startHash = startX + startY*grid.width
+
+	return startHash, offsetX, offsetY
+}
+
+func (grid *HashGrid[T, I, ID]) HashValuesForSquaredWithBoundsCheck(position gomath.Vector2[T], radius T) (startHash uint64, offsetX uint64, offsetY uint64) {
+	topX := position.X - radius
+	topY := position.Y - radius
+	bottomX := position.X + radius
+	bottomY := position.Y + radius
+
+	startX, startY := grid.HashPosition(topX, topY)
+	//startX &= grid.zeroMaskX
+	//startY &= grid.zeroMaskY
+	if startX > grid.xHashMask {
+		startX = 0
+	}
+	if startY > grid.yHashMask {
+		startY = 0
+	}
+
+	endX, endY := grid.HashPosition(bottomX, bottomY)
+	endX &= grid.width
+	endY &= grid.height
 
 	offsetX = endX - startX + 1
 	offsetY = endY - startY + 1
@@ -383,26 +446,64 @@ func (grid *HashGrid[T, I, ID]) HashPositionIndex(worldPositionX T, worldPositio
 	return hash
 }
 
+func (grid *HashGrid[T, I, ID]) HashPositionIndexCapped(worldPositionX T, worldPositionY T) uint64 {
+	worldPositionX += grid.offsetX
+	worldPositionY += grid.offsetY
+
+	var xHash, yHash uint64
+	if worldPositionX < 0 {
+
+	} else {
+		xIndex := worldPositionX * grid.inverseCellSize
+		xHash = uint64(xIndex) & grid.xHashMask
+		if xHash > grid.xHashMask {
+			xHash = grid.width - 1
+		}
+	}
+	if worldPositionY < 0 {
+
+	} else {
+		yIndex := worldPositionY * grid.inverseCellSize
+		yHash = uint64(yIndex) & grid.yHashMask
+		if yHash > grid.yHashMask {
+			yHash = grid.height - 1
+		}
+	}
+
+	hash := xHash + yHash*grid.width
+	return hash
+}
+
 func (grid *HashGrid[T, I, ID]) HashPosition(worldPositionX T, worldPositionY T) (uint64, uint64) {
 	worldPositionX += grid.offsetX
 	worldPositionY += grid.offsetY
 
-	var yHash, xHash uint64
-	if worldPositionX < 0 {
-		xIndex := -worldPositionX * grid.inverseCellSize
-		xHash = grid.xHashMask - uint64(xIndex)&grid.xHashMask
-	} else {
-		xIndex := worldPositionX * grid.inverseCellSize
-		xHash = uint64(xIndex) & grid.xHashMask
+	xIndex := worldPositionX * grid.inverseCellSize
+	xHash := uint64(xIndex) & grid.xHashMask
+	yIndex := worldPositionY * grid.inverseCellSize
+	yHash := uint64(yIndex) & grid.yHashMask
+
+	return xHash, yHash
+}
+
+// HashPositionWithBoundsCheck hashes the position and ensures the returned values are within the grid bounds
+// Ideally only used for testing and performance checking
+func (grid *HashGrid[T, I, ID]) HashPositionWithBoundsCheck(worldPositionX T, worldPositionY T) (uint64, uint64) {
+	xHash, yHash := grid.HashPosition(worldPositionX, worldPositionY)
+	if xHash >= grid.width {
+		xHash = grid.width - 1
 	}
-	if worldPositionY < 0 {
-		yIndex := -worldPositionY * grid.inverseCellSize
-		masked := uint64(yIndex) & grid.yHashMask
-		yHash = grid.yHashMask - masked
-	} else {
-		yIndex := worldPositionY * grid.inverseCellSize
-		yHash = uint64(yIndex) & grid.yHashMask
+	if yHash >= grid.height {
+		yHash = grid.height - 1
 	}
+
+	return xHash, yHash
+}
+
+func (grid *HashGrid[T, I, ID]) HashPositionWithBoundsCheck2(worldPositionX T, worldPositionY T) (uint64, uint64) {
+	xHash, yHash := grid.HashPosition(worldPositionX, worldPositionY)
+	xHash &= grid.width
+	yHash &= grid.height
 
 	return xHash, yHash
 }

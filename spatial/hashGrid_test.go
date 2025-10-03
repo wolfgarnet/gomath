@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wolfgarnet/gomath"
 )
 
 /*func TestHashGridCalculateNeighbourHashIndexes(t *testing.T) {
@@ -31,6 +32,41 @@ import (
 		})
 	}
 }*/
+
+func TestHashValuesForSquared(t *testing.T) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
+
+	tests := map[string]struct {
+		position         gomath.Vector2[float32]
+		radius           float32
+		hash             uint64
+		offsetX, offsetY uint64
+	}{
+		"very negative (-529, -160)": {
+			position: gomath.Vector2[float32]{X: -529, Y: -160},
+			radius:   128,
+			hash:     2902,
+			offsetX:  17,
+			offsetY:  17,
+		},
+		"-32, 596": {
+			position: gomath.Vector2[float32]{X: -32, Y: 596},
+			radius:   128,
+			hash:     1909,
+			offsetX:  17,
+			offsetY:  17,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			hash, offsetX, offsetY := grid.HashValuesForSquaredWithBoundsCheck(test.position, test.radius)
+			assert.Equalf(t, test.hash, hash, "Hash: %d not %d", hash, test.hash)
+			assert.Equalf(t, test.offsetX, offsetX, "OffsetX: %d not %d", offsetX, test.offsetX)
+			assert.Equalf(t, test.offsetY, offsetY, "OffsetY: %d not %d", offsetY, test.offsetY)
+		})
+	}
+}
 
 func TestHashPosition(t *testing.T) {
 	grid := NewHashGrid[float32, *testItem, uint64](8, 8, 10.0)
@@ -76,12 +112,12 @@ func TestHashPosition(t *testing.T) {
 			iy:       0,
 			expected: 0,
 		},
-		"negative_x - wrapped": {
+		"negative_x - capped": {
 			x:        -5,
 			y:        0,
-			ix:       7,
+			ix:       0,
 			iy:       0,
-			expected: 7,
+			expected: 0,
 		},
 		"origin - offset": {
 			x:        0,
@@ -89,7 +125,7 @@ func TestHashPosition(t *testing.T) {
 			offset:   40,
 			ix:       4,
 			iy:       4,
-			expected: 20,
+			expected: 36,
 		},
 		"upper left - offset": {
 			x:        -20,
@@ -97,7 +133,7 @@ func TestHashPosition(t *testing.T) {
 			offset:   40,
 			ix:       2,
 			iy:       2,
-			expected: 21,
+			expected: 18,
 		},
 		"lower right - offset": {
 			x:        20,
@@ -105,7 +141,7 @@ func TestHashPosition(t *testing.T) {
 			offset:   40,
 			ix:       6,
 			iy:       6,
-			expected: 50,
+			expected: 54,
 		},
 		"negative_x2": {
 			x:        -15,
@@ -192,10 +228,10 @@ func TestHashPosition(t *testing.T) {
 			grid.offsetY = test.offset
 
 			result := grid.HashPositionIndex(test.x, test.y)
-			assert.Equal(t, test.expected, result, "Hash")
+			assert.Equalf(t, test.expected, result, "Hash %d not %d", result, test.expected)
 			ix, iy := grid.HashPosition(test.x, test.y)
-			assert.Equal(t, test.ix, ix, "Grid x")
-			assert.Equal(t, test.iy, iy, "Grid y")
+			assert.Equalf(t, test.ix, ix, "Grid x %d not %d", ix, test.ix)
+			assert.Equalf(t, test.iy, iy, "Grid y %d not %d", iy, test.iy)
 		})
 	}
 }

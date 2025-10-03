@@ -126,3 +126,52 @@ func BenchmarkHashGridHashPositionOffset(b *testing.B) {
 		_ = hash
 	}
 }
+
+func BenchmarkHashGridHashPosition(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
+	for n := 0; n < b.N; n++ {
+		x, y := grid.HashPosition(-32, 596)
+		_ = x
+		_ = y
+	}
+}
+
+func BenchmarkHashGridHashPositionWithBoundsCheck(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
+	for n := 0; n < b.N; n++ {
+		x, y := grid.HashPositionWithBoundsCheck(-32, 596)
+		_ = x
+		_ = y
+	}
+}
+
+func BenchmarkHashGridHashPositionWithBoundsCheck2(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
+	for n := 0; n < b.N; n++ {
+		x, y := grid.HashPositionWithBoundsCheck2(-32, 596)
+		_ = x
+		_ = y
+	}
+}
+
+func BenchmarkHashValuesForSquared(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
+	position := gomath.Vector2[float32]{X: -32, Y: 596}
+	for n := 0; n < b.N; n++ {
+		hash, x, y := grid.HashValuesForSquared(position, 128)
+		_ = hash
+		_ = x
+		_ = y
+	}
+}
+
+func BenchmarkHashValuesForSquaredWithBoundsCheck(b *testing.B) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
+	position := gomath.Vector2[float32]{X: -32, Y: 596}
+	for n := 0; n < b.N; n++ {
+		hash, x, y := grid.HashValuesForSquaredWithBoundsCheck(position, 128)
+		_ = hash
+		_ = x
+		_ = y
+	}
+}
