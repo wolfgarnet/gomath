@@ -46,7 +46,6 @@ func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
 		return false
 	}
 
-	//spew.Dump("Comparing AABBAABB", b1, b2, "HAS OVERLAP")
 	return true
 }
 

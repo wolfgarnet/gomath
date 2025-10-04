@@ -2,6 +2,7 @@ package intersection
 
 import (
 	"fmt"
+
 	"github.com/wolfgarnet/gomath"
 )
 
