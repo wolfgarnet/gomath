@@ -301,3 +301,46 @@ func TestHashGrid_HashToCell(t *testing.T) {
 		})
 	}
 }
+
+func TestHashGrid(t *testing.T) {
+	grid := NewHashGrid[float32, *testItem, uint64](64, 64, 16.0)
+	tests := map[string]struct {
+		x, y          float32
+		expectedHash  uint64
+		x2, y2        float32
+		expectedHash2 uint64
+	}{
+		"real": {
+			x:             106,
+			y:             175,
+			expectedHash:  646,
+			x2:            100,
+			y2:            185,
+			expectedHash2: 710,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			item := &testItem{
+				IDValue:       uint64(1),
+				PositionValue: gomath.Vector2[float32]{X: test.x, Y: test.y},
+				radius:        8.0,
+			}
+			item2 := &testItem{
+				IDValue:       uint64(2),
+				PositionValue: gomath.Vector2[float32]{X: test.x2, Y: test.y2},
+				radius:        8.0,
+			}
+			hash := grid.AddItem(item)
+			assert.Equalf(t, test.expectedHash, hash, "Hash: %d not %d", hash, test.expectedHash)
+			hash2 := grid.AddItem(item2)
+			assert.Equalf(t, test.expectedHash2, hash2, "Hash: %d not %d", hash2, test.expectedHash2)
+			cell := grid.grid[hash]
+			assert.Contains(t, cell.neighbourHashes, hash2, "Hash %d not in grid", hash2)
+
+			hash = grid.localToHash(65, 65)
+			assert.Equalf(t, hash, 65, "Hash: %d not %d", hash, 65)
+		})
+	}
+}

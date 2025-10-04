@@ -104,6 +104,14 @@ func (grid *HashGrid[T, I, ID]) Display() string {
 	return fmt.Sprintf("HashGrid: %d x %d, %d cells, %d items", grid.width, grid.height, grid.size, grid.NumberOfElements())
 }
 
+//go:inline
+func (grid *HashGrid[T, I, ID]) localToHash(x, y uint64) uint64 {
+	x = x & grid.xHashMask
+	y = y & grid.yHashMask
+
+	return x + y*grid.width
+}
+
 func (grid *HashGrid[T, I, ID]) initialize() {
 	for i := uint64(0); i < grid.size; i++ {
 		grid.grid[i] = &GridCell[T, I, ID]{
@@ -114,40 +122,34 @@ func (grid *HashGrid[T, I, ID]) initialize() {
 		}
 	}
 
-	idx := func(x, y uint64) uint64 {
-		x = grid.xHashMask - x&grid.xHashMask
-		y = grid.yHashMask - y&grid.yHashMask
-		return x + y*grid.width
-	}
-
 	for i := uint64(0); i < grid.size; i++ {
 		cell := grid.grid[i]
 		x, y := grid.HashToCell(i)
 
 		// Top 0
-		cell.neighbours[upNeighbour] = grid.grid[idx(x, y-1)]
-		cell.neighbourHashes[upNeighbour] = idx(x, y-1)
+		cell.neighbours[upNeighbour] = grid.grid[grid.localToHash(x, y-1)]
+		cell.neighbourHashes[upNeighbour] = grid.localToHash(x, y-1)
 		// Top-right 1
-		cell.neighbours[upRightNeighbour] = grid.grid[idx(x+1, y-1)]
-		cell.neighbourHashes[upRightNeighbour] = idx(x+1, y-1)
+		cell.neighbours[upRightNeighbour] = grid.grid[grid.localToHash(x+1, y-1)]
+		cell.neighbourHashes[upRightNeighbour] = grid.localToHash(x+1, y-1)
 		// Right 2
-		cell.neighbours[rightNeighbour] = grid.grid[idx(x+1, y)]
-		cell.neighbourHashes[rightNeighbour] = idx(x+1, y)
+		cell.neighbours[rightNeighbour] = grid.grid[grid.localToHash(x+1, y)]
+		cell.neighbourHashes[rightNeighbour] = grid.localToHash(x+1, y)
 		// Bottom-right 3
-		cell.neighbours[downRightNeighbour] = grid.grid[idx(x+1, y+1)]
-		cell.neighbourHashes[downRightNeighbour] = idx(x+1, y+1)
+		cell.neighbours[downRightNeighbour] = grid.grid[grid.localToHash(x+1, y+1)]
+		cell.neighbourHashes[downRightNeighbour] = grid.localToHash(x+1, y+1)
 		// Bottom 4
-		cell.neighbours[downNeighbour] = grid.grid[idx(x, y+1)]
-		cell.neighbourHashes[downNeighbour] = idx(x, y+1)
+		cell.neighbours[downNeighbour] = grid.grid[grid.localToHash(x, y+1)]
+		cell.neighbourHashes[downNeighbour] = grid.localToHash(x, y+1)
 		// Bottom-left 5
-		cell.neighbours[downLeftNeighbour] = grid.grid[idx(x-1, y+1)]
-		cell.neighbourHashes[downLeftNeighbour] = idx(x-1, y+1)
+		cell.neighbours[downLeftNeighbour] = grid.grid[grid.localToHash(x-1, y+1)]
+		cell.neighbourHashes[downLeftNeighbour] = grid.localToHash(x-1, y+1)
 		// Left 6
-		cell.neighbours[leftNeighbour] = grid.grid[idx(x-1, y)]
-		cell.neighbourHashes[leftNeighbour] = idx(x-1, y)
+		cell.neighbours[leftNeighbour] = grid.grid[grid.localToHash(x-1, y)]
+		cell.neighbourHashes[leftNeighbour] = grid.localToHash(x-1, y)
 		// Top-left 7
-		cell.neighbours[upLeftNeighbour] = grid.grid[idx(x-1, y-1)]
-		cell.neighbourHashes[upLeftNeighbour] = idx(x-1, y-1)
+		cell.neighbours[upLeftNeighbour] = grid.grid[grid.localToHash(x-1, y-1)]
+		cell.neighbourHashes[upLeftNeighbour] = grid.localToHash(x-1, y-1)
 	}
 }
 
@@ -226,7 +228,7 @@ func (grid *HashGrid[T, I, ID]) rectangleIterator(hash uint64, offsetX uint64, o
 		for y := uint64(0); y < offsetY; y++ {
 			xCell := cell
 			for x := uint64(0); x < offsetX; x++ {
-				for _, item := range cell.items {
+				for _, item := range xCell.items {
 					if yield(item) {
 						return
 					}
@@ -318,32 +320,27 @@ func (grid *HashGrid[T, I, ID]) UpdateItem(item I) {
 }
 
 func (grid *HashGrid[T, I, ID]) NeighbourHashes(index uint64) (hashes []uint64) {
-	idx := func(x, y uint64) uint64 {
-		x = grid.xHashMask - x&grid.xHashMask
-		y = grid.yHashMask - y&grid.yHashMask
-		return x + y*grid.width
-	}
 	x, y := grid.HashToCell(index)
 	hashes = make([]uint64, 0, 8)
 
 	fmt.Printf("x: %d, y: %d\n", x, y)
 
 	// Top
-	hashes = append(hashes, idx(x, y-1))
+	hashes = append(hashes, grid.localToHash(x, y-1))
 	// Top-right
-	hashes = append(hashes, idx(x+1, y-1))
+	hashes = append(hashes, grid.localToHash(x+1, y-1))
 	// Right
-	hashes = append(hashes, idx(x+1, y))
+	hashes = append(hashes, grid.localToHash(x+1, y))
 	// Bottom-right
-	hashes = append(hashes, idx(x+1, y+1))
+	hashes = append(hashes, grid.localToHash(x+1, y+1))
 	// Bottom
-	hashes = append(hashes, idx(x, y+1))
+	hashes = append(hashes, grid.localToHash(x, y+1))
 	// Bottom-left
-	hashes = append(hashes, idx(x-1, y+1))
+	hashes = append(hashes, grid.localToHash(x-1, y+1))
 	// Left
-	hashes = append(hashes, idx(x-1, y))
+	hashes = append(hashes, grid.localToHash(x-1, y))
 	// Top-left
-	hashes = append(hashes, idx(x-1, y-1))
+	hashes = append(hashes, grid.localToHash(x-1, y-1))
 
 	return hashes
 }
@@ -353,8 +350,8 @@ func (grid *HashGrid[T, I, ID]) NeighbourHashesPair(index uint64) (pairs [][2]ui
 	pairs = make([][2]uint64, 0, 8)
 
 	pair := func(x, y uint64) [2]uint64 {
-		x = grid.xHashMask - x&grid.xHashMask
-		y = grid.yHashMask - y&grid.yHashMask
+		//x = grid.xHashMask - x&grid.xHashMask
+		//y = grid.yHashMask - y&grid.yHashMask
 		return [2]uint64{x, y}
 	}
 	fmt.Printf("x: %d, y: %d\n", x, y)
