@@ -75,7 +75,7 @@ func (tree *BoxedQuadtree[T, I]) ContainedIn(item BoxedItem[T]) bool {
 func (tree *BoxedQuadtree[T, I]) Insert(item I) bool {
 	// First, verify that the item belongs in this tree.
 	//if !tree.ContainedIn(item) {
-	if SquaredAABBAABB(tree.Boundary, item.BoundingBox()) {
+	if !SquaredAABBAABB(tree.Boundary, item.BoundingBox()) {
 		return false
 	}
 

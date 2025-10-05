@@ -4,9 +4,50 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/wolfgarnet/gomath"
 	"github.com/wolfgarnet/gomath/intersection"
 )
+
+func TestSquaredAABBAABB(t *testing.T) {
+	tests := map[string]struct {
+		a          gomath.SquaredAABB2D[float32]
+		b          gomath.AABB[float32]
+		intersects bool
+	}{
+		"test 1": {
+			a: gomath.SquaredAABB2D[float32]{
+				Center:   gomath.Vector2[float32]{X: 512, Y: 512},
+				HalfSize: 1024,
+			},
+			b: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 144, Y: 208},
+				HalfWidth:  150,
+				HalfHeight: 150,
+			},
+			intersects: true,
+		},
+		"test 2": {
+			a: gomath.SquaredAABB2D[float32]{
+				Center:   gomath.Vector2[float32]{X: 512, Y: 512},
+				HalfSize: 1024,
+			},
+			b: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 49, Y: 179},
+				HalfWidth:  6,
+				HalfHeight: 6,
+			},
+			intersects: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			intersects := SquaredAABBAABB(test.a, test.b)
+			assert.Equal(t, test.intersects, intersects)
+		})
+	}
+}
 
 func makeAABB32(w, h float32, num int) (aabbs []AABB32) {
 	for i := 0; i < num; i++ {

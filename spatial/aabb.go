@@ -24,7 +24,10 @@ func AABBAABB32(b1, b2 AABB32) bool {
 	if dy < 0 {
 		dy = -dy
 	}
-	return dy <= b1.HalfHeight+b2.HalfHeight
+	if dy > b1.HalfHeight+b2.HalfHeight {
+		return false
+	}
+	return true
 }
 
 type AABB[T constraints.Float] struct {
@@ -46,7 +49,10 @@ func AABBAABB[T constraints.Float](b1, b2 AABB[T]) bool {
 	if dy < 0 {
 		dy = -dy
 	}
-	return dy <= b1.HalfHeight+b2.HalfHeight
+	if dy > b1.HalfHeight+b2.HalfHeight {
+		return false
+	}
+	return true
 }
 
 type AABB2[T constraints.Float] struct {
@@ -68,7 +74,10 @@ func AABBAABB2[T constraints.Float](b1, b2 AABB2[T]) bool {
 	if dy < 0 {
 		dy = -dy
 	}
-	return dy <= b1.HalfHeight+b2.HalfHeight
+	if dy > b1.HalfHeight+b2.HalfHeight {
+		return false
+	}
+	return true
 }
 
 func AABBAABB3[T constraints.Float](b1, b2 gomath.AABB[T]) bool {
@@ -84,7 +93,10 @@ func AABBAABB3[T constraints.Float](b1, b2 gomath.AABB[T]) bool {
 	if dy < 0 {
 		dy = -dy
 	}
-	return dy <= b1.HalfHeight+b2.HalfHeight
+	if dy > b1.HalfHeight+b2.HalfHeight {
+		return false
+	}
+	return true
 }
 
 func SquaredAABBAABB[T constraints.Float](b1 gomath.SquaredAABB2D[T], b2 gomath.AABB[T]) bool {
@@ -100,5 +112,8 @@ func SquaredAABBAABB[T constraints.Float](b1 gomath.SquaredAABB2D[T], b2 gomath.
 	if dy < 0 {
 		dy = -dy
 	}
-	return dy <= b1.HalfSize+b2.HalfHeight
+	if dy > b1.HalfSize+b2.HalfHeight {
+		return false
+	}
+	return true
 }

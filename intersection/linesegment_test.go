@@ -2,9 +2,10 @@ package intersection
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/wolfgarnet/gomath"
-	"testing"
 )
 
 func TestLineSegmentLineSegment2D(t *testing.T) {

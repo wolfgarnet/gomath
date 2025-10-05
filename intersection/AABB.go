@@ -49,6 +49,8 @@ func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
 	return true
 }
 
+// AABB2AABB2 returns true if the two AABBs intersect
+// Only works if positioned at the origin
 func AABB2AABB2[T gomath.Number](a, b gomath.AABB2[T]) bool {
 	if a.MinX > b.MaxX || a.MaxX < b.MinX {
 		return false
