@@ -151,6 +151,33 @@ func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.AABB[T]) (penetr
 	}
 }
 
+func PointAABB2DPenetration[T gomath.Number](p gomath.Vector2[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[float32], inside bool) {
+	dx := p.X - b.Center.X
+	dy := p.Y - b.Center.Y
+
+	px := b.HalfWidth - gomath.Abs(dx)
+	py := b.HalfHeight - gomath.Abs(dy)
+
+	if px < 0 || py < 0 {
+		return 0, normal, false
+	}
+
+	if px < py {
+		if dx < 0 {
+			return px, gomath.Vector2[float32]{X: -1, Y: 0}, true
+		} else {
+			return px, gomath.Vector2[float32]{X: 1, Y: 0}, true
+		}
+	} else {
+		if dy < 0 {
+			return py, gomath.Vector2[float32]{X: 0, Y: -1}, true
+		} else {
+			return py, gomath.Vector2[float32]{X: 0, Y: 1}, true
+		}
+	}
+}
+
+// PointSideOfBox returns true if the point is inside the box defined by the two line segments
 func PointSideOfBox[T gomath.Number](p gomath.Vector2[T], ls1 gomath.LineSegment[T], ls2 gomath.LineSegment[T]) bool {
 	left := gomath.IsLeft(p, ls1.P1, ls2.P1)
 	right := gomath.IsLeft(p, ls1.P2, ls2.P2)

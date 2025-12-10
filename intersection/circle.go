@@ -147,14 +147,67 @@ func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.AAB
 	return max, normal, true
 }
 
+func isCircleInsideAABB[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
+	return c.Center.X-c.Radius >= b.Center.X-b.HalfWidth &&
+		c.Center.X+c.Radius <= b.Center.X+b.HalfWidth &&
+		c.Center.Y-c.Radius >= b.Center.Y-b.HalfHeight &&
+		c.Center.Y+c.Radius <= b.Center.Y+b.HalfHeight
+}
+
+func isAABBInsideCircle[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
+	corners := []gomath.Vector2[T]{
+		{X: b.Center.X - b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+		{X: b.Center.X + b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+		{X: b.Center.X + b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
+		{X: b.Center.X - b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
+	}
+
+	for _, corner := range corners {
+		if c.Center.DistanceTo(corner) > c.Radius {
+			return false
+		}
+	}
+	return true
+}
+
 func CircleAABBWithPenetration2[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
 	if !CircleAABB(c, b) {
 		return 0, normal, false
 	}
 
+	if isCircleInsideAABB(c, b) {
+		minDist := c.Radius
+		sides := b.Sides()
+		for _, side := range sides {
+			dist := gomath.MinimumDistance(side.P1, side.P2, c.Center)
+			if dist < minDist {
+				minDist = dist
+				normal = side.Normal()
+			}
+		}
+		return minDist, normal, true
+	}
+
+	if isAABBInsideCircle(c, b) {
+		maxCornerDist := T(0)
+		corners := []gomath.Vector2[T]{
+			{X: b.Center.X - b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+			{X: b.Center.X + b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+			{X: b.Center.X + b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
+			{X: b.Center.X - b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
+		}
+		for _, corner := range corners {
+			dist := c.Radius - c.Center.DistanceTo(corner)
+			if dist > maxCornerDist {
+				maxCornerDist = dist
+				normal = corner.Sub(c.Center).Normalize()
+			}
+		}
+		return maxCornerDist, normal, true
+	}
+
 	var max T
 	sides := b.Sides()
-	//for _, side := range b.Sides() {
 	for i, side := range sides {
 		j := (i + 2) % 4
 		if !PointSideOfBox(c.Center, side, sides[j]) {

@@ -74,21 +74,27 @@ func (a AABB[T]) Extend(w T) AABB[T] {
 	}
 }
 
+// Sides returns the 4 sides of the AABB as line segments
+// in clockwise order starting from the lower left corner
 func (a *AABB[T]) Sides() []LineSegment[T] {
 	segments := make([]LineSegment[T], 4)
 
+	// Lower left
 	p1 := Vector2[T]{
 		X: a.Center.X - a.HalfWidth,
 		Y: a.Center.Y + a.HalfHeight,
 	}
+	// Lower right
 	p2 := Vector2[T]{
 		X: a.Center.X + a.HalfWidth,
 		Y: a.Center.Y + a.HalfHeight,
 	}
+	// Upper right
 	p3 := Vector2[T]{
 		X: a.Center.X + a.HalfWidth,
 		Y: a.Center.Y - a.HalfHeight,
 	}
+	// Upper left
 	p4 := Vector2[T]{
 		X: a.Center.X - a.HalfWidth,
 		Y: a.Center.Y - a.HalfHeight,

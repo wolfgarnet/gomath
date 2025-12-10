@@ -1,9 +1,10 @@
 package intersection
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/wolfgarnet/gomath"
-	"testing"
 )
 
 func TestAABB2DPoint(t *testing.T) {
@@ -110,12 +111,160 @@ func TestPointSideOfBox(t *testing.T) {
 			},
 			contained: false,
 		},
+		"test": {
+			point: gomath.Vector2[float32]{X: 64, Y: 64},
+			ls1: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 0, Y: 0},
+				P2: gomath.Vector2[float32]{X: 0, Y: 96},
+			},
+			ls2: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 0, Y: 96},
+				P2: gomath.Vector2[float32]{X: 1024, Y: 96},
+			},
+			contained: true,
+		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			contained := PointSideOfBox(test.point, test.ls1, test.ls2)
 			assert.Equal(t, test.contained, contained)
+		})
+	}
+}
+
+func TestPointInsideBox(t *testing.T) {
+	tests := map[string]struct {
+		point       gomath.Vector2[float32]
+		box         gomath.AABB[float32]
+		penetration float32
+		normal      gomath.Vector2[float32]
+		contained   bool
+	}{
+		"simple": {
+			point: gomath.Vector2[float32]{X: 1, Y: 1},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 1, Y: 1},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained:   true,
+			penetration: 1,
+			normal:      gomath.Vector2[float32]{X: 0, Y: 1},
+		},
+		"simple2": {
+			point: gomath.Vector2[float32]{X: 1, Y: 0.5},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 1, Y: 1},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained:   true,
+			penetration: 0.5,
+			normal:      gomath.Vector2[float32]{X: 0, Y: -1},
+		},
+		"simple3": {
+			point: gomath.Vector2[float32]{X: 0.5, Y: 0.5},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 1, Y: 1},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained:   true,
+			penetration: 0.5,
+			normal:      gomath.Vector2[float32]{X: 0, Y: -1},
+		},
+		"simple4": {
+			point: gomath.Vector2[float32]{X: 0.2, Y: 0.5},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 1, Y: 1},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained:   true,
+			penetration: 0.2,
+			normal:      gomath.Vector2[float32]{X: -1, Y: 0},
+		},
+		"outside up": {
+			point: gomath.Vector2[float32]{X: 1.0, Y: 0.0},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 2, Y: 2},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained: false,
+		},
+		"outside up right": {
+			point: gomath.Vector2[float32]{X: 1.1, Y: 0.9},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 2, Y: 2},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained: false,
+		},
+		"outside down": {
+			point: gomath.Vector2[float32]{X: 1.0, Y: 3.01},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 2, Y: 2},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained: false,
+		},
+		"outside down right": {
+			point: gomath.Vector2[float32]{X: 3.0, Y: 3.01},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 2, Y: 2},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained: false,
+		},
+		"on down": {
+			point: gomath.Vector2[float32]{X: 1.0, Y: 3.0},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 2, Y: 2},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained:   true,
+			penetration: 0.0,
+			normal:      gomath.Vector2[float32]{X: 0, Y: 1},
+		},
+		"on down right": {
+			point: gomath.Vector2[float32]{X: 3.0, Y: 3.0},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 2, Y: 2},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained:   true,
+			penetration: 0.0,
+			normal:      gomath.Vector2[float32]{X: 0, Y: 1},
+		},
+		"on down right 2": {
+			point: gomath.Vector2[float32]{X: 3.0, Y: 2.9},
+			box: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 2, Y: 2},
+				HalfWidth:  1,
+				HalfHeight: 1,
+			},
+			contained:   true,
+			penetration: 0.0,
+			normal:      gomath.Vector2[float32]{X: 1, Y: 0},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			penetration, normal, contained := PointAABB2DPenetration(test.point, test.box)
+			assert.Equal(t, test.contained, contained)
+			if !contained {
+				return
+			}
+			assert.InDelta(t, test.penetration, penetration, 0.00001)
+			assert.Equal(t, test.normal, normal)
 		})
 	}
 }

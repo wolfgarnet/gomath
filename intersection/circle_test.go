@@ -1,9 +1,10 @@
 package intersection
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/wolfgarnet/gomath"
-	"testing"
 )
 
 func TestCircleCircle(t *testing.T) {
@@ -52,6 +53,38 @@ func TestCircleCircle(t *testing.T) {
 func TestCircleAABB(t *testing.T) {
 	tests := map[string]struct {
 		circle      gomath.Circle[float32]
+		box         gomath.AABB[float32]
+		overlapping bool
+		penetration float32
+		normal      gomath.Vector2[float32]
+	}{
+		"dkdkd": {
+			circle: gomath.NewCircle[float32](64, 64, 6),
+			box: gomath.AABB[float32]{
+				Center:     gomath.NewVector2[float32](512, 48),
+				HalfWidth:  512,
+				HalfHeight: 48,
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			penetration, normal, overlapping := CircleAABBWithPenetration2(test.circle, test.box)
+			assert.Equal(t, test.overlapping, overlapping)
+			if !overlapping {
+				return
+			}
+
+			assert.InDelta(t, test.penetration, penetration, 0.001)
+			assert.Equal(t, test.normal, normal)
+		})
+	}
+}
+
+func TestCircleSquaredAABB(t *testing.T) {
+	tests := map[string]struct {
+		circle      gomath.Circle[float32]
 		box         gomath.SquaredAABB2D[float32]
 		overlapping bool
 		penetration float32
@@ -70,6 +103,10 @@ func TestCircleAABB(t *testing.T) {
 			overlapping: true,
 			penetration: 0.1,
 			normal:      gomath.NewVector2[float32](0, 1),
+		},
+		"dkdkd": {
+			circle: gomath.NewCircle[float32](64, 64, 6),
+			box:    gomath.NewSquaredAABB2DXY[float32](0, 0, 10),
 		},
 	}
 
