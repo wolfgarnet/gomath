@@ -18,6 +18,10 @@ func (cell *SimpleGridCell[T, ID]) Size() int {
 	return len(cell.items)
 }
 
+func (cell *SimpleGridCell[T, ID]) Hash() uint64 {
+	return cell.hash
+}
+
 func (cell *SimpleGridCell[T, ID]) IterateNextNeighbors() iter.Seq[*SimpleGridCell[T, ID]] {
 	return func(yield func(*SimpleGridCell[T, ID]) bool) {
 		for _, neighbour := range []int8{rightNeighbour, downLeftNeighbour, downNeighbour, downRightNeighbour} {
@@ -172,6 +176,16 @@ func (grid *SimpleHashGrid[T, ID]) initialize() {
 		// Top-left 7
 		cell.neighbours[upLeftNeighbour] = grid.grid[grid.localToHash(x-1, y-1)]
 		cell.neighbourHashes[upLeftNeighbour] = grid.localToHash(x-1, y-1)
+	}
+}
+
+func (grid *SimpleHashGrid[T, ID]) IterateContent() iter.Seq[*SimpleGridCell[T, ID]] {
+	return func(yield func(hashGrid *SimpleGridCell[T, ID]) bool) {
+		for _, cell := range grid.grid {
+			if yield(cell) {
+				return
+			}
+		}
 	}
 }
 
