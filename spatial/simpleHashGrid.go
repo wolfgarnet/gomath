@@ -257,6 +257,19 @@ func (grid *SimpleHashGrid[T, ID]) HashValuesForRectangle(position gomath.Vector
 	return startHash, offsetX, offsetY
 }
 
+func (grid *SimpleHashGrid[T, ID]) HashValuesForRectangleMinMax(aabb gomath.AABB2[T]) (startHash uint64, offsetX uint64, offsetY uint64) {
+
+	startX, startY := grid.HashPosition(aabb.MinX, aabb.MinY)
+	startHash = startX + startY*grid.width
+
+	//offsetX = (2 * uint64(halfWidth*grid.inverseCellSize)) + 1
+	offsetX = uint64((aabb.MaxX-aabb.MinX)*grid.inverseCellSize) + 1
+	//offsetY = (2 * uint64(halfHeight*grid.inverseCellSize)) + 1
+	offsetY = uint64((aabb.MaxY-aabb.MinY)*grid.inverseCellSize) + 1
+
+	return startHash, offsetX, offsetY
+}
+
 //go:inline
 func (grid *SimpleHashGrid[T, ID]) rectangleIterator(hash uint64, offsetX uint64, offsetY uint64) iter.Seq[ID] {
 	return func(yield func(ID) bool) {
@@ -286,6 +299,11 @@ func (grid *SimpleHashGrid[T, ID]) SquaredIterator(position gomath.Vector2[T], r
 
 func (grid *SimpleHashGrid[T, ID]) RectangleIterator(position gomath.Vector2[T], halfWidth T, halfHeight T) iter.Seq[ID] {
 	hash, offsetX, offsetY := grid.HashValuesForRectangle(position, halfWidth, halfHeight)
+	return grid.rectangleIterator(hash, offsetX, offsetY)
+}
+
+func (grid *SimpleHashGrid[T, ID]) AABBIterator(aabb gomath.AABB2[T]) iter.Seq[ID] {
+	hash, offsetX, offsetY := grid.HashValuesForRectangleMinMax(aabb)
 	return grid.rectangleIterator(hash, offsetX, offsetY)
 }
 

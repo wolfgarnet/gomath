@@ -49,6 +49,74 @@ func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
 	return true
 }
 
+func AABB2LineSegment[T gomath.Number](aabb gomath.AABB2[float32], segment gomath.LineSegment[float32]) bool {
+	// Check if both endpoints are inside the AABB
+	p1Inside := segment.P1.X >= aabb.MinX && segment.P1.X <= aabb.MaxX &&
+		segment.P1.Y >= aabb.MinY && segment.P1.Y <= aabb.MaxY
+	p2Inside := segment.P2.X >= aabb.MinX && segment.P2.X <= aabb.MaxX &&
+		segment.P2.Y >= aabb.MinY && segment.P2.Y <= aabb.MaxY
+
+	// If both points are inside, the segment is contained
+	if p1Inside && p2Inside {
+		return true
+	}
+
+	// If at least one point is inside, there's an intersection
+	if p1Inside || p2Inside {
+		return true
+	}
+
+	// Check if the line segment intersects any of the AABB edges
+	// Using parametric line equation: P = P1 + t * (P2 - P1), where 0 <= t <= 1
+
+	dx := segment.P2.X - segment.P1.X
+	dy := segment.P2.Y - segment.P1.Y
+
+	// Check intersection with vertical edges (x = MinX and x = MaxX)
+	if dx != 0 {
+		// Left edge (x = MinX)
+		t := (aabb.MinX - segment.P1.X) / dx
+		if t >= 0 && t <= 1 {
+			y := segment.P1.Y + t*dy
+			if y >= aabb.MinY && y <= aabb.MaxY {
+				return true
+			}
+		}
+
+		// Right edge (x = MaxX)
+		t = (aabb.MaxX - segment.P1.X) / dx
+		if t >= 0 && t <= 1 {
+			y := segment.P1.Y + t*dy
+			if y >= aabb.MinY && y <= aabb.MaxY {
+				return true
+			}
+		}
+	}
+
+	// Check intersection with horizontal edges (y = MinY and y = MaxY)
+	if dy != 0 {
+		// Bottom edge (y = MinY)
+		t := (aabb.MinY - segment.P1.Y) / dy
+		if t >= 0 && t <= 1 {
+			x := segment.P1.X + t*dx
+			if x >= aabb.MinX && x <= aabb.MaxX {
+				return true
+			}
+		}
+
+		// Top edge (y = MaxY)
+		t = (aabb.MaxY - segment.P1.Y) / dy
+		if t >= 0 && t <= 1 {
+			x := segment.P1.X + t*dx
+			if x >= aabb.MinX && x <= aabb.MaxX {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // AABB2AABB2 returns true if the two AABBs intersect
 // Only works if positioned at the origin
 func AABB2AABB2[T gomath.Number](a, b gomath.AABB2[T]) bool {

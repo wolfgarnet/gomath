@@ -268,6 +268,23 @@ func (grid *HashGrid[T, I, ID]) SquaredAABBIteratorWithYield(position gomath.Vec
 	}
 }
 
+func (grid *HashGrid[T, I, ID]) IterateAABB(aabb gomath.AABB[T]) iter.Seq[I] {
+	hash, offsetX, offsetY := grid.HashValuesForRectangle(aabb.Center, aabb.HalfWidth, aabb.HalfHeight)
+	return func(yield func(I) bool) {
+		for y := uint64(0); y < offsetY; y++ {
+			hashOffset := hash + y*grid.width
+			for x := uint64(0); x < offsetX; x++ {
+				currentHash := hashOffset + x
+				for _, item := range grid.grid[currentHash].items {
+					if !yield(item) {
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
 // AddItem adds an item to the grid and returns the hash of the cell it was added to
 func (grid *HashGrid[T, I, ID]) AddItem(item I) (hash uint64) {
 	p := item.Position()
