@@ -1,8 +1,9 @@
 package intersection
 
 import (
-	"github.com/wolfgarnet/gomath"
 	"math"
+
+	"github.com/wolfgarnet/gomath"
 )
 
 const maxf = 1e300
@@ -133,46 +134,44 @@ func LineAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool 
 	max := bbCenter.Add(minToMax)
 	beginToMin := min.Sub(ls.P1)
 	beginToMax := max.Sub(ls.P1)
+
 	tNear := T(-math.MaxFloat32)
 	tFar := T(math.MaxFloat32)
-	axes := []int{0, 1}
 
+	axes := []int{0, 1}
 	for _, axis := range axes {
-		if beginToEnd.Component(axis) == 0 || gomath.IsEpsilon(beginToEnd.Component(axis)) { // parallel
-			if beginToMin.Component(axis) > 0 || beginToMax.Component(axis) < 0 {
+		d := beginToEnd.Component(axis)
+		if gomath.IsEpsilon(d) || d == 0 { // parallel
+			// If origin is outside the slabs, no intersection
+			if ls.P1.Component(axis) < min.Component(axis) || ls.P1.Component(axis) > max.Component(axis) {
 				return false
 			}
 		} else {
-			var t1 = beginToMin.Component(axis) / beginToEnd.Component(axis)
-			var t2 = beginToMax.Component(axis) / beginToEnd.Component(axis)
+			t1 := beginToMin.Component(axis) / d
+			t2 := beginToMax.Component(axis) / d
+
 			tMin := t1
 			tMax := t2
-			if t2 < tMin {
-				tMin = t2
+			if tMin > tMax {
+				tMin, tMax = tMax, tMin
 			}
-			if t2 > tMax {
-				tMax = t2
-			}
+
 			if tMin > tNear {
 				tNear = tMin
 			}
 			if tMax < tFar {
 				tFar = tMax
 			}
+
 			if tNear > tFar || tFar < 0 {
 				return false
 			}
 		}
 	}
 
-	if tNear >= 0 && tNear <= 1 {
-		return true
-	}
-	if tFar >= 0 && tFar <= 1 {
-		return true
-	}
-
-	return false
+	// For a line segment, the intersection interval [tNear, tFar]
+	// must overlap with the segment interval [0, 1].
+	return tNear <= 1 && tFar >= 0
 }
 
 func LineInsideSquaredAABB[T gomath.Number](ls gomath.LineSegment[T], bb gomath.SquaredAABB2D[T]) bool {

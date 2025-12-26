@@ -8,6 +8,33 @@ import (
 	"github.com/wolfgarnet/gomath"
 )
 
+func TestLineAABB2(t *testing.T) {
+	tests := map[string]struct {
+		ls         gomath.LineSegment[float32]
+		aabb       gomath.AABB[float32]
+		intersects bool
+	}{
+		"actual": {
+			ls: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 161.87857, Y: 160.80266},
+				P2: gomath.Vector2[float32]{X: 128, Y: 128},
+			},
+			aabb: gomath.AABB[float32]{
+				Center:     gomath.Vector2[float32]{X: 176, Y: 176},
+				HalfWidth:  16,
+				HalfHeight: 16,
+			},
+			intersects: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, test.intersects, LineAABB(test.ls, test.aabb))
+		})
+	}
+}
+
 func TestLineSegmentLineSegment2D(t *testing.T) {
 	tests := map[string]struct {
 		p1, p2, q1, q2 gomath.Vector2[float32]

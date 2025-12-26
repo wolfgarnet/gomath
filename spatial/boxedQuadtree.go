@@ -131,13 +131,37 @@ func (tree *BoxedQuadtree[T, I]) Insert(item BoxedItem[T, I]) bool {
 		// put it into the current sub tree.
 		tree.Items = append(tree.Items, item)
 		return true
-	} else {
-		if insertInto != nil {
-			return insertInto.Insert(item)
-		}
+	}
 
+	if insertInto != nil {
+		return insertInto.Insert(item)
+	}
+
+	return false
+}
+
+func (tree *BoxedQuadtree[T, I]) Remove(item BoxedItem[T, I]) bool {
+	var i int
+	for range tree.Items {
+		if tree.Items[i].ItemID == item.ItemID {
+			tree.Items = append(tree.Items[:i], tree.Items[i+1:]...)
+			return true
+		}
+	}
+
+	if tree.NorthEast == nil {
 		return false
 	}
+	if tree.NorthEast.Remove(item) {
+		return true
+	}
+	if tree.SouthEast.Remove(item) {
+		return true
+	}
+	if tree.SouthWest.Remove(item) {
+		return true
+	}
+	return tree.NorthWest.Remove(item)
 }
 
 func (tree *BoxedQuadtree[T, I]) Iterator(bounds gomath.AABB[T]) iter.Seq[BoxedItem[T, I]] {
