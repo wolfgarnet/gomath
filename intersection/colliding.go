@@ -20,6 +20,48 @@ type Collider[T gomath.Float] struct {
 	Shape  any
 }
 
+func ColliderPenetration[T gomath.Float](first Collider[T], second Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
+	switch first.Type {
+	case ColliderAABB:
+		return ColliderAABBPenetration(first.Shape.(gomath.AABBCollider[T]), first.Offset, second)
+	case ColliderCircle:
+		return ColliderCirclePenetration(first.Shape.(gomath.CircleCollider[T]), first.Offset, second)
+	//case ColliderLineSegment:
+	default:
+		fmt.Printf("Unsupported collider type for penetration: %T\n", first.Type)
+		return penetration, surfaceNormal, false
+	}
+}
+
+func ColliderCirclePenetration[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], collider Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
+	switch collider.Type {
+	case ColliderCircle:
+		return CircleCollidersPenetration(circle, offset, collider.Shape.(gomath.CircleCollider[T]), collider.Offset)
+	case ColliderAABB:
+		return CircleAABBCollidersPenetration(circle, offset, collider.Shape.(gomath.AABBCollider[T]), collider.Offset)
+	//case ColliderLineSegment
+
+	default:
+		fmt.Printf("Unsupported collider type for circle penetration: %T\n", collider.Type)
+		return penetration, surfaceNormal, false
+	}
+}
+
+func ColliderAABBPenetration[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath.Vector2[T], collider Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
+	switch collider.Type {
+	case ColliderAABB:
+		return AABBCollidersPenetration(aabb, offset, collider.Shape.(gomath.AABBCollider[T]), collider.Offset)
+	case ColliderCircle:
+		penetration, surfaceNormal, overlapping = CircleAABBCollidersPenetration(collider.Shape.(gomath.CircleCollider[T]), collider.Offset, aabb, offset)
+		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
+	//case ColliderLineSegment:
+
+	default:
+		fmt.Printf("Unsupported collider type for penetration: %T\n", collider.Type)
+		return penetration, surfaceNormal, false
+	}
+}
+
 func ColliderTest[T gomath.Float](first Collider[T], second Collider[T]) bool {
 	switch first.Type {
 	case ColliderCircle:

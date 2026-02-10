@@ -194,6 +194,43 @@ func AABBSquaredAABB2DWithPenetration[T gomath.Number](b1 gomath.AABB[T], b2 gom
 	)
 }
 
+func AABBCollidersPenetration[T gomath.Number](aabb1 gomath.AABBCollider[T], aabb1Offset gomath.Vector2[T], aabb2 gomath.AABBCollider[T], aabb2Offset gomath.Vector2[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	diffx := aabb1Offset.X - aabb2Offset.X
+	directionx := directionRight
+	if diffx < 0 {
+		diffx *= -1
+		directionx = directionLeft
+	}
+	sizex := aabb1.HalfWidth + aabb2.HalfWidth
+	if diffx > sizex {
+		return 0, normal, false
+	}
+	diffy := aabb1Offset.Y - aabb2Offset.Y
+	directiony := directionUp
+	if diffy < 0 {
+		diffy *= -1
+		directiony = directionDown
+	}
+	sizey := aabb1.HalfHeight + aabb2.HalfHeight
+	if diffy > sizey {
+		return 0, normal, false
+	}
+
+	px := sizex - diffx
+	py := sizey - diffy
+	if px < py {
+		if directionx == directionRight {
+			return px, gomath.Vector2[T]{X: -1, Y: 0}, true
+		}
+		return px, gomath.Vector2[T]{X: 1, Y: 0}, true
+	}
+
+	if directiony == directionUp {
+		return py, gomath.Vector2[T]{X: 0, Y: -1}, true
+	}
+	return py, gomath.Vector2[T]{X: 0, Y: 1}, true
+}
+
 func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
 	diffx := b1.Center.X - b2.Center.X
 	directionx := directionRight
@@ -221,16 +258,14 @@ func AABB2DAABB2DWithPenetration[T gomath.Number](b1, b2 gomath.AABB[T]) (penetr
 	if px < py {
 		if directionx == directionRight {
 			return px, gomath.Vector2[T]{X: -1, Y: 0}, true
-		} else {
-			return px, gomath.Vector2[T]{X: 1, Y: 0}, true
 		}
+		return px, gomath.Vector2[T]{X: 1, Y: 0}, true
 	}
 
 	if directiony == directionUp {
 		return py, gomath.Vector2[T]{X: 0, Y: -1}, true
-	} else {
-		return py, gomath.Vector2[T]{X: 0, Y: 1}, true
 	}
+	return py, gomath.Vector2[T]{X: 0, Y: 1}, true
 }
 
 func PointAABB2DPenetration[T gomath.Number](p gomath.Vector2[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[float32], inside bool) {
@@ -247,16 +282,13 @@ func PointAABB2DPenetration[T gomath.Number](p gomath.Vector2[T], b gomath.AABB[
 	if px < py {
 		if dx < 0 {
 			return px, gomath.Vector2[float32]{X: -1, Y: 0}, true
-		} else {
-			return px, gomath.Vector2[float32]{X: 1, Y: 0}, true
 		}
-	} else {
-		if dy < 0 {
-			return py, gomath.Vector2[float32]{X: 0, Y: -1}, true
-		} else {
-			return py, gomath.Vector2[float32]{X: 0, Y: 1}, true
-		}
+		return px, gomath.Vector2[float32]{X: 1, Y: 0}, true
 	}
+	if dy < 0 {
+		return py, gomath.Vector2[float32]{X: 0, Y: -1}, true
+	}
+	return py, gomath.Vector2[float32]{X: 0, Y: 1}, true
 }
 
 // PointSideOfBox returns true if the point is inside the box defined by the two line segments

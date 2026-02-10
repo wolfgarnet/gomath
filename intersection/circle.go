@@ -15,6 +15,12 @@ func CircleCircleColliders[T gomath.Number](radius1, radius2 T, offset1 gomath.V
 	return dist < radius1+radius2
 }
 
+func CircleCollidersPenetration[T gomath.Number](circle1 gomath.CircleCollider[T], offset1 gomath.Vector2[T], circle2 gomath.CircleCollider[T], offset2 gomath.Vector2[T]) (T, gomath.Vector2[T], bool) {
+	dist := offset2.Sub(offset1).Length()
+	penetration := (circle1.Radius + circle2.Radius) - dist
+	return penetration, offset2.Sub(offset1).Normalize(), penetration > 0
+}
+
 // CircleCircleWithPenetration determines if the two circles are intersecting and how deep the penetration is
 func CircleCircleWithPenetration[T gomath.Number](a, b gomath.Circle[T]) (T, gomath.Vector2[T], bool) {
 	dist := b.Center.Sub(a.Center).Length()
@@ -43,6 +49,11 @@ func CircleLineSegmentCollider[T gomath.Number](circle gomath.CircleCollider[T],
 	dist := gomath.MinimumDistance(segment.P1, segment.P2, offset)
 
 	return dist < circle.Radius
+}
+
+func CircleLineSegmentColliderPenetration[T gomath.Number](circle gomath.CircleCollider[T], offset gomath.Vector2[T], segment gomath.LineSegment[T]) (T, bool) {
+	dist := gomath.MinimumDistance(segment.P1, segment.P2, offset)
+	return circle.Radius - dist, dist < circle.Radius
 }
 
 func CircleLineSegmentWithPenetration[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment[T]) (T, bool) {
@@ -190,11 +201,25 @@ func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.AAB
 	return max, normal, true
 }
 
+func CircleInsideAABBColliders[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) bool {
+	return circleOffset.X-circle.Radius >= aabbOffset.X-aabb.HalfWidth &&
+		circleOffset.X+circle.Radius <= aabbOffset.X+aabb.HalfWidth &&
+		circleOffset.Y-circle.Radius >= aabbOffset.Y-aabb.HalfHeight &&
+		circleOffset.Y+circle.Radius <= aabbOffset.Y+aabb.HalfHeight
+}
+
 func isCircleInsideAABB[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
 	return c.Center.X-c.Radius >= b.Center.X-b.HalfWidth &&
 		c.Center.X+c.Radius <= b.Center.X+b.HalfWidth &&
 		c.Center.Y-c.Radius >= b.Center.Y-b.HalfHeight &&
 		c.Center.Y+c.Radius <= b.Center.Y+b.HalfHeight
+}
+
+func AABBInsideCircleColliders[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) bool {
+	return circleOffset.X-circle.Radius >= aabbOffset.X-aabb.HalfWidth &&
+		circleOffset.X+circle.Radius <= aabbOffset.X+aabb.HalfWidth &&
+		circleOffset.Y-circle.Radius >= aabbOffset.Y-aabb.HalfHeight &&
+		circleOffset.Y+circle.Radius <= aabbOffset.Y+aabb.HalfHeight
 }
 
 func isAABBInsideCircle[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
@@ -211,6 +236,61 @@ func isAABBInsideCircle[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) b
 		}
 	}
 	return true
+}
+
+func CircleAABBCollidersPenetration[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	if !CircleAABBColliders(circle, circleOffset, aabb, aabbOffset) {
+		return 0, normal, false
+	}
+
+	if CircleInsideAABBColliders(circle, circleOffset, aabb, aabbOffset) {
+		minDist := circle.Radius
+		sides := aabb.Sides(aabbOffset)
+		for _, side := range sides {
+			dist := gomath.MinimumDistance(side.P1, side.P2, circleOffset)
+			if dist < minDist {
+				minDist = dist
+				normal = side.Normal()
+			}
+		}
+		return minDist, normal, true
+	}
+
+	if AABBInsideCircleColliders(circle, circleOffset, aabb, aabbOffset) {
+		maxCornerDist := T(0)
+		corners := []gomath.Vector2[T]{
+			{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight},
+			{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight},
+			{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight},
+			{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight},
+		}
+		for _, corner := range corners {
+			dist := circle.Radius - circleOffset.DistanceTo(corner)
+			if dist > maxCornerDist {
+				maxCornerDist = dist
+				normal = corner.Sub(circleOffset).Normalize()
+			}
+		}
+		return maxCornerDist, normal, true
+	}
+
+	var max T
+	sides := aabb.Sides(aabbOffset)
+	for i, side := range sides {
+		j := (i + 2) % 4
+		if !PointSideOfBox(circleOffset, side, sides[j]) {
+			continue
+		}
+		p, ok := CircleLineSegmentColliderPenetration(circle, circleOffset, side)
+		if !ok {
+			continue
+		}
+		if p > max {
+			max = p
+			normal = side.Normal()
+		}
+	}
+	return max, normal, true
 }
 
 func CircleAABBWithPenetration2[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
