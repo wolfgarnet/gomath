@@ -27,6 +27,10 @@ func AABBPoint[T gomath.Number](a gomath.AABB[T], p gomath.Vector2[T]) bool {
 		a.Center.Y+a.HalfHeight >= p.Y
 }
 
+func AABBPointCollider[T gomath.Number](aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T], p gomath.Vector2[T]) bool {
+	return AABBPoint(gomath.AABB[T]{Center: aabbOffset, HalfWidth: aabb.HalfWidth, HalfHeight: aabb.HalfHeight}, p)
+}
+
 func SquaredAABBSquaredAABB[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) bool {
 	if gomath.Abs(b1.Center.X-b2.Center.X) > (b1.HalfSize + b2.HalfSize) {
 		return false
@@ -35,6 +39,16 @@ func SquaredAABBSquaredAABB[T gomath.Number](b1, b2 gomath.SquaredAABB2D[T]) boo
 		return false
 	}
 
+	return true
+}
+
+func AABBAABBColliders[T gomath.Number](aabb1 gomath.AABBCollider[T], aabb2 gomath.AABBCollider[T], aabb1Offset gomath.Vector2[T], aabb2Offset gomath.Vector2[T]) bool {
+	if gomath.Abs(aabb1Offset.X-aabb2Offset.X) > (aabb1.HalfWidth + aabb2.HalfWidth) {
+		return false
+	}
+	if gomath.Abs(aabb1Offset.Y-aabb2Offset.Y) > (aabb1.HalfHeight + aabb2.HalfHeight) {
+		return false
+	}
 	return true
 }
 

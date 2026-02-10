@@ -88,6 +88,16 @@ func LineSquaredBox[T gomath.Number](ls gomath.LineSegment[T], bb gomath.Squared
 	return false
 }
 
+func AABBLineSegmentColliders[T gomath.Number](aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T], segment gomath.LineSegment[T]) bool {
+	for _, side := range aabb.Sides(aabbOffset) {
+		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, segment.P1, segment.P2)
+		if intersects {
+			return true
+		}
+	}
+	return false
+}
+
 func LineBox[T gomath.Number](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool {
 	for _, side := range bb.Sides() {
 		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, ls.P1, ls.P2)

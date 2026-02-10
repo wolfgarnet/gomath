@@ -5,9 +5,19 @@ type Circle[T Number] struct {
 	Radius T
 }
 
+type CircleCollider[T Number] struct {
+	Radius T
+}
+
 func NewCircle[T Number](x, y, radius T) Circle[T] {
 	return Circle[T]{
 		Center: Vector2[T]{x, y},
+		Radius: radius,
+	}
+}
+
+func NewCircle2[T Number](radius T) CircleCollider[T] {
+	return CircleCollider[T]{
 		Radius: radius,
 	}
 }

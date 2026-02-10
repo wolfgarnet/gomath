@@ -10,6 +10,11 @@ func CircleCircle[T gomath.Number](a, b gomath.Circle[T]) bool {
 	return dist < a.Radius+b.Radius
 }
 
+func CircleCircleColliders[T gomath.Number](radius1, radius2 T, offset1 gomath.Vector2[T], offset2 gomath.Vector2[T]) bool {
+	dist := offset2.Sub(offset1).Length()
+	return dist < radius1+radius2
+}
+
 // CircleCircleWithPenetration determines if the two circles are intersecting and how deep the penetration is
 func CircleCircleWithPenetration[T gomath.Number](a, b gomath.Circle[T]) (T, gomath.Vector2[T], bool) {
 	dist := b.Center.Sub(a.Center).Length()
@@ -27,6 +32,17 @@ func CircleLineSegment[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment
 	dist := gomath.MinimumDistance(s.P1, s.P2, c.Center)
 
 	return dist < c.Radius
+}
+
+func CircleSegmentCollider[t gomath.Number](circle gomath.CircleCollider[t], offset gomath.Vector2[t], p1, p2 gomath.Vector2[t]) bool {
+	dist := gomath.MinimumDistance(p1, p2, offset)
+	return dist < circle.Radius
+}
+
+func CircleLineSegmentCollider[T gomath.Number](circle gomath.CircleCollider[T], offset gomath.Vector2[T], segment gomath.LineSegment[T]) bool {
+	dist := gomath.MinimumDistance(segment.P1, segment.P2, offset)
+
+	return dist < circle.Radius
 }
 
 func CircleLineSegmentWithPenetration[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment[T]) (T, bool) {
@@ -71,6 +87,33 @@ func CircleSquaredAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB
 	}
 
 	if SquaredAABBPoint(b, c.Center) {
+		return true
+	}
+
+	return false
+}
+
+func CircleAABBColliders[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) bool {
+	p1 := gomath.Vector2[T]{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight}
+	p2 := gomath.Vector2[T]{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight}
+
+	if CircleSegmentCollider(circle, circleOffset, p1, p2) {
+		return true
+	}
+
+	p3 := gomath.Vector2[T]{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight}
+
+	if CircleSegmentCollider(circle, circleOffset, p2, p3) {
+		return true
+	}
+
+	p4 := gomath.Vector2[T]{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight}
+
+	if CircleSegmentCollider(circle, circleOffset, p3, p4) {
+		return true
+	}
+
+	if AABBPointCollider(aabb, aabbOffset, circleOffset) {
 		return true
 	}
 

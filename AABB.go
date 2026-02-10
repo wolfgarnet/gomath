@@ -12,6 +12,11 @@ type AABB[T Number] struct {
 	HalfHeight T
 }
 
+type AABBCollider[T Number] struct {
+	HalfWidth  T
+	HalfHeight T
+}
+
 func NewAABBFromRectangle[T Number](rect image.Rectangle) AABB[T] {
 	// Make an AABB[T] out of the Rectangle rect
 	centerX := T(rect.Min.X+rect.Max.X) / 2
@@ -72,6 +77,29 @@ func (a AABB[T]) Extend(w T) AABB[T] {
 		HalfWidth:  a.HalfWidth + w,
 		HalfHeight: a.HalfHeight + w,
 	}
+}
+
+func (a AABBCollider[T]) Sides(offset Vector2[T]) []LineSegment[T] {
+	segments := make([]LineSegment[T], 4)
+
+	segments[0] = NewLineSegment(
+		Vector2[T]{X: offset.X - a.HalfWidth, Y: offset.Y + a.HalfHeight}, // p1
+		Vector2[T]{X: offset.X + a.HalfWidth, Y: offset.Y + a.HalfHeight}, // p2
+	)
+	segments[1] = NewLineSegment(
+		Vector2[T]{X: offset.X + a.HalfWidth, Y: offset.Y + a.HalfHeight}, // p2
+		Vector2[T]{X: offset.X + a.HalfWidth, Y: offset.Y - a.HalfHeight}, // p3
+	)
+	segments[2] = NewLineSegment(
+		Vector2[T]{X: offset.X + a.HalfWidth, Y: offset.Y - a.HalfHeight}, // p3
+		Vector2[T]{X: offset.X - a.HalfWidth, Y: offset.Y - a.HalfHeight}, // p4
+	)
+	segments[3] = NewLineSegment(
+		Vector2[T]{X: offset.X - a.HalfWidth, Y: offset.Y - a.HalfHeight}, // p4
+		Vector2[T]{X: offset.X - a.HalfWidth, Y: offset.Y + a.HalfHeight}, // p1
+	)
+
+	return segments
 }
 
 // Sides returns the 4 sides of the AABB as line segments

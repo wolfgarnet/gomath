@@ -229,7 +229,7 @@ func IntersectingCircle2[T gomath.Float](circle gomath.Circle[T], other interfac
 		return CircleCircleWithPenetration(circle, o)
 	case gomath.AABB[T]:
 		penetration, surfaceNormal, overlapping = CircleAABBWithPenetration2(circle, o)
-		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
+		return penetration, surfaceNormal, overlapping
 	default:
 		panic(fmt.Sprintf("Unsupported operand: %T", other))
 	}
