@@ -2,9 +2,10 @@
 package gomath
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVector2_ScaleToLength(t *testing.T) {
@@ -160,4 +161,29 @@ func BenchmarkVectorAngle(b *testing.B) {
 		}
 	})
 
+}
+
+func BenchmarkVector2Float32Operations(b *testing.B) {
+
+	b.Run("by value", func(b *testing.B) {
+		v1 := Vector2[float32]{X: 1, Y: 0}
+		v2 := Vector2[float32]{X: 0, Y: 1}
+		v3 := Vector2[float32]{X: 0, Y: -1}
+		for i := 0; i < b.N; i++ {
+			v4 := v1.Add(v2)
+			v5 := v4.Mul(v3)
+			_ = v5.Add(v4)
+		}
+	})
+
+	b.Run("by reference", func(b *testing.B) {
+		v1 := &Vector2p[float32]{X: 1, Y: 0}
+		v2 := &Vector2p[float32]{X: 0, Y: 1}
+		v3 := &Vector2p[float32]{X: 0, Y: -1}
+		for i := 0; i < b.N; i++ {
+			v4 := v1.Add2(v2)
+			v5 := v4.Mul2(v3)
+			_ = v5.Add2(v4)
+		}
+	})
 }

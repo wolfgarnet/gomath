@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/wolfgarnet/gomath"
+	"github.com/wolfgarnet/gomath/collider"
 )
 
 type ColliderType uint8
@@ -33,31 +34,33 @@ func ColliderPenetration[T gomath.Float](first Collider[T], second Collider[T]) 
 	}
 }
 
-func ColliderCirclePenetration[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], collider Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
-	switch collider.Type {
+func ColliderCirclePenetration[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], other Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
+	switch other.Type {
 	case ColliderCircle:
-		return CircleCollidersPenetration(circle, offset, collider.Shape.(gomath.CircleCollider[T]), collider.Offset)
+		pen, nx, ny, ok := collider.CircleCirclePenetration(circle.Radius, other.Shape.(gomath.CircleCollider[T]).Radius, offset.X, offset.Y, other.Offset.X, other.Offset.Y)
+		return pen, gomath.Vector2[T]{X: nx, Y: ny}, ok
 	case ColliderAABB:
-		return CircleAABBCollidersPenetration(circle, offset, collider.Shape.(gomath.AABBCollider[T]), collider.Offset)
+		return CircleAABBCollidersPenetration(circle, offset, other.Shape.(gomath.AABBCollider[T]), other.Offset)
 	//case ColliderLineSegment
 
 	default:
-		fmt.Printf("Unsupported collider type for circle penetration: %T\n", collider.Type)
+		fmt.Printf("Unsupported collider type for circle penetration: %T\n", other.Type)
 		return penetration, surfaceNormal, false
 	}
 }
 
-func ColliderAABBPenetration[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath.Vector2[T], collider Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
-	switch collider.Type {
+func ColliderAABBPenetration[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath.Vector2[T], other Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
+	switch other.Type {
 	case ColliderAABB:
-		return AABBCollidersPenetration(aabb, offset, collider.Shape.(gomath.AABBCollider[T]), collider.Offset)
+		pen, normal, ok := collider.AABBAABBPenetration(offset.X, offset.Y, other.Offset.X, other.Offset.Y, aabb.HalfWidth, aabb.HalfHeight, other.Shape.(gomath.AABBCollider[T]).HalfWidth, other.Shape.(gomath.AABBCollider[T]).HalfHeight)
+		return pen, normal, ok
 	case ColliderCircle:
-		penetration, surfaceNormal, overlapping = CircleAABBCollidersPenetration(collider.Shape.(gomath.CircleCollider[T]), collider.Offset, aabb, offset)
+		penetration, surfaceNormal, overlapping = CircleAABBCollidersPenetration(other.Shape.(gomath.CircleCollider[T]), other.Offset, aabb, offset)
 		return penetration, surfaceNormal.MultiplyScalar(-1), overlapping
 	//case ColliderLineSegment:
 
 	default:
-		fmt.Printf("Unsupported collider type for penetration: %T\n", collider.Type)
+		fmt.Printf("Unsupported collider type for penetration: %T\n", other.Type)
 		return penetration, surfaceNormal, false
 	}
 }
@@ -93,32 +96,32 @@ func LineSegmentColliderTest[T gomath.Float](segment gomath.LineSegment[T], coll
 	}
 }
 
-func AABBColliderTest[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath.Vector2[T], collider Collider[T]) bool {
-	switch collider.Type {
+func AABBColliderTest[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath.Vector2[T], other Collider[T]) bool {
+	switch other.Type {
 	case ColliderCircle:
-		return CircleAABBColliders(collider.Shape.(gomath.CircleCollider[T]), collider.Offset, aabb, offset)
+		return CircleAABBColliders(other.Shape.(gomath.CircleCollider[T]), other.Offset, aabb, offset)
 	case ColliderAABB:
-		return AABBAABBColliders(aabb, collider.Shape.(gomath.AABBCollider[T]), offset, collider.Offset)
+		return collider.AABBAABB(offset.X, offset.Y, other.Offset.X, other.Offset.Y, aabb.HalfWidth, aabb.HalfHeight, other.Shape.(gomath.AABBCollider[T]).HalfWidth, other.Shape.(gomath.AABBCollider[T]).HalfHeight)
 	case ColliderLineSegment:
-		return AABBLineSegmentColliders(aabb, offset, collider.Shape.(gomath.LineSegment[T]))
+		return AABBLineSegmentColliders(aabb, offset, other.Shape.(gomath.LineSegment[T]))
 
 	default:
-		fmt.Printf("Unsupported collider type for AABB intersection: %T\n", collider.Type)
+		fmt.Printf("Unsupported collider type for AABB intersection: %T\n", other.Type)
 		return false
 	}
 }
 
-func CircleColliderTest[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], collider Collider[T]) bool {
-	switch collider.Type {
+func CircleColliderTest[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], other Collider[T]) bool {
+	switch other.Type {
 	case ColliderCircle:
-		return CircleCircleColliders(circle.Radius, collider.Shape.(gomath.CircleCollider[T]).Radius, offset, collider.Shape.(gomath.Circle[T]).Center)
+		return collider.CircleCircle(circle.Radius, other.Shape.(gomath.CircleCollider[T]).Radius, offset.X, offset.Y, other.Offset.X, other.Offset.Y)
 	case ColliderLineSegment:
-		return CircleLineSegmentCollider(circle, offset, collider.Shape.(gomath.LineSegment[T]))
+		return CircleLineSegmentCollider(circle, offset, other.Shape.(gomath.LineSegment[T]))
 	case ColliderAABB:
-		return CircleAABBColliders(circle, offset, collider.Shape.(gomath.AABBCollider[T]), collider.Offset)
+		return CircleAABBColliders(circle, offset, other.Shape.(gomath.AABBCollider[T]), other.Offset)
 
 	default:
-		fmt.Printf("Unsupported collider type for circle intersection: %T\n", collider.Type)
+		fmt.Printf("Unsupported collider type for circle intersection: %T\n", other.Type)
 		return false
 	}
 }
