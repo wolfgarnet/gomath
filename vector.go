@@ -93,6 +93,10 @@ func (v *Vector2[T]) AddScalarsp(x T, y T) {
 	v.Y = v.Y + y
 }
 
+func VectorSubtract[T Number](v1x, v1y, v2x, v2y T) (T, T) {
+	return v1x - v2x, v1y - v2y
+}
+
 // Sub subtracts the coordinates of the given Vector2 from the coordinates of the current Vector2
 func (v Vector2[T]) Sub(v2 Vector2[T]) Vector2[T] {
 	return Vector2[T]{
@@ -257,6 +261,11 @@ func Length[T Number](x1 T, y1 T) T {
 	return T(math.Sqrt(float64(x1*x1 + y1*y1)))
 }
 
+func LengthVectors[T Number](v1x, v1y, v2x, v2y T) T {
+	dx, dy := v1x-v2x, v1y-v2y
+	return T(math.Sqrt(float64(dx*dx + dy*dy)))
+}
+
 func (v Vector2[T]) Length() T {
 	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
@@ -294,14 +303,20 @@ func (v *Vector2[T]) SetLengthp(l T) {
 	}
 }
 
+func NormalizeVector[T Number](v1x, v1y T) (normalx T, normaly T) {
+	l := Length(v1x, v1y)
+	if float64(l) > Epsilon {
+		return v1x / l, v1y / l
+	}
+	return v1x, v1y
+}
+
 func (v Vector2[T]) Normalize() Vector2[T] {
 	m := v.Length()
-
 	if float64(m) > Epsilon {
 		return v.DivScalar(m)
-	} else {
-		return v
 	}
+	return v
 }
 
 func (v *Vector2[T]) Normalizep() {

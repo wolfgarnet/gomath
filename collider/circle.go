@@ -90,6 +90,18 @@ func CircleAABBPenetration[T gomath.Number](circleRadius T, circleOffsetX, circl
 	return penetration, dx * invDist, dy * invDist, true
 }
 
+func CircleLineSegmentPenetration[T gomath.Number](circleRadius T, circleOffsetX, circleOffsetY T, startx T, starty T, endx T, endy T) (penetration T, normalx T, normaly T, overlapping bool) {
+	tox, toy, dist := gomath.VectorToMinimumDistance(startx, starty, endx, endy, circleOffsetX, circleOffsetY)
+	normalx, normaly = gomath.NormalizeVector(tox, toy)
+	return circleRadius - dist, normalx, normaly, dist < circleRadius
+}
+
+func CircleSegment[T gomath.Number](circleRadius T, circleOffsetX, circleOffsetY T, startx T, starty T, endx T, endy T) bool {
+	dist := gomath.MinimumDistanceValues(startx, starty, endx, endy, circleOffsetX, circleOffsetY)
+
+	return dist < circleRadius
+}
+
 func clamp[T gomath.Number](val, min, max T) T {
 	if val < min {
 		return min

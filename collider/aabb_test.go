@@ -109,3 +109,43 @@ func TestAABBAABB(t *testing.T) {
 		})
 	}
 }
+
+func TestAABB2LineSegment(t *testing.T) {
+	tests := map[string]struct {
+		minx, miny, maxx, maxy float32
+		ls                     gomath.LineSegment[float32]
+		expected               bool
+	}{
+		"inside": {
+			minx: 0, miny: 0, maxx: 1, maxy: 1,
+			ls: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 0.5, Y: 0.5},
+				P2: gomath.Vector2[float32]{X: 0.5, Y: 0.5},
+			},
+			expected: true,
+		},
+		"outside": {
+			minx: 0, miny: 0, maxx: 1, maxy: 1,
+			ls: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 2, Y: 2},
+				P2: gomath.Vector2[float32]{X: 2, Y: 2},
+			},
+			expected: false,
+		},
+		"vertical": {
+			minx: 0, miny: 0, maxx: 1, maxy: 1,
+			ls: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 0.5, Y: 0},
+				P2: gomath.Vector2[float32]{X: 0.5, Y: 1},
+			},
+			expected: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			intersects := AABB2LineSegment[float32](test.minx, test.miny, test.maxx, test.maxy, test.ls.P1.X, test.ls.P2.Y, test.ls.P2.X, test.ls.P2.Y)
+			assert.Equal(t, test.expected, intersects)
+		})
+	}
+}
