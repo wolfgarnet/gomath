@@ -37,7 +37,7 @@ func ColliderPenetration[T gomath.Float](first Collider[T], second Collider[T]) 
 func ColliderCirclePenetration[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], other Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
 	switch other.Type {
 	case ColliderCircle:
-		pen, nx, ny, ok := collider.CircleCirclePenetration(circle.Radius, other.Shape.(gomath.CircleCollider[T]).Radius, offset.X, offset.Y, other.Offset.X, other.Offset.Y)
+		pen, nx, ny, ok := collider.CircleCirclePenetration(circle.Radius, offset.X, offset.Y, other.Shape.(gomath.CircleCollider[T]).Radius, other.Offset.X, other.Offset.Y)
 		return pen, gomath.Vector2[T]{X: nx, Y: ny}, ok
 	case ColliderAABB:
 		return CircleAABBCollidersPenetration(circle, offset, other.Shape.(gomath.AABBCollider[T]), other.Offset)
@@ -52,7 +52,7 @@ func ColliderCirclePenetration[T gomath.Float](circle gomath.CircleCollider[T], 
 func ColliderAABBPenetration[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath.Vector2[T], other Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
 	switch other.Type {
 	case ColliderAABB:
-		pen, normal, ok := collider.AABBAABBPenetration(offset.X, offset.Y, other.Offset.X, other.Offset.Y, aabb.HalfWidth, aabb.HalfHeight, other.Shape.(gomath.AABBCollider[T]).HalfWidth, other.Shape.(gomath.AABBCollider[T]).HalfHeight)
+		pen, normal, ok := collider.AABBAABBPenetration(offset.X, offset.Y, aabb.HalfWidth, aabb.HalfHeight, other.Offset.X, other.Offset.Y, other.Shape.(gomath.AABBCollider[T]).HalfWidth, other.Shape.(gomath.AABBCollider[T]).HalfHeight)
 		return pen, normal, ok
 	case ColliderCircle:
 		penetration, surfaceNormal, overlapping = CircleAABBCollidersPenetration(other.Shape.(gomath.CircleCollider[T]), other.Offset, aabb, offset)
@@ -101,7 +101,7 @@ func AABBColliderTest[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath
 	case ColliderCircle:
 		return CircleAABBColliders(other.Shape.(gomath.CircleCollider[T]), other.Offset, aabb, offset)
 	case ColliderAABB:
-		return collider.AABBAABB(offset.X, offset.Y, other.Offset.X, other.Offset.Y, aabb.HalfWidth, aabb.HalfHeight, other.Shape.(gomath.AABBCollider[T]).HalfWidth, other.Shape.(gomath.AABBCollider[T]).HalfHeight)
+		return collider.AABBAABB(offset.X, offset.Y, aabb.HalfWidth, aabb.HalfHeight, other.Offset.X, other.Offset.Y, other.Shape.(gomath.AABBCollider[T]).HalfWidth, other.Shape.(gomath.AABBCollider[T]).HalfHeight)
 	case ColliderLineSegment:
 		return AABBLineSegmentColliders(aabb, offset, other.Shape.(gomath.LineSegment[T]))
 
@@ -114,7 +114,7 @@ func AABBColliderTest[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath
 func CircleColliderTest[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], other Collider[T]) bool {
 	switch other.Type {
 	case ColliderCircle:
-		return collider.CircleCircle(circle.Radius, other.Shape.(gomath.CircleCollider[T]).Radius, offset.X, offset.Y, other.Offset.X, other.Offset.Y)
+		return collider.CircleCircle(circle.Radius, offset.X, offset.Y, other.Shape.(gomath.CircleCollider[T]).Radius, other.Offset.X, other.Offset.Y)
 	case ColliderLineSegment:
 		return CircleLineSegmentCollider(circle, offset, other.Shape.(gomath.LineSegment[T]))
 	case ColliderAABB:

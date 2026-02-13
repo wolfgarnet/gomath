@@ -42,15 +42,15 @@ func TestCircleCircle(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := CircleCircle(tc.r1, tc.r2, tc.o1x, tc.o1y, tc.o2x, tc.o2y)
+			got := CircleCircle(tc.r1, tc.o1x, tc.o1y, tc.r2, tc.o2x, tc.o2y)
 			assert.Equal(t, tc.expected, got)
 
-			pen, nx, ny, ok := CircleCirclePenetration(tc.r1, tc.r2, tc.o1x, tc.o1y, tc.o2x, tc.o2y)
-			assert.Equal(t, tc.expected, ok)
-			if ok {
-				assert.InDelta(t, tc.expectedPenetration, pen, 0.0001)
-				assert.InDelta(t, tc.expectedNormalX, nx, 0.0001)
-				assert.InDelta(t, tc.expectedNormalY, ny, 0.0001)
+			penetration, normal, overlapping := CircleCirclePenetration(tc.r1, tc.o1x, tc.o1y, tc.r2, tc.o2x, tc.o2y)
+			assert.Equal(t, tc.expected, overlapping)
+			if overlapping {
+				assert.InDelta(t, tc.expectedPenetration, penetration, 0.0001)
+				assert.InDelta(t, tc.expectedNormalX, normal.X, 0.0001)
+				assert.InDelta(t, tc.expectedNormalY, normal.Y, 0.0001)
 			}
 		})
 	}
@@ -111,12 +111,12 @@ func TestCircleAABB(t *testing.T) {
 			got := CircleAABB(tc.r, tc.cx, tc.cy, tc.hw, tc.hh, tc.ax, tc.ay)
 			assert.Equal(t, tc.expected, got)
 
-			pen, nx, ny, ok := CircleAABBPenetration(tc.r, tc.cx, tc.cy, tc.hw, tc.hh, tc.ax, tc.ay)
-			assert.Equal(t, tc.expected, ok)
-			if ok {
-				assert.InDelta(t, tc.expectedPenetration, pen, 0.0001, "penetration")
-				assert.InDelta(t, tc.expectedNormalX, nx, 0.0001, "normalX")
-				assert.InDelta(t, tc.expectedNormalY, ny, 0.0001, "normalY")
+			penetration, normal, overlapping := CircleAABBPenetration(tc.r, tc.cx, tc.cy, tc.hw, tc.hh, tc.ax, tc.ay)
+			assert.Equal(t, tc.expected, overlapping)
+			if overlapping {
+				assert.InDelta(t, tc.expectedPenetration, penetration, 0.0001, "penetration")
+				assert.InDelta(t, tc.expectedNormalX, normal.X, 0.0001, "normalX")
+				assert.InDelta(t, tc.expectedNormalY, normal.Y, 0.0001, "normalY")
 			}
 		})
 	}
@@ -163,12 +163,12 @@ func TestCircleLineSegmentPenetration(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			penetration, normalx, normaly, overlapping := CircleLineSegmentPenetration(test.circleRadius, test.circlex, test.circley, test.segment1x, test.segment1y, test.segment2x, test.segment2y)
+			penetration, normal, overlapping := CircleLineSegmentPenetration(test.circleRadius, test.circlex, test.circley, test.segment1x, test.segment1y, test.segment2x, test.segment2y)
 			require.Equal(t, test.overlapping, overlapping)
 			if overlapping {
 				assert.InDelta(t, test.penetration, penetration, 0.0001, "penetration")
-				assert.InDelta(t, test.normalx, normalx, 0.0001, "normalx")
-				assert.InDelta(t, test.normaly, normaly, 0.0001, "normaly")
+				assert.InDelta(t, test.normalx, normal.X, 0.0001, "normalx")
+				assert.InDelta(t, test.normaly, normal.Y, 0.0001, "normaly")
 			}
 		})
 	}

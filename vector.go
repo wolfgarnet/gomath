@@ -168,19 +168,6 @@ func (v Vector2[T]) MultiplyScalars(x T, y T) Vector2[T] {
 	}
 }
 
-func VectorMultiplyScalarsWith[T1 Number, T2 Number](v Vector2[T1], x T2, y T2) Vector2[T1] {
-	v.X *= T1(x)
-	v.Y *= T1(y)
-	return v
-}
-
-func VectorMultiplyScalarsAs[T1 Number, T2 Number](v Vector2[T1], x T1, y T1) Vector2[T2] {
-	return Vector2[T2]{
-		X: T2(v.X * x),
-		Y: T2(v.Y * y),
-	}
-}
-
 func (v *Vector2[T]) MultiplyScalarsp(x T, y T) {
 	v.X = v.X * x
 	v.Y = v.Y * y
@@ -257,15 +244,6 @@ func (v Vector2[T]) Length64() float64 {
 	return math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y))
 }
 
-func Length[T Number](x1 T, y1 T) T {
-	return T(math.Sqrt(float64(x1*x1 + y1*y1)))
-}
-
-func LengthVectors[T Number](v1x, v1y, v2x, v2y T) T {
-	dx, dy := v1x-v2x, v1y-v2y
-	return T(math.Sqrt(float64(dx*dx + dy*dy)))
-}
-
 func (v Vector2[T]) Length() T {
 	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
@@ -301,14 +279,6 @@ func (v *Vector2[T]) SetLengthp(l T) {
 	if oldLength != 0 && l != oldLength {
 		v.MultiplyScalarp(l / oldLength)
 	}
-}
-
-func NormalizeVector[T Number](v1x, v1y T) (normalx T, normaly T) {
-	l := Length(v1x, v1y)
-	if float64(l) > Epsilon {
-		return v1x / l, v1y / l
-	}
-	return v1x, v1y
 }
 
 func (v Vector2[T]) Normalize() Vector2[T] {
@@ -444,10 +414,6 @@ const (
 	pi180 = 180 / math.Pi
 )
 
-func RotateVectorAngle[T Float](v Vector2[T], phi T) (r Vector2[T]) {
-	return v.Rotate(phi / pi180)
-}
-
 // Rotate will rotate counterclockwise for positive phi (radian)
 func (v Vector2[T]) Rotate(phi T) (r Vector2[T]) {
 	r.X = v.X*Cos(phi) - v.Y*Sin(phi)
@@ -475,39 +441,6 @@ func (v *Vector2[T]) ToVector3p(z T) *Vector3[T] {
 		Y: v.Y,
 		Z: z,
 	}
-}
-
-// FindNormalVector returns a normalized normal vector which is perpendicular to the line segment given by the two vectors.
-func FindNormalVector[T Number](p1, p2 Vector2[T]) Vector2[T] {
-	p3, p4 := FindNormal(p1, p2)
-	return p4.Sub(p3).Normalize()
-}
-
-// FindNormal returns a normal vector which is perpendicular to the line segment given by the two vectors as two vector endpoints.
-func FindNormal[T Number](p1, p2 Vector2[T]) (Vector2[T], Vector2[T]) {
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
-
-	return Vector2[T]{X: -dy, Y: dx}, Vector2[T]{X: dy, Y: -dx}
-}
-
-func GetNormal[T Number](v Vector2[T]) Vector2[T] {
-	return NewVector2(v.Y, -v.X).Normalize()
-}
-
-// Three points are a counter-clockwise turn if ccw > 0, clockwise if
-// ccw < 0, and collinear if ccw = 0 because ccw is a determinant that
-// gives twice the signed  area of the triangle formed by p1, p2 and p3.
-func CCW[T Number](p1, p2, p3 Vector2[T]) T {
-	return (p2.X-p1.X)*(p3.Y-p1.Y) - (p2.Y-p1.Y)*(p3.X-p1.X)
-}
-
-func IsLeft[T Number](p1, p2, p3 Vector2[T]) T {
-	return CCW(p1, p2, p3)
-}
-
-func CCWOrigin[T Number](p2, p3 Vector2[T]) T {
-	return (p2.X-0)*(p3.Y-0) - (p2.Y-0)*(p3.X-0)
 }
 
 func (v Vector2[T]) String() string {
@@ -564,3 +497,79 @@ func (v Vector2[T]) GetHalfHeight() T {
 }
 func (v Vector2[T]) SetHalfWidth(T)  {}
 func (v Vector2[T]) SetHalfHeight(T) {}
+
+// FindNormalVector returns a normalized normal vector which is perpendicular to the line segment given by the two vectors.
+func FindNormalVector[T Number](p1, p2 Vector2[T]) Vector2[T] {
+	p3, p4 := FindNormal(p1, p2)
+	return p4.Sub(p3).Normalize()
+}
+
+// FindNormal returns a normal vector which is perpendicular to the line segment given by the two vectors as two vector endpoints.
+func FindNormal[T Number](p1, p2 Vector2[T]) (Vector2[T], Vector2[T]) {
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
+
+	return Vector2[T]{X: -dy, Y: dx}, Vector2[T]{X: dy, Y: -dx}
+}
+
+func GetNormal[T Number](v Vector2[T]) Vector2[T] {
+	return NewVector2(v.Y, -v.X).Normalize()
+}
+
+// Three points are a counter-clockwise turn if ccw > 0, clockwise if
+// ccw < 0, and collinear if ccw = 0 because ccw is a determinant that
+// gives twice the signed  area of the triangle formed by p1, p2 and p3.
+func CCW[T Number](p1, p2, p3 Vector2[T]) T {
+	return (p2.X-p1.X)*(p3.Y-p1.Y) - (p2.Y-p1.Y)*(p3.X-p1.X)
+}
+
+func IsLeft[T Number](p1, p2, p3 Vector2[T]) T {
+	return CCW(p1, p2, p3)
+}
+
+func CCWOrigin[T Number](p2, p3 Vector2[T]) T {
+	return (p2.X-0)*(p3.Y-0) - (p2.Y-0)*(p3.X-0)
+}
+
+func VectorMultiplyScalarsWith[T1 Number, T2 Number](v Vector2[T1], x T2, y T2) Vector2[T1] {
+	v.X *= T1(x)
+	v.Y *= T1(y)
+	return v
+}
+
+func VectorMultiplyScalarsAs[T1 Number, T2 Number](v Vector2[T1], x T1, y T1) Vector2[T2] {
+	return Vector2[T2]{
+		X: T2(v.X * x),
+		Y: T2(v.Y * y),
+	}
+}
+
+func Length[T Number](x1 T, y1 T) T {
+	return T(math.Sqrt(float64(x1*x1 + y1*y1)))
+}
+
+func LengthVectors[T Number](v1x, v1y, v2x, v2y T) T {
+	dx, dy := v1x-v2x, v1y-v2y
+	return T(math.Sqrt(float64(dx*dx + dy*dy)))
+}
+
+func NormalizeVector[T Number](v1x, v1y T) (normalx T, normaly T) {
+	l := Length(v1x, v1y)
+	if float64(l) > Epsilon {
+		return v1x / l, v1y / l
+	}
+	return v1x, v1y
+}
+
+func NormalizeVectors[T Number](v1x, v1y T, v2x, v2y T) (normalx T, normaly T) {
+	v1x, v1y = v1x-v2x, v1y-v2y
+	l := Length(v1x, v1y)
+	if float64(l) > Epsilon {
+		return v1x / l, v1y / l
+	}
+	return v1x, v1y
+}
+
+func RotateVectorAngle[T Float](v Vector2[T], phi T) (r Vector2[T]) {
+	return v.Rotate(phi / pi180)
+}

@@ -31,7 +31,7 @@ func LineSegmentLineSegment2D[T gomath.Number](p1, p2, q1, q2 gomath.Vector2[T])
 		}
 
 		// Do they overlap? (Are all the circle differences in either direction the same sign)
-		return nil, !allEqual((q1.X-p1.Y < 0), (q1.X-p2.X < 0), (q2.X-p1.X < 0), (q2.X-p2.X < 0)) ||
+		return nil, !allEqual((q1.X-p1.X < 0), (q1.X-p2.X < 0), (q2.X-p1.X < 0), (q2.X-p2.X < 0)) ||
 			!allEqual((q1.Y-p1.Y < 0), (q1.Y-p2.Y < 0), (q2.Y-p1.Y < 0), (q2.Y-p2.Y < 0))
 	}
 
