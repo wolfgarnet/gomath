@@ -206,8 +206,7 @@ func isAABBInsideCircle[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) b
 }
 
 func CircleAABBCollidersPenetration[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
-	pen, nx, ny, ok := collider.CircleAABBPenetration(circle.Radius, circleOffset.X, circleOffset.Y, aabb.HalfWidth, aabb.HalfHeight, aabbOffset.X, aabbOffset.Y)
-	return pen, gomath.Vector2[T]{X: nx, Y: ny}, ok
+	return collider.CircleAABBPenetration(circle.Radius, circleOffset.X, circleOffset.Y, aabb.HalfWidth, aabb.HalfHeight, aabbOffset.X, aabbOffset.Y)
 }
 
 func CircleAABBWithPenetration2[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {

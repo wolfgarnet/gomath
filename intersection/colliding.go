@@ -37,8 +37,8 @@ func ColliderPenetration[T gomath.Float](first Collider[T], second Collider[T]) 
 func ColliderCirclePenetration[T gomath.Float](circle gomath.CircleCollider[T], offset gomath.Vector2[T], other Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
 	switch other.Type {
 	case ColliderCircle:
-		pen, nx, ny, ok := collider.CircleCirclePenetration(circle.Radius, offset.X, offset.Y, other.Shape.(gomath.CircleCollider[T]).Radius, other.Offset.X, other.Offset.Y)
-		return pen, gomath.Vector2[T]{X: nx, Y: ny}, ok
+		//pen, nx, ny, ok := collider.CircleCirclePenetration(circle.Radius, offset.X, offset.Y, other.Shape.(gomath.CircleCollider[T]).Radius, other.Offset.X, other.Offset.Y)
+		//return pen, gomath.Vector2[T]{X: nx, Y: ny}, ok
 	case ColliderAABB:
 		return CircleAABBCollidersPenetration(circle, offset, other.Shape.(gomath.AABBCollider[T]), other.Offset)
 	//case ColliderLineSegment
@@ -47,6 +47,7 @@ func ColliderCirclePenetration[T gomath.Float](circle gomath.CircleCollider[T], 
 		fmt.Printf("Unsupported collider type for circle penetration: %T\n", other.Type)
 		return penetration, surfaceNormal, false
 	}
+	return
 }
 
 func ColliderAABBPenetration[T gomath.Float](aabb gomath.AABBCollider[T], offset gomath.Vector2[T], other Collider[T]) (penetration T, surfaceNormal gomath.Vector2[T], overlapping bool) {
