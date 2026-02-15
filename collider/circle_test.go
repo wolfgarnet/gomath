@@ -104,6 +104,14 @@ func TestCircleAABB(t *testing.T) {
 			expectedNormalX:     0,
 			expectedNormalY:     -1,
 		},
+		"intersecting from right": {
+			r: 1, cx: 5, cy: 0,
+			hw: 5, hh: 5, ax: 0, ay: 0,
+			expected:            true,
+			expectedPenetration: 1,
+			expectedNormalX:     1,
+			expectedNormalY:     0,
+		},
 	}
 
 	for name, tc := range tests {
