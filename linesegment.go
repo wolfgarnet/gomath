@@ -52,17 +52,32 @@ func (l LineSegment[T]) Normal() Vector2[T] {
 	return FindNormalVector(l.P1, l.P2)
 }
 
-func GetClosestPointOnLineSegment[T Number](lineStart, lineEnd, point Vector2[T]) Vector2[T] {
-	lineVector := Vector2[T]{X: lineEnd.X - lineStart.X, Y: lineEnd.Y - lineStart.Y}
-	pointVector := Vector2[T]{X: point.X - lineStart.X, Y: point.Y - lineStart.Y}
+// GetClosestPointOnLineSegment returns the point on the line segment closest for the given point.
+func GetClosestPointOnLineSegment[T Float](segmentStart, segmentEnd, point Vector2[T]) Vector2[T] {
+	dx := segmentEnd.X - segmentStart.X
+	dy := segmentEnd.Y - segmentStart.Y
 
-	t := (pointVector.X*lineVector.X + pointVector.Y*lineVector.Y) / (lineVector.X*lineVector.X + lineVector.Y*lineVector.Y)
+	den := dx*dx + dy*dy
+	if den == 0 {
+		// Segment is a point.
+		return segmentStart
+	}
 
-	if t < 0 {
-		return lineStart
-	} else if t > 1 {
-		return lineEnd
-	} else {
-		return Vector2[T]{X: lineStart.X + t*lineVector.X, Y: lineStart.Y + t*lineVector.Y}
+	px := point.X - segmentStart.X
+	py := point.Y - segmentStart.Y
+
+	t := (px*dx + py*dy) / den
+
+	// Clamp t to [0, 1]
+	if t <= 0 {
+		return segmentStart
+	}
+	if t >= 1 {
+		return segmentEnd
+	}
+
+	return Vector2[T]{
+		X: segmentStart.X + t*dx,
+		Y: segmentStart.Y + t*dy,
 	}
 }

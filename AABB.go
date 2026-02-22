@@ -191,6 +191,18 @@ func (a *AABB[T]) Points() []Vector2[T] {
 	}
 }
 
+func ShortestDistanceFromPointToAABB[T Float](point Vector2[T], aabb AABB[T]) T {
+	minDistance := T(math.MaxFloat32)
+	for _, segment := range aabb.Sides() {
+		closest := GetClosestPointOnLineSegment(segment.P1, segment.P2, point)
+		distance := closest.DistanceToSquared(point)
+		if distance < minDistance {
+			minDistance = distance
+		}
+	}
+	return Sqrt(minDistance)
+}
+
 func ShortestDistance[T Float](a AABB[T], b AABB[T]) T {
 	var closest = T(math.MaxFloat32)
 	for _, a1 := range a.Points() {
