@@ -73,12 +73,12 @@ func CircleAABBPenetration[T gomath.Number](circleRadius T, circleOffsetX, circl
 			penetration = px + circleRadius
 			if circleOffsetX > aabbOffsetX {
 				return penetration, gomath.Vector2[T]{
-					X: 1,
+					X: -1,
 					Y: 0,
 				}, true
 			}
 			return penetration, gomath.Vector2[T]{
-				X: -1,
+				X: 1,
 				Y: 0,
 			}, true
 		}
@@ -87,12 +87,12 @@ func CircleAABBPenetration[T gomath.Number](circleRadius T, circleOffsetX, circl
 		if circleOffsetY > aabbOffsetY {
 			return penetration, gomath.Vector2[T]{
 				X: 0,
-				Y: 1,
+				Y: -1,
 			}, true
 		}
 		return penetration, gomath.Vector2[T]{
 			X: 0,
-			Y: -1,
+			Y: 1,
 		}, true
 	}
 
@@ -103,8 +103,8 @@ func CircleAABBPenetration[T gomath.Number](circleRadius T, circleOffsetX, circl
 
 	invDist := T(1) / dist
 	return penetration, gomath.Vector2[T]{
-		X: dx * invDist,
-		Y: dy * invDist,
+		X: -dx * invDist,
+		Y: -dy * invDist,
 	}, true
 }
 

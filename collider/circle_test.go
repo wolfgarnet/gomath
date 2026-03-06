@@ -77,7 +77,7 @@ func TestCircleAABB(t *testing.T) {
 			hw: 1, hh: 1, ax: 0, ay: 0,
 			expected:            true,
 			expectedPenetration: 0.5,
-			expectedNormalX:     -1,
+			expectedNormalX:     1,
 			expectedNormalY:     0,
 		},
 		"inside AABB": {
@@ -86,7 +86,7 @@ func TestCircleAABB(t *testing.T) {
 			expected:            true,
 			expectedPenetration: 6, // hw - |cx-ax| + r = 5 - 0 + 1 = 6
 			expectedNormalX:     0,
-			expectedNormalY:     -1,
+			expectedNormalY:     1,
 		},
 		"inside AABB slightly up": {
 			r: 1, cx: 0, cy: 1,
@@ -94,7 +94,7 @@ func TestCircleAABB(t *testing.T) {
 			expected:            true,
 			expectedPenetration: 5, // hw - |cx-ax| + r = 5 - 0 + 1 = 6
 			expectedNormalX:     0,
-			expectedNormalY:     1,
+			expectedNormalY:     -1,
 		},
 		"inside AABB slightly down": {
 			r: 1, cx: 0, cy: -1,
@@ -102,14 +102,14 @@ func TestCircleAABB(t *testing.T) {
 			expected:            true,
 			expectedPenetration: 5, // hw - |cx-ax| + r = 5 - 0 + 1 = 6
 			expectedNormalX:     0,
-			expectedNormalY:     -1,
+			expectedNormalY:     1,
 		},
 		"intersecting from right": {
 			r: 1, cx: 5, cy: 0,
 			hw: 5, hh: 5, ax: 0, ay: 0,
 			expected:            true,
 			expectedPenetration: 1,
-			expectedNormalX:     1,
+			expectedNormalX:     -1,
 			expectedNormalY:     0,
 		},
 	}
