@@ -224,6 +224,10 @@ func (v Vector2[T]) Dot(v2 Vector2[T]) T {
 	return v.X*v2.X + v.Y*v2.Y
 }
 
+func DotVector2[T Number](v1x T, v1y T, v2x T, v2y T) T {
+	return v1x*v2x + v1y*v2y
+}
+
 func (v *Vector2[T]) Dotp(v2 *Vector2[T]) T {
 	return v.X*v2.X + v.Y*v2.Y
 }
