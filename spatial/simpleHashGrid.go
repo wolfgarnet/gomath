@@ -278,7 +278,7 @@ func (grid *SimpleHashGrid[T, ID]) rectangleIterator(hash uint64, offsetX uint64
 			xCell := cell
 			for x := uint64(0); x < offsetX; x++ {
 				for _, item := range xCell.items {
-					if yield(item) {
+					if !yield(item) {
 						return
 					}
 				}

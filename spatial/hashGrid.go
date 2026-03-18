@@ -156,7 +156,7 @@ func (grid *HashGrid[T, I, ID]) initialize() {
 func (grid *HashGrid[T, I, ID]) IteratorForHash(hash uint64) iter.Seq[I] {
 	return func(yield func(I) bool) {
 		for _, item := range grid.grid[hash].items {
-			if yield(item) {
+			if !yield(item) {
 				return
 			}
 		}
@@ -229,7 +229,7 @@ func (grid *HashGrid[T, I, ID]) rectangleIterator(hash uint64, offsetX uint64, o
 			xCell := cell
 			for x := uint64(0); x < offsetX; x++ {
 				for _, item := range xCell.items {
-					if yield(item) {
+					if !yield(item) {
 						return
 					}
 				}
