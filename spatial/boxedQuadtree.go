@@ -170,27 +170,27 @@ func (tree *BoxedQuadtree[T, I]) Iterator(bounds gomath.AABB[T]) iter.Seq[BoxedI
 	}
 }
 
-func IteratePointQuadtree[T constraints.Float, I comparable](tree *BoxedQuadtree[T, I], bounds gomath.AABB[T], yield func(item BoxedItem[T, I]) bool) {
+func IteratePointQuadtree[T constraints.Float, I comparable](tree *BoxedQuadtree[T, I], bounds gomath.AABB[T], yield func(item BoxedItem[T, I]) bool) bool {
 	// Determine if the contained is inside the quadtree boundary
 	if !SquaredAABBAABB(tree.Boundary, bounds) {
-		return
+		return true
 	}
 	// Leaf node
 	for _, item := range tree.Items {
 		//if tree.Checker.Check(item.GetBounds(), containing) {
 		if AABBAABB3(item.AABB, bounds) {
 			if !yield(item) {
-				return
+				return false
 			}
 		}
 	}
 
 	if tree.NorthEast == nil {
-		return
+		return true
 	}
 
-	IteratePointQuadtree(tree.NorthEast, bounds, yield)
-	IteratePointQuadtree(tree.SouthEast, bounds, yield)
-	IteratePointQuadtree(tree.SouthWest, bounds, yield)
-	IteratePointQuadtree(tree.NorthWest, bounds, yield)
+	return IteratePointQuadtree(tree.NorthEast, bounds, yield) &&
+		IteratePointQuadtree(tree.SouthEast, bounds, yield) &&
+		IteratePointQuadtree(tree.SouthWest, bounds, yield) &&
+		IteratePointQuadtree(tree.NorthWest, bounds, yield)
 }

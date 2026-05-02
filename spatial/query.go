@@ -128,48 +128,44 @@ func Iterator[T gomath.Number, I BoundedItem[ID], ID comparable](tree *Quadtree[
 	}
 }
 
-func IterateQuadtree[T gomath.Number, I BoundedItem[ID], ID comparable](tree *Quadtree[T, I, ID], containing any, yield func(item I) bool) {
-	// Determine if the contained is inside the quadtree boundary
+func IterateQuadtree[T gomath.Number, I BoundedItem[ID], ID comparable](tree *Quadtree[T, I, ID], containing any, yield func(item I) bool) bool {
 	if !tree.Checker.Check(tree.Boundary, containing) {
-		return
+		return true
 	}
-	// Leaf node
 	for _, item := range tree.Items {
 		if tree.Checker.Check(item.GetBounds(), containing) {
 			if !yield(item) {
-				return
+				return false
 			}
 		}
 	}
-
 	if tree.NorthEast == nil {
-		return
+		return true
 	}
-
-	IterateQuadtree(tree.NorthEast, containing, yield)
-	IterateQuadtree(tree.SouthEast, containing, yield)
-	IterateQuadtree(tree.SouthWest, containing, yield)
-	IterateQuadtree(tree.NorthWest, containing, yield)
+	return IterateQuadtree(tree.NorthEast, containing, yield) &&
+		IterateQuadtree(tree.SouthEast, containing, yield) &&
+		IterateQuadtree(tree.SouthWest, containing, yield) &&
+		IterateQuadtree(tree.NorthWest, containing, yield)
 }
 
-func IterateQuadtreeWithoutCheck[T gomath.Number, I BoundedItem[ID], ID comparable](tree *Quadtree[T, I, ID], containing any, yield func(item I) bool) {
+func IterateQuadtreeWithoutCheck[T gomath.Number, I BoundedItem[ID], ID comparable](tree *Quadtree[T, I, ID], containing any, yield func(item I) bool) bool {
 	// Determine if the contained is inside the quadtree boundary
 	if !tree.Checker.Check(tree.Boundary, containing) {
-		return
+		return true
 	}
 	// Leaf node
 	for _, item := range tree.Items {
 		if !yield(item) {
-			return
+			return false
 		}
 	}
 
 	if tree.NorthEast == nil {
-		return
+		return true
 	}
 
-	IterateQuadtree(tree.NorthEast, containing, yield)
-	IterateQuadtree(tree.SouthEast, containing, yield)
-	IterateQuadtree(tree.SouthWest, containing, yield)
-	IterateQuadtree(tree.NorthWest, containing, yield)
+	return IterateQuadtree(tree.NorthEast, containing, yield) &&
+		IterateQuadtree(tree.SouthEast, containing, yield) &&
+		IterateQuadtree(tree.SouthWest, containing, yield) &&
+		IterateQuadtree(tree.NorthWest, containing, yield)
 }
