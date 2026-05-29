@@ -51,7 +51,7 @@ func BenchmarkBoxedQuadtreeInsert(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, item := range items {
-			tree.Insert(item)
+			_, _ = tree.Insert(item)
 		}
 		tree.Clear()
 	}
@@ -63,7 +63,7 @@ func BenchmarkBoxedQuadtreeInsert2(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, item := range items {
-			tree.Insert(item)
+			_, _ = tree.Insert(item)
 		}
 		tree.Clear()
 	}
