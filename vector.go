@@ -272,7 +272,7 @@ func (v Vector2[T]) Length32() float32 {
 func (v Vector2[T]) SetLength(l T) Vector2[T] {
 	oldLength := v.Length()
 	if oldLength != 0 && l != oldLength {
-		v.MultiplyScalar(l / oldLength)
+		return v.MultiplyScalar(l / oldLength)
 	}
 
 	return v
@@ -303,18 +303,19 @@ func (v *Vector2[T]) Normalizep() {
 	v.DivScalarp(m)
 }
 
-func (v Vector2[T]) Reflect(v2 Vector2[T]) Vector2[T] {
-	factor := -T(2.0) * v.Dot(v2)
+// Reflect reflects the vector about the given normal, which is assumed to be of unit length.
+func (v Vector2[T]) Reflect(normal Vector2[T]) Vector2[T] {
+	factor := -T(2.0) * v.Dot(normal)
 	return NewVector2(
-		factor*v.X+v2.X,
-		factor*v.Y+v2.Y,
+		factor*normal.X+v.X,
+		factor*normal.Y+v.Y,
 	)
 }
 
-func (v *Vector2[T]) Reflectp(v2 *Vector2[T]) {
-	factor := -T(2.0) * v.Dot(*v2)
-	v.X = factor*v.X + v2.X
-	v.Y = factor*v.Y + v2.Y
+func (v *Vector2[T]) Reflectp(normal *Vector2[T]) {
+	factor := -T(2.0) * v.Dot(*normal)
+	v.X = factor*normal.X + v.X
+	v.Y = factor*normal.Y + v.Y
 }
 
 func (v Vector2[T]) Equals(v2 Vector2[T]) bool {
@@ -325,13 +326,14 @@ func (v *Vector2[T]) Equalsp(v2 *Vector2[T]) bool {
 	return v.X == v2.X && v.Y == v2.Y
 }
 
+// AngleTo returns the unsigned angle in radians between this vector and v2.
 func (v Vector2[T]) AngleTo(v2 Vector2[T]) T {
-	theta := v.Dot(v2) / v.Length() * v2.Length()
+	theta := v.Dot(v2) / (v.Length() * v2.Length())
 	return Acos(Clamp[T](theta, T(-1.0), 1))
 }
 
 func (v *Vector2[T]) AngleTop(v2 *Vector2[T]) T {
-	theta := v.Dot(*v2) / v.Lengthp() * v2.Lengthp()
+	theta := v.Dot(*v2) / (v.Lengthp() * v2.Lengthp())
 	return Acos(Clamp[T](theta, T(-1.0), 1))
 }
 
@@ -427,8 +429,9 @@ func (v Vector2[T]) Rotate(phi T) (r Vector2[T]) {
 }
 
 func (v *Vector2[T]) Rotatep(phi T) {
-	v.X = v.X*Cos(phi) - v.Y*Sin(phi)
-	v.Y = v.X*Sin(phi) + v.Y*Cos(phi)
+	x, y := v.X, v.Y
+	v.X = x*Cos(phi) - y*Sin(phi)
+	v.Y = x*Sin(phi) + y*Cos(phi)
 }
 
 func (v Vector2[T]) ToVector3(z T) Vector3[T] {
@@ -488,7 +491,7 @@ func VectorAs[T1 Number, T2 Number](v Vector2[T1]) Vector2[T2] {
 
 // Volume stuff
 
-func (v Vector2[T]) SetCenter(c Vector2[T]) {
+func (v *Vector2[T]) SetCenter(c Vector2[T]) {
 	v.X = c.X
 	v.Y = c.Y
 }

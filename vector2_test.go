@@ -81,6 +81,39 @@ func TestVector2_AngleTo(t *testing.T) {
 			v2:       Vector2[float64]{X: -1, Y: 0},
 			expected: math.Pi,
 		},
+
+		// Non-unit inputs: the angle must not depend on the magnitude of either
+		// operand, only on the directions.
+		"orthogonal vectors, non-unit": {
+			v:        Vector2[float64]{X: 3, Y: 0},
+			v2:       Vector2[float64]{X: 0, Y: 5},
+			expected: math.Pi / 2,
+		},
+		"45 degrees, non-unit": {
+			v:        Vector2[float64]{X: 2, Y: 0},
+			v2:       Vector2[float64]{X: 2, Y: 2},
+			expected: math.Pi / 4,
+		},
+		"45 degrees, both scaled": {
+			v:        Vector2[float64]{X: 7, Y: 0},
+			v2:       Vector2[float64]{X: 3, Y: 3},
+			expected: math.Pi / 4,
+		},
+		"120 degrees, non-unit": {
+			v:        Vector2[float64]{X: 2, Y: 0},
+			v2:       Vector2[float64]{X: -1, Y: 1.7320508},
+			expected: 2 * math.Pi / 3,
+		},
+		"opposite vectors, non-unit": {
+			v:        Vector2[float64]{X: 3, Y: 0},
+			v2:       Vector2[float64]{X: -7, Y: 0},
+			expected: math.Pi,
+		},
+		"same vectors, non-unit": {
+			v:        Vector2[float64]{X: 2, Y: 2},
+			v2:       Vector2[float64]{X: 5, Y: 5},
+			expected: 0,
+		},
 	}
 
 	for name, tc := range testCases {
@@ -89,7 +122,24 @@ func TestVector2_AngleTo(t *testing.T) {
 			if math.IsNaN(tc.expected) {
 				assert.True(t, math.IsNaN(angle))
 			} else {
-				assert.Equal(t, tc.expected, angle)
+				assert.InDelta(t, tc.expected, angle, 0.0001)
+			}
+
+			// AngleTo is unsigned, so it must be symmetric.
+			reversed := tc.v2.AngleTo(tc.v)
+			if math.IsNaN(tc.expected) {
+				assert.True(t, math.IsNaN(reversed))
+			} else {
+				assert.InDelta(t, tc.expected, reversed, 0.0001)
+			}
+
+			// The pointer variant must agree with the value variant.
+			v, v2 := tc.v, tc.v2
+			pointerAngle := v.AngleTop(&v2)
+			if math.IsNaN(tc.expected) {
+				assert.True(t, math.IsNaN(pointerAngle))
+			} else {
+				assert.InDelta(t, tc.expected, pointerAngle, 0.0001)
 			}
 		})
 	}
@@ -103,10 +153,12 @@ func TestVector2_AngleToWithSign(t *testing.T) {
 		v2       Vector2[float64]
 		expected float64
 	}{
+		// AngleToWithSign is Atan2-based, and Atan2(0, 0) is defined as 0.
+		// (The Acos-based implementations return NaN here instead.)
 		"default vectors": {
 			v:        Vector2[float64]{X: 0, Y: 0},
 			v2:       Vector2[float64]{X: 0, Y: 0},
-			expected: math.NaN(),
+			expected: 0,
 		},
 		"same vectors": {
 			v:        Vector2[float64]{X: 1, Y: 1},

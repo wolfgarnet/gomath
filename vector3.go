@@ -160,7 +160,7 @@ func (v Vector3[T]) Length64() float64 {
 }
 
 func (v Vector3[T]) Length() T {
-	return T(math.Sqrt(float64(v.X)*float64(v.X)+float64(v.Y)*float64(v.Y)) + float64(v.Z)*float64(v.Z))
+	return T(v.Length64())
 }
 
 func (v Vector3[T]) LengthSq() T {
@@ -168,13 +168,13 @@ func (v Vector3[T]) LengthSq() T {
 }
 
 func (v Vector3[T]) Length32() float32 {
-	return float32(math.Sqrt(float64(v.X)*float64(v.X)+float64(v.Y)*float64(v.Y)) + float64(v.Z)*float64(v.Z))
+	return float32(v.Length64())
 }
 
 func (v Vector3[T]) SetLength(l T) Vector3[T] {
 	oldLength := v.Length()
 	if oldLength != 0 && l != oldLength {
-		v.MultiplyScalar(l / oldLength)
+		return v.MultiplyScalar(l / oldLength)
 	}
 
 	return v
@@ -190,12 +190,13 @@ func (v Vector3[T]) Normalize() Vector3[T] {
 	}
 }
 
-func (v Vector3[T]) Reflect(v2 Vector3[T]) Vector3[T] {
-	factor := -T(2.0) * v.Dot(v2)
+// Reflect reflects the vector about the given normal, which is assumed to be of unit length.
+func (v Vector3[T]) Reflect(normal Vector3[T]) Vector3[T] {
+	factor := -T(2.0) * v.Dot(normal)
 	return Vector3[T]{
-		X: factor*v.X + v2.X,
-		Y: factor*v.Y + v2.Y,
-		Z: factor*v.Z + v2.Z,
+		X: factor*normal.X + v.X,
+		Y: factor*normal.Y + v.Y,
+		Z: factor*normal.Z + v.Z,
 	}
 }
 
@@ -203,8 +204,9 @@ func (v Vector3[T]) Equals(v2 Vector3[T]) bool {
 	return v.X == v2.X && v.Y == v2.Y && v.Z == v2.Z
 }
 
+// AngleTo returns the unsigned angle in radians between this vector and v2.
 func (v Vector3[T]) AngleTo(v2 Vector3[T]) T {
-	theta := v.Dot(v2) / v.Length() * v2.Length()
+	theta := v.Dot(v2) / (v.Length() * v2.Length())
 	return Acos(Clamp[T](theta, T(-1.0), 1))
 }
 
@@ -217,8 +219,9 @@ func (v Vector3[T]) DistanceTo(v2 Vector3[T]) T {
 func (v Vector3[T]) DistanceToSquared(v2 Vector3[T]) T {
 	dx := v.X - v2.X
 	dy := v.Y - v2.Y
+	dz := v.Z - v2.Z
 
-	return dx*dx + dy*dy
+	return dx*dx + dy*dy + dz*dz
 }
 
 func (v Vector3[T]) ToVector2() Vector2[T] {

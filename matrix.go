@@ -66,17 +66,7 @@ func (m *Matrix[T]) Angle() T {
 }
 
 func (m *Matrix[T]) Multiply(b *Matrix[T]) {
-	m[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2]
-	m[3] = m[0]*b[3] + m[3]*b[4] + m[6]*b[5]
-	m[6] = m[0]*b[6] + m[3]*b[7] + m[6]*b[8]
-
-	m[1] = m[1]*b[0] + m[4]*b[1] + m[7]*b[2]
-	m[4] = m[1]*b[3] + m[4]*b[4] + m[7]*b[5]
-	m[7] = m[1]*b[6] + m[4]*b[7] + m[7]*b[8]
-
-	m[2] = m[2]*b[0] + m[5]*b[1] + m[8]*b[2]
-	m[5] = m[2]*b[3] + m[5]*b[4] + m[8]*b[5]
-	m[8] = m[2]*b[6] + m[5]*b[7] + m[8]*b[8]
+	*m = MatrixMultiply(m, b)
 }
 
 func MatrixMultiply[T Number](m *Matrix[T], b *Matrix[T]) (c Matrix[T]) {
@@ -120,7 +110,9 @@ func (m Matrix[T]) Determinant() T {
 		m[2]*m[4]*m[6]
 }
 
-func (m Matrix[T]) GetInverse(src Matrix[T]) error {
+// GetInverse sets m to the inverse of src, returning an error if src is not invertible,
+// in which case m is set to the identity.
+func (m *Matrix[T]) GetInverse(src Matrix[T]) error {
 
 	n11 := src[0]
 	n21 := src[1]

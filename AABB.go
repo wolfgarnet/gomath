@@ -265,8 +265,8 @@ func NewSquaredAABB2D[T Number](center Vector2[T], halfSize T) SquaredAABB2D[T] 
 	}
 }
 
-func (a SquaredAABB2D[T]) GetCenter() Vector2[float32] {
-	return a.GetCenter()
+func (a SquaredAABB2D[T]) GetCenter() Vector2[T] {
+	return a.Center
 }
 
 func (a SquaredAABB2D[T]) Sides() []LineSegment[T] {

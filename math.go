@@ -40,7 +40,10 @@ func Atan2[T Number](x, y T) T {
 }
 
 func Abs[T Number](v T) T {
-	return T(math.Abs(float64(v)))
+	if v < 0 {
+		return -v
+	}
+	return v
 }
 
 func Cos[T Number](theta T) T {
@@ -70,13 +73,11 @@ func Clamp[T Number](x, a, b T) T {
 }
 
 func Max[T Number](a, b T) T {
-	max := math.Max(float64(a), float64(b))
-	return T(max)
+	return max(a, b)
 }
 
 func Min[T Number](a, b T) T {
-	min := math.Min(float64(a), float64(b))
-	return T(min)
+	return min(a, b)
 }
 
 func Round[T Number](n T) T {

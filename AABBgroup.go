@@ -5,8 +5,8 @@ type AABBGroups[T Number] struct {
 }
 
 func (g *AABBGroups[T]) Add(aabb *AABB[T]) {
-	for _, g := range g.Groups {
-		g.Add(aabb)
+	for i := range g.Groups {
+		g.Groups[i].Add(aabb)
 	}
 }
 
