@@ -182,11 +182,23 @@ func isCircleInsideAABB[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) b
 		c.Center.Y+c.Radius <= b.Center.Y+b.HalfHeight
 }
 
+// AABBInsideCircleColliders reports whether the AABB lies entirely within the circle,
+// which is true exactly when every one of its corners does.
 func AABBInsideCircleColliders[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) bool {
-	return circleOffset.X-circle.Radius >= aabbOffset.X-aabb.HalfWidth &&
-		circleOffset.X+circle.Radius <= aabbOffset.X+aabb.HalfWidth &&
-		circleOffset.Y-circle.Radius >= aabbOffset.Y-aabb.HalfHeight &&
-		circleOffset.Y+circle.Radius <= aabbOffset.Y+aabb.HalfHeight
+	corners := []gomath.Vector2[T]{
+		{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight},
+		{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight},
+		{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight},
+		{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight},
+	}
+
+	for _, corner := range corners {
+		if circleOffset.DistanceTo(corner) > circle.Radius {
+			return false
+		}
+	}
+
+	return true
 }
 
 func isAABBInsideCircle[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
@@ -215,13 +227,17 @@ func CircleAABBWithPenetration2[T gomath.Number](c gomath.Circle[T], b gomath.AA
 	}
 
 	if isCircleInsideAABB(c, b) {
-		minDist := c.Radius
-		sides := b.Sides()
-		for _, side := range sides {
+		// Every side is at least c.Radius away here -- that is what being inside
+		// means -- so seeding minDist with c.Radius left the loop body unreachable
+		// and returned a zero normal.
+		var minDist T
+		nearest := false
+		for _, side := range b.Sides() {
 			dist := gomath.MinimumDistance(side.P1, side.P2, c.Center)
-			if dist < minDist {
+			if !nearest || dist < minDist {
 				minDist = dist
 				normal = side.Normal()
+				nearest = true
 			}
 		}
 		return minDist, normal, true

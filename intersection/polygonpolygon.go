@@ -26,7 +26,7 @@ func PolygonPolygon[T gomath.Float](poly1, poly2 gomath.Polygon[T]) (penetration
 
 	l2 := len(poly2.Points)
 	for i, p1_0 := range poly2.Points {
-		if i < l2-2 {
+		if i < l2-1 {
 			p1 = poly2.Points[i+1]
 		} else {
 			p1 = poly2.Points[0]

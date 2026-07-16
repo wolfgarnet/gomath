@@ -40,11 +40,29 @@ func LineSegmentLineSegment2D[T gomath.Number](p1, p2, q1, q2 gomath.Vector2[T])
 		return nil, false
 	}
 
-	u := uNumerator / denominator
-	t := (qp1.X*s2.Y - qp1.Y*s2.X) / denominator
+	// The ratios must be computed in floating point: T may be an integer type,
+	// and integer division would truncate both of them to zero.
+	u := float64(uNumerator) / float64(denominator)
+	t := float64(qp1.X*s2.Y-qp1.Y*s2.X) / float64(denominator)
 
-	return &gomath.Vector2[T]{X: p1.X + (t * s1.X), Y: p1.Y + (t * s1.Y)},
+	return &gomath.Vector2[T]{
+			X: p1.X + scaleToNumber[T](t, s1.X),
+			Y: p1.Y + scaleToNumber[T](t, s1.Y),
+		},
 		(t >= 0) && (t <= 1) && (u >= 0) && (u <= 1)
+}
+
+// scaleToNumber returns ratio*v as a T, rounding for integer instantiations so
+// that a ratio landing on 4.999999 does not truncate away a whole unit.
+func scaleToNumber[T gomath.Number](ratio float64, v T) T {
+	scaled := ratio * float64(v)
+
+	var one, two T = 1, 2
+	if one/two == 0 { // integer instantiation
+		return T(math.Round(scaled))
+	}
+
+	return T(scaled)
 }
 
 // LineSegmentLineSegment2D2 finds the intersection point between two line segments.
@@ -98,7 +116,14 @@ func AABBLineSegmentColliders[T gomath.Number](aabb gomath.AABBCollider[T], aabb
 	return false
 }
 
+// LineBox determines whether the line segment touches the box, either by crossing
+// one of its sides or by lying entirely within it.
 func LineBox[T gomath.Number](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool {
+	// A segment fully inside the box crosses none of its sides.
+	if AABBPoint(bb, ls.P1) || AABBPoint(bb, ls.P2) {
+		return true
+	}
+
 	for _, side := range bb.Sides() {
 		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, ls.P1, ls.P2)
 		if intersects {
@@ -109,9 +134,12 @@ func LineBox[T gomath.Number](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool 
 	return false
 }
 
+// LineBoxSide returns the side of the box the segment crosses closest to ls.P1,
+// or nil if the segment crosses none of them.
 func LineBoxSide[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) *gomath.LineSegment[T] {
 	var closest T = math.MaxFloat32
 	var closestSide gomath.LineSegment[T]
+	found := false
 	for _, side := range bb.Sides() {
 		_, intersects := LineSegmentLineSegment2D(side.P1, side.P2, ls.P1, ls.P2)
 		if !intersects {
@@ -122,7 +150,12 @@ func LineBoxSide[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) *g
 		if distance < closest {
 			closest = distance
 			closestSide = side
+			found = true
 		}
+	}
+
+	if !found {
+		return nil
 	}
 
 	return &closestSide

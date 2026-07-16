@@ -157,17 +157,48 @@ func TestPointSideOfBox(t *testing.T) {
 			},
 			contained: false,
 		},
-		"test": {
+		// The cases below use two OPPOSITE sides of the box x=[0,1024], y=[0,96],
+		// which is how the only caller uses this: sides[i] paired with sides[i+2].
+		// The previous "test" case passed two ADJACENT sides (the left and top
+		// edges, meeting at (0,96)), which do not define a box at all.
+		//
+		// The wedge faces ls1 (the left side here) and is unbounded, so a point
+		// far outside the box on the left is still in it.
+		"wide box, point in the left wedge": {
 			point: gomath.Vector2[float32]{X: 64, Y: 64},
 			ls1: gomath.LineSegment[float32]{
 				P1: gomath.Vector2[float32]{X: 0, Y: 0},
 				P2: gomath.Vector2[float32]{X: 0, Y: 96},
 			},
 			ls2: gomath.LineSegment[float32]{
-				P1: gomath.Vector2[float32]{X: 0, Y: 96},
-				P2: gomath.Vector2[float32]{X: 1024, Y: 96},
+				P1: gomath.Vector2[float32]{X: 1024, Y: 96},
+				P2: gomath.Vector2[float32]{X: 1024, Y: 0},
 			},
 			contained: true,
+		},
+		"wide box, left wedge reaches outside the box": {
+			point: gomath.Vector2[float32]{X: -64, Y: 64},
+			ls1: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 0, Y: 0},
+				P2: gomath.Vector2[float32]{X: 0, Y: 96},
+			},
+			ls2: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 1024, Y: 96},
+				P2: gomath.Vector2[float32]{X: 1024, Y: 0},
+			},
+			contained: true,
+		},
+		"wide box, point faces another side": {
+			point: gomath.Vector2[float32]{X: 512, Y: 90},
+			ls1: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 0, Y: 0},
+				P2: gomath.Vector2[float32]{X: 0, Y: 96},
+			},
+			ls2: gomath.LineSegment[float32]{
+				P1: gomath.Vector2[float32]{X: 1024, Y: 96},
+				P2: gomath.Vector2[float32]{X: 1024, Y: 0},
+			},
+			contained: false,
 		},
 	}
 

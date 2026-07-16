@@ -240,7 +240,11 @@ func PointAABB2DPenetration[T gomath.Number](p gomath.Vector2[T], b gomath.AABB[
 	return py, gomath.Vector2[float32]{X: 0, Y: 1}, true
 }
 
-// PointSideOfBox returns true if the point is inside the box defined by the two line segments
+// PointSideOfBox reports whether p lies in the wedge facing ls1, where ls1 and ls2
+// are OPPOSITE sides of a box. The wedge is bounded by the box's two diagonals and
+// is unbounded away from the box, so a point well outside the box is still in the
+// wedge of the side it faces. This is what picks the contact face for a collision;
+// it is not a containment test.
 func PointSideOfBox[T gomath.Number](p gomath.Vector2[T], ls1 gomath.LineSegment[T], ls2 gomath.LineSegment[T]) bool {
 	left := gomath.IsLeft(p, ls1.P1, ls2.P1)
 	right := gomath.IsLeft(p, ls1.P2, ls2.P2)

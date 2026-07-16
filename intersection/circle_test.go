@@ -58,13 +58,18 @@ func TestCircleAABB(t *testing.T) {
 		penetration float32
 		normal      gomath.Vector2[float32]
 	}{
-		"dkdkd": {
+		// The box spans x in [0,1024] and y in [0,96], so this circle sits wholly
+		// inside it and therefore overlaps it. The nearest wall is y=96, 32 away.
+		"circle contained in a wide box": {
 			circle: gomath.NewCircle[float32](64, 64, 6),
 			box: gomath.AABB[float32]{
 				Center:     gomath.NewVector2[float32](512, 48),
 				HalfWidth:  512,
 				HalfHeight: 48,
 			},
+			overlapping: true,
+			penetration: 32,
+			normal:      gomath.NewVector2[float32](0, -1),
 		},
 	}
 

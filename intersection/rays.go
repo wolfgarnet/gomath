@@ -12,37 +12,25 @@ func IntersectingRay2[T gomath.Float](ray gomath.Ray[T], other any) (intersects 
 	case *gomath.AABB[T]:
 		return RayAABB2(ray, *t)
 	case gomath.Circle[T]:
-		intersections, p1, p2 := RayCircle(ray, t)
-		switch intersections {
-		case 1:
-			return true, ray.Origin.DistanceTo(p1)
-		case 2:
-			d1 := ray.Origin.DistanceTo(p1)
-			d2 := ray.Origin.DistanceTo(p2)
-			if d1 > d2 {
-				return true, d1
-			}
-			return true, d2
-		default:
-			return false, 0
-		}
+		return rayCircleDistance(ray, t)
 	case *gomath.Circle[T]:
-		intersections, p1, p2 := RayCircle(ray, *t)
-		switch intersections {
-		case 1:
-			return true, ray.Origin.DistanceTo(p1)
-		case 2:
-			d1 := ray.Origin.DistanceTo(p1)
-			d2 := ray.Origin.DistanceTo(p2)
-			if d1 > d2 {
-				return true, d1
-			}
-			return true, d2
-		default:
-			return false, 0
-		}
+		return rayCircleDistance(ray, *t)
 
 	default:
 		panic(fmt.Sprintf("unknown type %T", other))
+	}
+}
+
+// rayCircleDistance returns the distance to the nearest point where the ray meets
+// the circle.
+func rayCircleDistance[T gomath.Float](ray gomath.Ray[T], circle gomath.Circle[T]) (intersects bool, distance T) {
+	intersections, p1, p2 := RayCircle(ray, circle)
+	switch intersections {
+	case 1:
+		return true, ray.Origin.DistanceTo(p1)
+	case 2:
+		return true, gomath.Min(ray.Origin.DistanceTo(p1), ray.Origin.DistanceTo(p2))
+	default:
+		return false, 0
 	}
 }
