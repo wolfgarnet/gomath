@@ -261,11 +261,11 @@ func TestQuadtree_insert2(t *testing.T) {
 
 func TestQuadtree_remove(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{4, 4}})
-	item := TestItem2D{bounds: gomath.Vector2[float32]{6, 6}}
+	qt.Insert(TestItem2D{id: 1, bounds: gomath.Vector2[float32]{1, 1}})
+	qt.Insert(TestItem2D{id: 2, bounds: gomath.Vector2[float32]{2, 2}})
+	qt.Insert(TestItem2D{id: 3, bounds: gomath.Vector2[float32]{3, 3}})
+	qt.Insert(TestItem2D{id: 4, bounds: gomath.Vector2[float32]{4, 4}})
+	item := TestItem2D{id: 5, bounds: gomath.Vector2[float32]{6, 6}}
 	qt.Insert(item)
 
 	fmt.Printf("Length: %v\n", len(qt.Items))
@@ -292,11 +292,11 @@ func TestQuadtree_remove(t *testing.T) {
 
 func TestQuadtree_remove_five_aabb(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)})
-	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)})
-	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)})
-	qt.Insert(TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 0.5)})
-	item := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](6, 6, 0.5)}
+	qt.Insert(TestItem2D{id: 1, bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)})
+	qt.Insert(TestItem2D{id: 2, bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)})
+	qt.Insert(TestItem2D{id: 3, bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)})
+	qt.Insert(TestItem2D{id: 4, bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 0.5)})
+	item := TestItem2D{id: 5, bounds: gomath.NewSquaredAABB2DXY[float32](6, 6, 0.5)}
 	qt.Insert(item)
 
 	qt.Remove(item)
@@ -311,15 +311,15 @@ func TestQuadtree_remove_five_aabb(t *testing.T) {
 
 func TestQuadtree_remove_five_aabb_nocrossing(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	item1 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)}
+	item1 := TestItem2D{id: 1, bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)}
 	qt.Insert(item1)
-	item2 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)}
+	item2 := TestItem2D{id: 2, bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)}
 	qt.Insert(item2)
-	item3 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)}
+	item3 := TestItem2D{id: 3, bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)}
 	qt.Insert(item3)
-	item4 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 0.5)}
+	item4 := TestItem2D{id: 4, bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 0.5)}
 	qt.Insert(item4)
-	item5 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](-2, -2, 0.5)}
+	item5 := TestItem2D{id: 5, bounds: gomath.NewSquaredAABB2DXY[float32](-2, -2, 0.5)}
 	qt.Insert(item5)
 
 	qt.Remove(item5)
@@ -341,15 +341,15 @@ func TestQuadtree_remove_five_aabb_nocrossing(t *testing.T) {
 
 func TestQuadtree_remove_five_aabb_crossing(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	item1 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)}
+	item1 := TestItem2D{id: 1, bounds: gomath.NewSquaredAABB2DXY[float32](1, 1, 0.5)}
 	qt.Insert(item1)
-	item2 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)}
+	item2 := TestItem2D{id: 2, bounds: gomath.NewSquaredAABB2DXY[float32](2, 2, 0.5)}
 	qt.Insert(item2)
-	item3 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)}
+	item3 := TestItem2D{id: 3, bounds: gomath.NewSquaredAABB2DXY[float32](3, 3, 0.5)}
 	qt.Insert(item3)
-	item4 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 0.5)}
+	item4 := TestItem2D{id: 4, bounds: gomath.NewSquaredAABB2DXY[float32](4, 4, 0.5)}
 	qt.Insert(item4)
-	item6 := TestItem2D{bounds: gomath.NewSquaredAABB2DXY[float32](5, 5, 0.5)}
+	item6 := TestItem2D{id: 6, bounds: gomath.NewSquaredAABB2DXY[float32](5, 5, 0.5)}
 	qt.Insert(item6)
 
 	qt.Remove(item6)
@@ -371,11 +371,11 @@ func TestQuadtree_remove_five_aabb_crossing(t *testing.T) {
 
 func TestQuadtree_remove2(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{4, 4}})
-	item := TestItem2D{bounds: gomath.Vector2[float32]{6, 6}}
+	qt.Insert(TestItem2D{id: 1, bounds: gomath.Vector2[float32]{1, 1}})
+	qt.Insert(TestItem2D{id: 2, bounds: gomath.Vector2[float32]{2, 2}})
+	qt.Insert(TestItem2D{id: 3, bounds: gomath.Vector2[float32]{3, 3}})
+	qt.Insert(TestItem2D{id: 4, bounds: gomath.Vector2[float32]{4, 4}})
+	item := TestItem2D{id: 5, bounds: gomath.Vector2[float32]{6, 6}}
 	qt.Insert(item)
 
 	fmt.Printf("Length: %v\n", len(qt.Items))
@@ -399,18 +399,22 @@ func TestQuadtree_remove2(t *testing.T) {
 
 func TestQuadtree_Query_simple(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D, uint64](0.0, 0, 10)
-	item1 := TestItem2D{bounds: gomath.Vector2[float32]{1, 1}}
-	item2 := TestItem2D{bounds: gomath.Vector2[float32]{2, 2}}
-	item3 := TestItem2D{bounds: gomath.Vector2[float32]{3, 3}}
-	item4 := TestItem2D{bounds: gomath.Vector2[float32]{4, 4}}
+	item1 := TestItem2D{id: 1, bounds: gomath.Vector2[float32]{1, 1}}
+	item2 := TestItem2D{id: 2, bounds: gomath.Vector2[float32]{2, 2}}
+	item3 := TestItem2D{id: 3, bounds: gomath.Vector2[float32]{3, 3}}
+	item4 := TestItem2D{id: 4, bounds: gomath.Vector2[float32]{4, 4}}
 	expected := []TestItem2D{item1, item2, item3, item4}
 	qt.Insert(item1)
 	qt.Insert(item2)
 	qt.Insert(item3)
 	qt.Insert(item4)
 
-	ls := TestItem2D{bounds: gomath.NewLineSegmentXY[float32](0, 0, 5, 5)}
-	list := QueryQuadtreeWithResult(qt, ls)
+	// The checked query intersects every item against the query geometry, so it
+	// must be a 2D shape (see QueryQuadtree's doc): point-vs-line-segment is
+	// unsupported and panics in Intersecting2D. A box over [0,5]x[0,5] covers all
+	// four points. Use the bounded-item variant so GetBounds() is unwrapped.
+	box := TestItem2D{id: 100, bounds: gomath.NewSquaredAABB2DXY[float32](2.5, 2.5, 2.5)}
+	list := QueryQuadtreeWithBoundedItemWithResult(qt, box)
 	if len(list) != 4 {
 		t.Errorf("Not the correct size, should have been 4")
 		return

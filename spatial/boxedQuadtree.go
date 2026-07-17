@@ -183,8 +183,7 @@ func (tree *BoxedQuadtree[T, I]) Insert(item BoxedItem[T, I]) (bool, error) {
 }
 
 func (tree *BoxedQuadtree[T, I]) Remove(item BoxedItem[T, I]) bool {
-	var i int
-	for range tree.Items {
+	for i := range tree.Items {
 		if tree.Items[i].ItemID == item.ItemID {
 			tree.Items = append(tree.Items[:i], tree.Items[i+1:]...)
 			return true

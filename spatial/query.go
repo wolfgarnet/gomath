@@ -164,8 +164,8 @@ func IterateQuadtreeWithoutCheck[T gomath.Number, I BoundedItem[ID], ID comparab
 		return true
 	}
 
-	return IterateQuadtree(tree.NorthEast, containing, yield) &&
-		IterateQuadtree(tree.SouthEast, containing, yield) &&
-		IterateQuadtree(tree.SouthWest, containing, yield) &&
-		IterateQuadtree(tree.NorthWest, containing, yield)
+	return IterateQuadtreeWithoutCheck(tree.NorthEast, containing, yield) &&
+		IterateQuadtreeWithoutCheck(tree.SouthEast, containing, yield) &&
+		IterateQuadtreeWithoutCheck(tree.SouthWest, containing, yield) &&
+		IterateQuadtreeWithoutCheck(tree.NorthWest, containing, yield)
 }

@@ -140,33 +140,33 @@ func TestHashPosition(t *testing.T) {
 			iy:       0,
 			expected: 0,
 		},
-		"negative_x - capped": {
+		// The grid wraps toroidally: floor(-5/10) = -1, which is cell 7 on an
+		// 8-wide grid. (The previous data expected 0 here and assumed a grid
+		// offset of 40 in the three "- offset" cases, neither of which this
+		// offset-free grid has.)
+		"negative_x - wraps": {
 			x:        -5,
 			y:        0,
-			ix:       0,
+			ix:       7,
 			iy:       0,
-			expected: 0,
+			expected: 7,
 		},
-		"origin - offset": {
-			x:        0,
-			y:        0,
-			ix:       4,
-			iy:       4,
-			expected: 36,
+		// Upper-left and lower-right diagonals, replacing the deleted "- offset"
+		// cases with the correct offset-free values. -25 and 25 sit inside a cell
+		// rather than on a boundary, so the wrap is unambiguous.
+		"upper left diagonal": {
+			x:        -25,
+			y:        -25,
+			ix:       5,
+			iy:       5,
+			expected: 45,
 		},
-		"upper left - offset": {
-			x:        -20,
-			y:        -20,
+		"lower right diagonal": {
+			x:        25,
+			y:        25,
 			ix:       2,
 			iy:       2,
 			expected: 18,
-		},
-		"lower right - offset": {
-			x:        20,
-			y:        20,
-			ix:       6,
-			iy:       6,
-			expected: 54,
 		},
 		"negative_x2": {
 			x:        -15,
@@ -274,6 +274,9 @@ func TestHashGrid_HashToCell(t *testing.T) {
 		expectedCellX, expectedCellY uint64
 		expectedNeighboursPair       [][2]uint64
 	}{
+		// The eight neighbours of cell (0,0) on an 8x8 torus, in the code's order:
+		// up, up-right, right, down-right, down, down-left, left, up-left. The up
+		// and left directions wrap to the far edge (index 7).
 		"origin": {
 			x:             0,
 			y:             0,
@@ -281,7 +284,7 @@ func TestHashGrid_HashToCell(t *testing.T) {
 			expectedCellX: 0,
 			expectedCellY: 0,
 			expectedNeighboursPair: [][2]uint64{
-				{0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 1},
+				{0, 7}, {1, 7}, {1, 0}, {1, 1}, {0, 1}, {7, 1}, {7, 0}, {7, 7},
 			},
 		},
 	}
@@ -295,9 +298,7 @@ func TestHashGrid_HashToCell(t *testing.T) {
 			assert.Equal(t, test.expectedCellY, y)
 			hashes := grid.NeighbourHashesPair(hash)
 			require.Lenf(t, hashes, len(test.expectedNeighboursPair), "Hashes length mismatch: %v", hashes)
-			for i := range hashes {
-				assert.Contains(t, hashes[i], test.expectedNeighboursPair[i])
-			}
+			assert.Equal(t, test.expectedNeighboursPair, hashes)
 		})
 	}
 }
@@ -339,8 +340,9 @@ func TestHashGrid(t *testing.T) {
 			cell := grid.grid[hash]
 			assert.Contains(t, cell.neighbourHashes, hash2, "Hash %d not in grid", hash2)
 
+			// 65 wraps to cell (1,1) on a 64-wide grid: 1 + 1*64 = 65.
 			hash = grid.localToHash(65, 65)
-			assert.Equalf(t, hash, 65, "Hash: %d not %d", hash, 65)
+			assert.Equalf(t, uint64(65), hash, "Hash: %d not %d", hash, 65)
 		})
 	}
 }

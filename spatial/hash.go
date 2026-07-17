@@ -52,8 +52,7 @@ func (spec GridSpecification[T]) HashPositionToroidalIndex(worldPositionX T, wor
 	if worldPositionY < 0 {
 		yIndex := -worldPositionY * spec.inverseCellSize
 		masked := uint64(yIndex) & spec.yHashMask
-		yHash = spec.xHashMask - masked
-		//yHash = grid.height - 1 - int(yIndex)&grid.yHashMask
+		yHash = spec.yHashMask - masked
 	} else {
 		yIndex := worldPositionY * spec.inverseCellSize
 		yHash = uint64(yIndex) & spec.yHashMask

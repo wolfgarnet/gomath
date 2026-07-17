@@ -78,17 +78,17 @@ func (tree *Quadtree[T, I, ID]) Depth() (d int) {
 
 // FindQuadTree will find the quadtree storing the given item.
 func (tree *Quadtree[T, I, ID]) FindQuadTree(i I) (*Quadtree[T, I, ID], bool) {
-	parent := tree.parent
-	for parent != nil {
-		parent = parent.parent
+	root := tree
+	for root.parent != nil {
+		root = root.parent
 	}
 
-	if parent.allItems != nil {
-		v, ok := tree.allItems[i.ID()]
-		return v, ok
+	if root.allItems == nil {
+		return nil, false
 	}
 
-	return nil, false
+	v, ok := root.allItems[i.ID()]
+	return v, ok
 }
 
 func (tree *Quadtree[T, I, ID]) Subdivide() {
@@ -252,6 +252,7 @@ func (tree *Quadtree[T, I, ID]) Expand() {
 	newNorthWest := newQuadtree(tree.Boundary.Center.X-oldSize, tree.Boundary.Center.Y+oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
 	tree.NorthWest.addDepth()
 	newNorthWest.SouthEast = tree.NorthWest
+	tree.NorthWest.parent = newNorthWest
 	newNorthWest.SouthWest = newQuadtree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
 	newNorthWest.NorthWest = newQuadtree(newNorthWest.Boundary.Center.X-halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
 	newNorthWest.NorthEast = newQuadtree(newNorthWest.Boundary.Center.X+halfSize, newNorthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
@@ -261,27 +262,30 @@ func (tree *Quadtree[T, I, ID]) Expand() {
 	newNorthEast := newQuadtree(tree.Boundary.Center.X+oldSize, tree.Boundary.Center.Y+oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
 	tree.NorthEast.addDepth()
 	newNorthEast.SouthWest = tree.NorthEast
-	newNorthEast.SouthEast = newQuadtree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
-	newNorthEast.NorthWest = newQuadtree(newNorthEast.Boundary.Center.X-halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
-	newNorthEast.NorthEast = newQuadtree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	tree.NorthEast.parent = newNorthEast
+	newNorthEast.SouthEast = newQuadtree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y-halfSize, halfSize, newNorthEast, newNorthEast.depth+1, tree.Checker, tree.maxDepth)
+	newNorthEast.NorthWest = newQuadtree(newNorthEast.Boundary.Center.X-halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthEast, newNorthEast.depth+1, tree.Checker, tree.maxDepth)
+	newNorthEast.NorthEast = newQuadtree(newNorthEast.Boundary.Center.X+halfSize, newNorthEast.Boundary.Center.Y+halfSize, halfSize, newNorthEast, newNorthEast.depth+1, tree.Checker, tree.maxDepth)
 	tree.NorthEast = newNorthEast
 
 	// South East (north west)
 	newSouthEast := newQuadtree(tree.Boundary.Center.X+oldSize, tree.Boundary.Center.Y-oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
 	tree.SouthEast.addDepth()
 	newSouthEast.NorthWest = tree.SouthEast
-	newSouthEast.SouthEast = newQuadtree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
-	newSouthEast.SouthWest = newQuadtree(newSouthEast.Boundary.Center.X-halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
-	newSouthEast.NorthEast = newQuadtree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthEast.parent = newSouthEast
+	newSouthEast.SouthEast = newQuadtree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newSouthEast, newSouthEast.depth+1, tree.Checker, tree.maxDepth)
+	newSouthEast.SouthWest = newQuadtree(newSouthEast.Boundary.Center.X-halfSize, newSouthEast.Boundary.Center.Y-halfSize, halfSize, newSouthEast, newSouthEast.depth+1, tree.Checker, tree.maxDepth)
+	newSouthEast.NorthEast = newQuadtree(newSouthEast.Boundary.Center.X+halfSize, newSouthEast.Boundary.Center.Y+halfSize, halfSize, newSouthEast, newSouthEast.depth+1, tree.Checker, tree.maxDepth)
 	tree.SouthEast = newSouthEast
 
 	// South West (north east)
 	newSouthWest := newQuadtree(tree.Boundary.Center.X-oldSize, tree.Boundary.Center.Y-oldSize, oldSize, tree, tree.depth+1, tree.Checker, tree.maxDepth)
 	tree.SouthWest.addDepth()
 	newSouthWest.NorthEast = tree.SouthWest
-	newSouthWest.SouthEast = newQuadtree(newSouthWest.Boundary.Center.X+halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
-	newSouthWest.SouthWest = newQuadtree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
-	newSouthWest.NorthWest = newQuadtree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y+halfSize, halfSize, newNorthWest, newNorthWest.depth+1, tree.Checker, tree.maxDepth)
+	tree.SouthWest.parent = newSouthWest
+	newSouthWest.SouthEast = newQuadtree(newSouthWest.Boundary.Center.X+halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newSouthWest, newSouthWest.depth+1, tree.Checker, tree.maxDepth)
+	newSouthWest.SouthWest = newQuadtree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y-halfSize, halfSize, newSouthWest, newSouthWest.depth+1, tree.Checker, tree.maxDepth)
+	newSouthWest.NorthWest = newQuadtree(newSouthWest.Boundary.Center.X-halfSize, newSouthWest.Boundary.Center.Y+halfSize, halfSize, newSouthWest, newSouthWest.depth+1, tree.Checker, tree.maxDepth)
 	tree.SouthWest = newSouthWest
 }
 

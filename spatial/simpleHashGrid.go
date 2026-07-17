@@ -384,8 +384,6 @@ func (grid *SimpleHashGrid[T, ID]) NeighbourHashes(index uint64) (hashes []uint6
 	x, y := grid.HashToCell(index)
 	hashes = make([]uint64, 0, 8)
 
-	fmt.Printf("x: %d, y: %d\n", x, y)
-
 	// Top
 	hashes = append(hashes, grid.localToHash(x, y-1))
 	// Top-right
@@ -411,11 +409,8 @@ func (grid *SimpleHashGrid[T, ID]) NeighbourHashesPair(index uint64) (pairs [][2
 	pairs = make([][2]uint64, 0, 8)
 
 	pair := func(x, y uint64) [2]uint64 {
-		//x = grid.xHashMask - x&grid.xHashMask
-		//y = grid.yHashMask - y&grid.yHashMask
-		return [2]uint64{x, y}
+		return [2]uint64{x & grid.xHashMask, y & grid.yHashMask}
 	}
-	fmt.Printf("x: %d, y: %d\n", x, y)
 
 	// Top
 	pairs = append(pairs, pair(x, y-1))
@@ -464,8 +459,7 @@ func (grid *SimpleHashGrid[T, ID]) HashPositionIndex(worldPositionX T, worldPosi
 	if worldPositionY < 0 {
 		yIndex := -worldPositionY * grid.inverseCellSize
 		masked := uint64(yIndex) & grid.yHashMask
-		yHash = grid.xHashMask - masked
-		//yHash = grid.height - 1 - int(yIndex)&grid.yHashMask
+		yHash = grid.yHashMask - masked
 	} else {
 		yIndex := worldPositionY * grid.inverseCellSize
 		yHash = uint64(yIndex) & grid.yHashMask
@@ -488,8 +482,7 @@ func (grid *SimpleHashGrid[T, ID]) HashPosition(worldPositionX T, worldPositionY
 	if worldPositionY < 0 {
 		yIndex := -worldPositionY * grid.inverseCellSize
 		masked := uint64(yIndex) & grid.yHashMask
-		yHash = grid.xHashMask - masked
-		//yHash = grid.height - 1 - int(yIndex)&grid.yHashMask
+		yHash = grid.yHashMask - masked
 	} else {
 		yIndex := worldPositionY * grid.inverseCellSize
 		yHash = uint64(yIndex) & grid.yHashMask
