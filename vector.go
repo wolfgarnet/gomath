@@ -36,11 +36,6 @@ func (v Vector2[T]) Set(x T, y T) Vector2[T] {
 	return v
 }
 
-func (v *Vector2[T]) Setp(x T, y T) {
-	v.X = x
-	v.Y = y
-}
-
 // GetCenter is implemented just to satisfy the CenteredVolume interface
 func (v Vector2[T]) GetCenter() Vector2[T] {
 	return v
@@ -51,11 +46,6 @@ func (v Vector2[T]) Add(v2 Vector2[T]) Vector2[T] {
 		X: v.X + v2.X,
 		Y: v.Y + v2.Y,
 	}
-}
-
-func (v *Vector2[T]) Addp(v2 Vector2[T]) {
-	v.X = v.X + v2.X
-	v.Y = v.Y + v2.Y
 }
 
 func (v Vector2[T]) Component(i int) T {
@@ -76,21 +66,11 @@ func (v Vector2[T]) AddScalar(scalar T) Vector2[T] {
 	}
 }
 
-func (v *Vector2[T]) AddScalarp(scalar T) {
-	v.X = v.X + scalar
-	v.Y = v.Y + scalar
-}
-
 func (v Vector2[T]) AddScalars(x T, y T) Vector2[T] {
 	return Vector2[T]{
 		X: v.X + x,
 		Y: v.Y + y,
 	}
-}
-
-func (v *Vector2[T]) AddScalarsp(x T, y T) {
-	v.X = v.X + x
-	v.Y = v.Y + y
 }
 
 func VectorSubtract[T Number](v1x, v1y, v2x, v2y T) (T, T) {
@@ -105,21 +85,11 @@ func (v Vector2[T]) Sub(v2 Vector2[T]) Vector2[T] {
 	}
 }
 
-func (v *Vector2[T]) Subp(v2 *Vector2[T]) {
-	v.X = v.X - v2.X
-	v.Y = v.Y - v2.Y
-}
-
 func (v Vector2[T]) SubScalar(scalar T) Vector2[T] {
 	return Vector2[T]{
 		X: v.X - scalar,
 		Y: v.Y - scalar,
 	}
-}
-
-func (v *Vector2[T]) SubScalarp(scalar T) {
-	v.X = v.X - scalar
-	v.Y = v.Y - scalar
 }
 
 func (v Vector2[T]) SubScalars(x T, y T) Vector2[T] {
@@ -129,22 +99,12 @@ func (v Vector2[T]) SubScalars(x T, y T) Vector2[T] {
 	}
 }
 
-func (v *Vector2[T]) SubScalarsp(x T, y T) {
-	v.X = v.X - x
-	v.Y = v.Y - y
-}
-
 // Mul multiplies the current vector by another vector element-wise and returns the result as a new Vector2.
 func (v Vector2[T]) Mul(v2 Vector2[T]) Vector2[T] {
 	return Vector2[T]{
 		X: v.X * v2.X,
 		Y: v.Y * v2.Y,
 	}
-}
-
-func (v *Vector2[T]) Mulp(v2 *Vector2[T]) {
-	v.X = v.X * v2.X
-	v.Y = v.Y * v2.Y
 }
 
 // MultiplyScalar multiplies the current vector by a scalar value.
@@ -156,21 +116,11 @@ func (v Vector2[T]) MultiplyScalar(scalar T) Vector2[T] {
 	}
 }
 
-func (v *Vector2[T]) MultiplyScalarp(scalar T) {
-	v.X = v.X * scalar
-	v.Y = v.Y * scalar
-}
-
 func (v Vector2[T]) MultiplyScalars(x T, y T) Vector2[T] {
 	return Vector2[T]{
 		X: v.X * x,
 		Y: v.Y * y,
 	}
-}
-
-func (v *Vector2[T]) MultiplyScalarsp(x T, y T) {
-	v.X = v.X * x
-	v.Y = v.Y * y
 }
 
 func (v Vector2[T]) Div(v2 Vector2[T]) Vector2[T] {
@@ -180,18 +130,8 @@ func (v Vector2[T]) Div(v2 Vector2[T]) Vector2[T] {
 	}
 }
 
-func (v *Vector2[T]) Divp(v2 *Vector2[T]) {
-	v.X = v.X / v2.X
-	v.Y = v.Y / v2.Y
-}
-
 func (v Vector2[T]) DivScalar(scalar T) Vector2[T] {
 	return Vector2[T]{X: v.X / scalar, Y: v.Y / scalar}
-}
-
-func (v *Vector2[T]) DivScalarp(scalar T) {
-	v.X = v.X / scalar
-	v.Y = v.Y / scalar
 }
 
 func (v Vector2[T]) DivScalars(x T, y T) Vector2[T] {
@@ -201,19 +141,8 @@ func (v Vector2[T]) DivScalars(x T, y T) Vector2[T] {
 	}
 }
 
-func (v *Vector2[T]) DivScalarsp(x T, y T) {
-	v.X = v.X / x
-	v.Y = v.Y / y
-}
-
 // Distance calculates the Euclidean distance between two Vector2 points.
 func (v Vector2[T]) Distance(v2 Vector2[T]) float64 {
-	dx := v.X - v2.X
-	dy := v.Y - v2.Y
-	return math.Sqrt(float64(dx*dx + dy*dy))
-}
-
-func (v *Vector2[T]) Distancep(v2 Vector2[T]) float64 {
 	dx := v.X - v2.X
 	dy := v.Y - v2.Y
 	return math.Sqrt(float64(dx*dx + dy*dy))
@@ -228,20 +157,11 @@ func DotVector2[T Number](v1x T, v1y T, v2x T, v2y T) T {
 	return v1x*v2x + v1y*v2y
 }
 
-func (v *Vector2[T]) Dotp(v2 *Vector2[T]) T {
-	return v.X*v2.X + v.Y*v2.Y
-}
-
 func (v Vector2[T]) Lerp(v2 Vector2[T], t T) Vector2[T] {
 	return Vector2[T]{
 		v.X + (v2.X-v.X)*t,
 		v.Y + (v2.Y-v.Y)*t,
 	}
-}
-
-func (v *Vector2[T]) Lerpp(v2 *Vector2[T], t T) {
-	v.X = v.X + (v2.X-v.X)*t
-	v.Y = v.Y + (v2.Y-v.Y)*t
 }
 
 func (v Vector2[T]) Length64() float64 {
@@ -252,16 +172,8 @@ func (v Vector2[T]) Length() T {
 	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
 
-func (v *Vector2[T]) Lengthp() T {
-	return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
-}
-
 func (v Vector2[T]) LengthSq() T {
 	//return T(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
-	return v.X*v.X + v.Y*v.Y
-}
-
-func (v *Vector2[T]) LengthSqp() T {
 	return v.X*v.X + v.Y*v.Y
 }
 
@@ -278,29 +190,12 @@ func (v Vector2[T]) SetLength(l T) Vector2[T] {
 	return v
 }
 
-func (v *Vector2[T]) SetLengthp(l T) {
-	oldLength := v.Length()
-	if oldLength != 0 && l != oldLength {
-		v.MultiplyScalarp(l / oldLength)
-	}
-}
-
 func (v Vector2[T]) Normalize() Vector2[T] {
 	m := v.Length()
 	if float64(m) > Epsilon {
 		return v.DivScalar(m)
 	}
 	return v
-}
-
-func (v *Vector2[T]) Normalizep() {
-	m := v.Lengthp()
-
-	if float64(m) < Epsilon {
-		return
-	}
-
-	v.DivScalarp(m)
 }
 
 // Reflect reflects the vector about the given normal, which is assumed to be of unit length.
@@ -312,28 +207,13 @@ func (v Vector2[T]) Reflect(normal Vector2[T]) Vector2[T] {
 	)
 }
 
-func (v *Vector2[T]) Reflectp(normal *Vector2[T]) {
-	factor := -T(2.0) * v.Dot(*normal)
-	v.X = factor*normal.X + v.X
-	v.Y = factor*normal.Y + v.Y
-}
-
 func (v Vector2[T]) Equals(v2 Vector2[T]) bool {
-	return v.X == v2.X && v.Y == v2.Y
-}
-
-func (v *Vector2[T]) Equalsp(v2 *Vector2[T]) bool {
 	return v.X == v2.X && v.Y == v2.Y
 }
 
 // AngleTo returns the unsigned angle in radians between this vector and v2.
 func (v Vector2[T]) AngleTo(v2 Vector2[T]) T {
 	theta := v.Dot(v2) / (v.Length() * v2.Length())
-	return Acos(Clamp[T](theta, T(-1.0), 1))
-}
-
-func (v *Vector2[T]) AngleTop(v2 *Vector2[T]) T {
-	theta := v.Dot(*v2) / (v.Lengthp() * v2.Lengthp())
 	return Acos(Clamp[T](theta, T(-1.0), 1))
 }
 
@@ -355,36 +235,15 @@ func (v Vector2[T]) AngleToWithSign(v2 Vector2[T]) T {
 	return Atan2(cross, dot)
 }
 
-func (v *Vector2[T]) AngleToWithSignp(v2 *Vector2[T]) T {
-	theta := v.AngleTop(v2)
-	cross := v.X*v2.Y - v.Y*v2.X
-
-	if cross < 0 {
-		theta = -theta
-	}
-
-	return theta
-}
-
 // DistanceTo returns the distance to the given vector
 func (v Vector2[T]) DistanceTo(v2 Vector2[T]) T {
 
 	return Sqrt(v.DistanceToSquared(v2))
 }
 
-func (v *Vector2[T]) DistanceTop(v2 *Vector2[T]) T {
-	return Sqrt(v.DistanceToSquaredp(v2))
-}
-
 // DistanceToSquared returns the squared distance to the given vector
 func (v Vector2[T]) DistanceToSquared(v2 Vector2[T]) T {
 
-	dx := v.X - v2.X
-	dy := v.Y - v2.Y
-	return dx*dx + dy*dy
-}
-
-func (v *Vector2[T]) DistanceToSquaredp(v2 *Vector2[T]) T {
 	dx := v.X - v2.X
 	dy := v.Y - v2.Y
 	return dx*dx + dy*dy
@@ -397,13 +256,6 @@ func (v Vector2[T]) ApplyMatrix(m Matrix[T]) Vector2[T] {
 	v.Y = m[1]*x + m[4]*y + m[7]
 
 	return v
-}
-
-func (v *Vector2[T]) ApplyMatrixp(m *Matrix[T]) {
-	x := v.X
-	y := v.Y
-	v.X = m[0]*x + m[3]*y + m[6]
-	v.Y = m[1]*x + m[4]*y + m[7]
 }
 
 // NormalCounterClockwise calculates the counterclockwise normal of the vector
@@ -428,22 +280,8 @@ func (v Vector2[T]) Rotate(phi T) (r Vector2[T]) {
 	return r
 }
 
-func (v *Vector2[T]) Rotatep(phi T) {
-	x, y := v.X, v.Y
-	v.X = x*Cos(phi) - y*Sin(phi)
-	v.Y = x*Sin(phi) + y*Cos(phi)
-}
-
 func (v Vector2[T]) ToVector3(z T) Vector3[T] {
 	return Vector3[T]{
-		X: v.X,
-		Y: v.Y,
-		Z: z,
-	}
-}
-
-func (v *Vector2[T]) ToVector3p(z T) *Vector3[T] {
-	return &Vector3[T]{
 		X: v.X,
 		Y: v.Y,
 		Z: z,

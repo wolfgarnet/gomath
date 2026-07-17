@@ -60,13 +60,11 @@ func TestVector2_Rotate(t *testing.T) {
 
 func TestBenchmarkCalculations(t *testing.T) {
 	var v4 Vector2[float32]
-	var v4p Vector2[float32]
 	for i := 0; i < 100000000; i++ {
-		//runAddPointer(&v4p)
 		v4 = v4.Add(runAddValue())
 	}
 
-	fmt.Printf("%v == %v\n", v4, v4p)
+	fmt.Printf("%v\n", v4)
 }
 
 // func TestVector2_Add(t *testing.T) {
@@ -80,23 +78,8 @@ func runAddValue() (v4 Vector2[float32]) {
 	return v4
 }
 
-func runAddPointer(v4 *Vector2[float32]) {
-	v1 := Vector2[float32]{X: 1, Y: 2}
-	v2 := Vector2[float32]{X: 3, Y: 4}
-
-	v3 := v1.Add(v2)
-	v4.Addp(v3)
-}
-
 func BenchmarkVector2_Add(b *testing.B) {
-	b.Run("value", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			runAddValue()
-		}
-	})
-	b.Run("pointer", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			runAddPointer(nil)
-		}
-	})
+	for i := 0; i < b.N; i++ {
+		runAddValue()
+	}
 }

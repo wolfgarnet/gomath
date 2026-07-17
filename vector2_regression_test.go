@@ -7,43 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestVector2_Rotatep asserts that the in-place Rotatep agrees with the
-// value-returning Rotate for the same input.
-func TestVector2_Rotatep(t *testing.T) {
-	tests := map[string]struct {
-		vector Vector2[float64]
-		angle  float64
-	}{
-		"right 90":  {vector: Vector2[float64]{1, 0}, angle: math.Pi / 2},
-		"right -90": {vector: Vector2[float64]{1, 0}, angle: -math.Pi / 2},
-		"up 90":     {vector: Vector2[float64]{0, 1}, angle: math.Pi / 2},
-		"up 45":     {vector: Vector2[float64]{0, 1}, angle: math.Pi / 4},
-		"up 180":    {vector: Vector2[float64]{0, 1}, angle: math.Pi},
-		"diagonal":  {vector: Vector2[float64]{3, 4}, angle: math.Pi / 3},
-		"zero":      {vector: Vector2[float64]{0, 0}, angle: math.Pi / 3},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			want := test.vector.Rotate(test.angle)
-
-			got := test.vector
-			got.Rotatep(test.angle)
-
-			assert.InDelta(t, want.X, got.X, 0.0001)
-			assert.InDelta(t, want.Y, got.Y, 0.0001)
-		})
-	}
-}
-
-// TestVector2_RotatepPreservesLength asserts a defining property of rotation:
+// TestVector2_RotatePreservesLength asserts a defining property of rotation:
 // it never changes the magnitude of the vector.
-func TestVector2_RotatepPreservesLength(t *testing.T) {
+func TestVector2_RotatePreservesLength(t *testing.T) {
 	angles := []float64{0, math.Pi / 6, math.Pi / 4, math.Pi / 2, math.Pi, -math.Pi / 3}
 
 	for _, angle := range angles {
-		v := Vector2[float64]{3, 4}
-		v.Rotatep(angle)
+		v := Vector2[float64]{3, 4}.Rotate(angle)
 		assert.InDeltaf(t, 5.0, v.Length(), 0.0001, "rotating (3,4) by %v gave %v", angle, v)
 	}
 }
@@ -88,12 +58,6 @@ func TestVector2_SetLength(t *testing.T) {
 			got := test.vector.SetLength(test.length)
 			assert.InDelta(t, test.expected.X, got.X, 0.0001)
 			assert.InDelta(t, test.expected.Y, got.Y, 0.0001)
-
-			// The pointer variant must agree with the value variant.
-			p := test.vector
-			p.SetLengthp(test.length)
-			assert.InDelta(t, test.expected.X, p.X, 0.0001)
-			assert.InDelta(t, test.expected.Y, p.Y, 0.0001)
 		})
 	}
 }
@@ -117,12 +81,6 @@ func TestVector2_Reflect(t *testing.T) {
 			got := test.vector.Reflect(test.normal)
 			assert.InDelta(t, test.expected.X, got.X, 0.0001)
 			assert.InDelta(t, test.expected.Y, got.Y, 0.0001)
-
-			// The pointer variant must agree with the value variant.
-			v, n := test.vector, test.normal
-			v.Reflectp(&n)
-			assert.InDelta(t, test.expected.X, v.X, 0.0001)
-			assert.InDelta(t, test.expected.Y, v.Y, 0.0001)
 		})
 	}
 }
