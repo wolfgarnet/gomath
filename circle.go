@@ -1,5 +1,10 @@
 package gomath
 
+// Circle is a circle defined by a centre and radius, treated as a filled disk by
+// the containment and overlap helpers. Integer T works exactly for the squared
+// tests (Contains, Intersects, ...) but is storage-only for operations that need
+// a true magnitude or pi (ClosestPoint, Area, Circumference). See
+// circle_additions.go for those helpers.
 type Circle[T Number] struct {
 	Center Vector2[T]
 	Radius T
