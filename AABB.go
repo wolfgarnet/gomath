@@ -56,33 +56,29 @@ func (a AABB[T]) Translate(translation Vector2[T]) AABB[T] {
 	}
 }
 
-func (a *AABB[T]) Scale(scale T) {
+// Scaled returns a copy of the box with both half-extents multiplied by scale.
+func (a AABB[T]) Scaled(scale T) AABB[T] {
 	a.HalfHeight *= scale
 	a.HalfWidth *= scale
+	return a
 }
 
-func (a *AABB[T]) SetCenter(c Vector2[T]) {
+// WithCenter returns a copy of the box centred at c.
+func (a AABB[T]) WithCenter(c Vector2[T]) AABB[T] {
 	a.Center = c
+	return a
 }
 
-func (a *AABB[T]) GetCenter() Vector2[T] {
+func (a AABB[T]) GetCenter() Vector2[T] {
 	return a.Center
 }
 
-func (a *AABB[T]) GetHalfWidth() T {
+func (a AABB[T]) GetHalfWidth() T {
 	return a.HalfWidth
 }
 
-func (a *AABB[T]) GetHalfHeight() T {
+func (a AABB[T]) GetHalfHeight() T {
 	return a.HalfHeight
-}
-
-func (a *AABB[T]) SetHalfWidth(t T) {
-	a.HalfWidth = t
-}
-
-func (a *AABB[T]) SetHalfHeight(t T) {
-	a.HalfHeight = t
 }
 
 func (a AABB[T]) Extend(w T) AABB[T] {
@@ -118,7 +114,7 @@ func (a AABBCollider[T]) Sides(offset Vector2[T]) []LineSegment[T] {
 
 // Sides returns the 4 sides of the AABB as line segments
 // in clockwise order starting from the lower left corner
-func (a *AABB[T]) Sides() []LineSegment[T] {
+func (a AABB[T]) Sides() []LineSegment[T] {
 	segments := make([]LineSegment[T], 4)
 
 	// Lower left
@@ -150,7 +146,7 @@ func (a *AABB[T]) Sides() []LineSegment[T] {
 	return segments
 }
 
-func (a *AABB[T]) Polygon() Polygon[T] {
+func (a AABB[T]) Polygon() Polygon[T] {
 	p1 := Vector2[T]{
 		X: a.Center.X - a.HalfWidth,
 		Y: a.Center.Y + a.HalfHeight,
@@ -170,11 +166,11 @@ func (a *AABB[T]) Polygon() Polygon[T] {
 	return NewPolygon([]Vector2[T]{p1, p2, p3, p4})
 }
 
-func (a *AABB[T]) String() string {
+func (a AABB[T]) String() string {
 	return fmt.Sprintf("AABB[c=%v w=%v, h=%v]", a.Center, a.HalfWidth, a.HalfHeight)
 }
 
-func (a *AABB[T]) Points() []Vector2[T] {
+func (a AABB[T]) Points() []Vector2[T] {
 	p1 := Vector2[T]{
 		X: a.Center.X - a.HalfWidth,
 		Y: a.Center.Y + a.HalfHeight,
@@ -326,4 +322,61 @@ func (a SquaredAABB2D[T]) Polygon() Polygon[T] {
 
 func (a SquaredAABB2D[T]) String() string {
 	return fmt.Sprintf("SquaredAABB[c=%v hs=%v]", a.Center, a.HalfSize)
+}
+
+// GetHalfWidth returns HalfSize, so SquaredAABB2D satisfies SimpleVolume with the
+// square's half-extent used for both axes.
+func (a SquaredAABB2D[T]) GetHalfWidth() T {
+	return a.HalfSize
+}
+
+// GetHalfHeight returns HalfSize (see GetHalfWidth).
+func (a SquaredAABB2D[T]) GetHalfHeight() T {
+	return a.HalfSize
+}
+
+// Translate returns a copy of the box moved by translation.
+func (a SquaredAABB2D[T]) Translate(translation Vector2[T]) SquaredAABB2D[T] {
+	a.Center = a.Center.Add(translation)
+	return a
+}
+
+// Scaled returns a copy of the box with its half-extent multiplied by scale. The
+// box stays square.
+func (a SquaredAABB2D[T]) Scaled(scale T) SquaredAABB2D[T] {
+	a.HalfSize *= scale
+	return a
+}
+
+// WithCenter returns a copy of the box centred at c.
+func (a SquaredAABB2D[T]) WithCenter(c Vector2[T]) SquaredAABB2D[T] {
+	a.Center = c
+	return a
+}
+
+// Points returns the 4 corners, in the same order as Sides/Polygon and AABB.Points
+// (lower-left, lower-right, upper-right, upper-left; "lower" = +Y, screen y-down).
+func (a SquaredAABB2D[T]) Points() []Vector2[T] {
+	return []Vector2[T]{
+		{X: a.Center.X - a.HalfSize, Y: a.Center.Y + a.HalfSize},
+		{X: a.Center.X + a.HalfSize, Y: a.Center.Y + a.HalfSize},
+		{X: a.Center.X + a.HalfSize, Y: a.Center.Y - a.HalfSize},
+		{X: a.Center.X - a.HalfSize, Y: a.Center.Y - a.HalfSize},
+	}
+}
+
+// Equals reports whether a and other have the same centre and half-size.
+func (a SquaredAABB2D[T]) Equals(other SquaredAABB2D[T]) bool {
+	return a.Center == other.Center && a.HalfSize == other.HalfSize
+}
+
+// ToAABB returns the equivalent AABB (HalfWidth = HalfHeight = HalfSize). Use it
+// to reach the rich AABB queries that a square is not closed under, e.g.
+// a.ToAABB().Union(b) or a.ToAABB().Intersection(b).
+func (a SquaredAABB2D[T]) ToAABB() AABB[T] {
+	return AABB[T]{
+		Center:     a.Center,
+		HalfWidth:  a.HalfSize,
+		HalfHeight: a.HalfSize,
+	}
 }

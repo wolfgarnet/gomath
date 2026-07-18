@@ -10,6 +10,23 @@ import "math"
 // Contains uses a cross-multiplied test, so it is exact for integer T; Area and
 // PointAt go through float64 and truncate for integer T.
 
+// GetCenter returns the ellipse centre. Together with GetHalfWidth and
+// GetHalfHeight it makes Ellipsoid satisfy SimpleVolume, treating the axis
+// half-extents (Radii) as the bounding half-extents.
+func (e Ellipsoid[T]) GetCenter() Vector2[T] {
+	return e.Position
+}
+
+// GetHalfWidth returns the horizontal radius (Radii.X).
+func (e Ellipsoid[T]) GetHalfWidth() T {
+	return e.Radii.X
+}
+
+// GetHalfHeight returns the vertical radius (Radii.Y).
+func (e Ellipsoid[T]) GetHalfHeight() T {
+	return e.Radii.Y
+}
+
 // Contains reports whether point lies inside the ellipse, boundary inclusive.
 func (e Ellipsoid[T]) Contains(point Vector2[T]) bool {
 	dx := point.X - e.Position.X

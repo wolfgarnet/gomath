@@ -6,7 +6,6 @@ import (
 
 type Polygon[T Number] struct {
 	Points []Vector2[T]
-	center *Vector2[T]
 }
 
 func NewPolygon[T Number](points []Vector2[T]) Polygon[T] {
@@ -48,18 +47,14 @@ func (p Polygon[T]) Previous(i int) (Vector2[T], int) {
 	return p.Points[i], i
 }
 
-func (p *Polygon[T]) Center() Vector2[T] {
-	if p.center != nil {
-		return *p.center
-	}
+func (p Polygon[T]) Center() Vector2[T] {
 	center := Vector2[T]{}
 	ratio := 1 / T(len(p.Points))
 	for _, point := range p.Points {
 		center = center.Add(point.MultiplyScalar(ratio))
 	}
-	p.center = &center
 
-	return *p.center
+	return center
 }
 
 func (p Polygon[T]) Center2() Vector2[T] {
