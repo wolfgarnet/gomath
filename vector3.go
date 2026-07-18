@@ -5,6 +5,14 @@ import (
 	"math"
 )
 
+// Vector3 is a 3D vector. As with Vector2, integer element types are
+// storage-only for geometry: methods that involve magnitude, angles or
+// trigonometry (Length, Normalize, Distance*, AngleTo, SetLength, ScaleToLength,
+// Limit, ClampLength, MoveTowards, Project, Reject, RotateAxis, ...) compute in
+// float64 and truncate back to T, so their results are meaningless for integer
+// T. Use a floating-point T for any such work. Pure element-wise operations
+// (Add, Sub, Mul, Cross, Min/Max, Manhattan/ChebyshevDistance, ...) are exact
+// for integers.
 type Vector3[T Number] struct {
 	X T
 	Y T
@@ -19,6 +27,9 @@ func NewVector3[T Number](x T, y T, z T) Vector3[T] {
 	}
 }
 
+// Set returns a copy of the vector with X, Y and Z replaced. It has a value
+// receiver and does NOT mutate the receiver, so the result must be used:
+// `v = v.Set(x, y, z)`.
 func (v Vector3[T]) Set(x T, y T, z T) Vector3[T] {
 	v.X = x
 	v.Y = y
@@ -171,6 +182,9 @@ func (v Vector3[T]) Length32() float32 {
 	return float32(v.Length64())
 }
 
+// SetLength returns the vector scaled to length l, preserving direction. A zero
+// vector is returned unchanged. Note SetLength(0) collapses a non-zero vector to
+// the zero vector; ScaleToLength(0) instead leaves it unchanged.
 func (v Vector3[T]) SetLength(l T) Vector3[T] {
 	oldLength := v.Length()
 	if oldLength != 0 && l != oldLength {
@@ -235,10 +249,15 @@ func (v Vector3[T]) String() string {
 	return fmt.Sprintf("Vector3(%v, %v, %v)", v.X, v.Y, v.Z)
 }
 
+// Limit caps the vector's magnitude at limit, preserving its direction. A
+// vector already at or under limit is returned unchanged.
 func (v Vector3[T]) Limit(limit T) Vector3[T] {
 	l := v.Length()
 	if l > limit {
-		return v.Normalize().MultiplyScalar(limit)
+		// Scale directly by limit/l — one square root instead of the two a
+		// Normalize().MultiplyScalar(limit) would take. l > limit >= 0 here, so
+		// l is nonzero.
+		return v.MultiplyScalar(limit / l)
 	}
 
 	return v
