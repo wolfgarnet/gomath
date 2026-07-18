@@ -59,7 +59,9 @@ func TestAABBAABB(t *testing.T) {
 			b1x: 0, b1y: 0, b2x: 0, b2y: 0, b1halfwidth: 1, b1halfheight: 1, b2halfwidth: 1, b2halfheight: 1,
 			overlaps:    true,
 			penetration: 2.0,
-			normal:      gomath.Vector2[float32]{X: 0, Y: 1},
+			// Normal points from box1 toward box2 (obstacle). Degenerate when the
+			// boxes coincide; the y-axis is the tie-break.
+			normal: gomath.Vector2[float32]{X: 0, Y: -1},
 		},
 		"next to each other": {
 			b1x: 0, b1y: 0, b2x: 3, b2y: 0, b1halfwidth: 1, b1halfheight: 1, b2halfwidth: 1, b2halfheight: 1,
@@ -69,7 +71,7 @@ func TestAABBAABB(t *testing.T) {
 			b1x: 0, b1y: 0, b2x: 1.5, b2y: 0, b1halfwidth: 1, b1halfheight: 1, b2halfwidth: 1, b2halfheight: 1,
 			overlaps:    true,
 			penetration: 0.5,
-			normal:      gomath.Vector2[float32]{X: -1, Y: 0},
+			normal:      gomath.Vector2[float32]{X: 1, Y: 0},
 		},
 		"over each other": {
 			b1x: 0, b1y: 0, b2x: 0, b2y: 3, b1halfwidth: 1, b1halfheight: 1, b2halfwidth: 1, b2halfheight: 1,
@@ -79,7 +81,7 @@ func TestAABBAABB(t *testing.T) {
 			b1x: 0, b1y: 0, b2x: 0, b2y: 1.5, b1halfwidth: 1, b1halfheight: 1, b2halfwidth: 1, b2halfheight: 1,
 			overlaps:    true,
 			penetration: 0.5,
-			normal:      gomath.Vector2[float32]{X: 0, Y: -1},
+			normal:      gomath.Vector2[float32]{X: 0, Y: 1},
 		},
 		"diagonal": {
 			b1x: 0, b1y: 0, b2x: 2, b2y: 3, b1halfwidth: 1, b1halfheight: 1, b2halfwidth: 1, b2halfheight: 1,
@@ -89,7 +91,7 @@ func TestAABBAABB(t *testing.T) {
 			b1x: 0, b1y: 0, b2x: 1.5, b2y: 1.2, b1halfwidth: 1, b1halfheight: 1, b2halfwidth: 1, b2halfheight: 1,
 			overlaps:    true,
 			penetration: 0.5,
-			normal:      gomath.Vector2[float32]{X: -1, Y: 0},
+			normal:      gomath.Vector2[float32]{X: 1, Y: 0},
 		},
 	}
 

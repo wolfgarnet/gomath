@@ -147,7 +147,9 @@ func TestCircleLineSegmentPenetration(t *testing.T) {
 			segment2x: 0, segment2y: 1,
 			overlapping: true,
 			penetration: 1,
-			normalx:     0, normaly: -1,
+			// Normal points from the circle toward the segment (obstacle),
+			// consistent with CircleCircle/CircleAABB.
+			normalx: 0, normaly: 1,
 		},
 		"segment slightly under circle overlapping": {
 			circleRadius: 1.1,
@@ -156,7 +158,7 @@ func TestCircleLineSegmentPenetration(t *testing.T) {
 			segment2x: 0, segment2y: -1,
 			overlapping: true,
 			penetration: 0.1,
-			normalx:     0, normaly: 1,
+			normalx:     0, normaly: -1,
 		},
 		"segment over left overlapping": {
 			circleRadius: 1.0,
@@ -165,7 +167,7 @@ func TestCircleLineSegmentPenetration(t *testing.T) {
 			segment2x: 1, segment2y: 0,
 			overlapping: true,
 			penetration: 0.29289323,
-			normalx:     -0.70710677, normaly: -0.70710677,
+			normalx:     0.70710677, normaly: 0.70710677,
 		},
 	}
 

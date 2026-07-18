@@ -37,19 +37,22 @@ func AABBAABBPenetration[T gomath.Number](aabbPosition1x T, aabbPosition1y T, aa
 	px := sizex - absDiffx
 	py := sizey - absDiffy
 
+	// diff = position1 - position2, so the direction from box1 toward box2 is
+	// -diff. The normal points from box1 toward box2 (the obstacle), matching the
+	// convention of CircleCircle/CircleAABB.
 	if px < py {
 		penetration = px
 		if diffx >= 0 {
-			normal = gomath.Vector2[T]{X: 1, Y: 0}
-		} else {
 			normal = gomath.Vector2[T]{X: -1, Y: 0}
+		} else {
+			normal = gomath.Vector2[T]{X: 1, Y: 0}
 		}
 	} else {
 		penetration = py
 		if diffy >= 0 {
-			normal = gomath.Vector2[T]{X: 0, Y: 1}
-		} else {
 			normal = gomath.Vector2[T]{X: 0, Y: -1}
+		} else {
+			normal = gomath.Vector2[T]{X: 0, Y: 1}
 		}
 	}
 
@@ -163,8 +166,6 @@ func AABBLineSegmentPenetration[T gomath.Number](aabbPositionX T, aabbPositionY,
 		py := aabbHalfHeight - gomath.Abs(dy)
 
 		if px < py {
-			penetration = px + gomath.Max(aabbHalfWidth, aabbHalfHeight) // Some large value or just px?
-			// Usually we want the shortest exit.
 			penetration = px
 			if dx >= 0 {
 				normal = gomath.Vector2[T]{X: 1, Y: 0}

@@ -54,13 +54,6 @@ func CircleAABBPenetration[T gomath.Number](circleRadius T, circleOffsetX, circl
 	dy := circleOffsetY - closestY
 
 	distSq := dx*dx + dy*dy
-	if distSq >= circleRadius*circleRadius {
-		// Even if not intersecting via closest point, if the circle center is INSIDE the AABB,
-		// we still might have an intersection that CircleAABB would catch if we used a more robust method.
-		// However, for AABB, the closest point method IS robust, except when the circle center is INSIDE.
-		// If circle center is inside, closestX == circleOffsetX and closestY == circleOffsetY, distSq == 0.
-	}
-
 	dist := gomath.Sqrt(distSq)
 
 	// If the circle center is inside the AABB
@@ -109,8 +102,12 @@ func CircleAABBPenetration[T gomath.Number](circleRadius T, circleOffsetX, circl
 }
 
 func CircleLineSegmentPenetration[T gomath.Number](circleRadius T, circleOffsetX, circleOffsetY T, startSegmentX T, startSegmentY T, endSegmentX T, endSegmentY T) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	// VectorToMinimumDistance returns (circle - closestPointOnSegment), i.e. a
+	// vector pointing from the segment toward the circle. Negate it so the normal
+	// points from the circle toward the segment (the obstacle), matching the
+	// convention of CircleCircle/CircleAABB.
 	tox, toy, dist := gomath.VectorToMinimumDistance(startSegmentX, startSegmentY, endSegmentX, endSegmentY, circleOffsetX, circleOffsetY)
-	normalx, normaly := gomath.NormalizeVector(tox, toy)
+	normalx, normaly := gomath.NormalizeVector(-tox, -toy)
 	return circleRadius - dist, gomath.Vector2[T]{
 		X: normalx,
 		Y: normaly,
