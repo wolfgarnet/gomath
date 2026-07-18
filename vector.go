@@ -17,6 +17,14 @@ type Float interface {
 	constraints.Float
 }
 
+// Vector2 is a 2D vector. T may be any signed integer or float type, but note
+// that integer element types are storage-only for geometry: methods that
+// involve magnitude, angles or trigonometry (Length, Normalize, Distance*,
+// Angle*, SetLength, ScaleToLength, Limit, ClampLength, MoveTowards, Project,
+// Reject, Rotate*, ...) compute in float64 and truncate back to T, so their
+// results are meaningless for integer T. Use a floating-point T for any such
+// work. Pure element-wise operations (Add, Sub, Mul, Cross, Perp, Min/Max,
+// Manhattan/ChebyshevDistance, ...) are exact for integers.
 type Vector2[T Number] struct {
 	X T
 	Y T
@@ -29,6 +37,9 @@ func NewVector2[T Number](x T, y T) Vector2[T] {
 	}
 }
 
+// Set returns a copy of the vector with X and Y replaced by x and y. It has a
+// value receiver and does NOT mutate the receiver, so the result must be used:
+// `v = v.Set(x, y)`. Calling `v.Set(x, y)` and discarding the result is a no-op.
 func (v Vector2[T]) Set(x T, y T) Vector2[T] {
 	v.X = x
 	v.Y = y
@@ -181,6 +192,10 @@ func (v Vector2[T]) Length32() float32 {
 	return float32(math.Sqrt(float64(v.X)*float64(v.X) + float64(v.Y)*float64(v.Y)))
 }
 
+// SetLength returns the vector scaled to length l, preserving direction. A zero
+// vector is returned unchanged (it has no direction to scale). Note SetLength(0)
+// collapses a non-zero vector to the zero vector; ScaleToLength(0) instead
+// leaves it unchanged — pick the one whose length-0 behaviour you want.
 func (v Vector2[T]) SetLength(l T) Vector2[T] {
 	oldLength := v.Length()
 	if oldLength != 0 && l != oldLength {
@@ -258,12 +273,16 @@ func (v Vector2[T]) ApplyMatrix(m Matrix[T]) Vector2[T] {
 	return v
 }
 
-// NormalCounterClockwise calculates the counterclockwise normal of the vector
+// NormalCounterClockwise returns the counter-clockwise perpendicular {-Y, X}.
+// Despite the name it is NOT normalized: the result has the same magnitude as
+// the source (use Normalize, or Perp which is an identical value-receiver
+// alias). GetNormal returns a normalized perpendicular instead.
 func (v *Vector2[T]) NormalCounterClockwise() Vector2[T] {
 	return Vector2[T]{X: -v.Y, Y: v.X}
 }
 
-// NormalClockwise calculates the clockwise normal of the vector
+// NormalClockwise returns the clockwise perpendicular {Y, -X}. Like
+// NormalCounterClockwise it is NOT normalized; it keeps the source magnitude.
 func (v *Vector2[T]) NormalClockwise() Vector2[T] {
 	return Vector2[T]{X: v.Y, Y: -v.X}
 }
@@ -274,8 +293,9 @@ const (
 
 // Rotate will rotate counterclockwise for positive phi (radian)
 func (v Vector2[T]) Rotate(phi T) (r Vector2[T]) {
-	r.X = v.X*Cos(phi) - v.Y*Sin(phi)
-	r.Y = v.X*Sin(phi) + v.Y*Cos(phi)
+	c, s := Cos(phi), Sin(phi)
+	r.X = v.X*c - v.Y*s
+	r.Y = v.X*s + v.Y*c
 
 	return r
 }
@@ -292,10 +312,15 @@ func (v Vector2[T]) String() string {
 	return fmt.Sprintf("Vector2(%v, %v)", v.X, v.Y)
 }
 
+// Limit caps the vector's magnitude at limit, preserving its direction. A
+// vector already at or under limit is returned unchanged.
 func (v Vector2[T]) Limit(limit T) Vector2[T] {
 	l := v.Length()
 	if l > limit {
-		return v.Normalize().MultiplyScalar(limit)
+		// Scale directly by limit/l — one square root instead of the two a
+		// Normalize().MultiplyScalar(limit) would take. l > limit >= 0 here, so
+		// l is nonzero.
+		return v.MultiplyScalar(limit / l)
 	}
 
 	return v
@@ -309,6 +334,9 @@ func (v Vector2[T]) IsZero() bool {
 	return v.X == 0 && v.Y == 0
 }
 
+// ScaleToLength returns the vector scaled to the given length, preserving
+// direction. Unlike SetLength, a length of 0 (or a zero vector) returns the
+// vector unchanged rather than collapsing it to the zero vector.
 func (v Vector2[T]) ScaleToLength(length T) Vector2[T] {
 	if length == 0 || v.IsZero() {
 		return v
