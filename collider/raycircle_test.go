@@ -1,10 +1,9 @@
 package collider
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/wolfgarnet/gomath"
+	"testing"
 )
 
 func TestRayCircleIntersection(t *testing.T) {
@@ -37,7 +36,7 @@ func TestRayCircleIntersection(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			intersects, p1, p2 := RayCircle(test.ray.Origin.X, test.ray.Origin.Y, test.ray.Direction.X, test.ray.Direction.Y, test.circle.Center.X, test.circle.Center.Y, test.circle.Radius)
+			intersects, p1, p2 := RayCircle(test.ray, test.circle)
 			assert.Equal(t, test.expected, intersects)
 			if intersects > 0 {
 				assert.Equal(t, *test.p1, p1)

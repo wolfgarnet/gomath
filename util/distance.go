@@ -2,12 +2,12 @@ package util
 
 import (
 	"github.com/wolfgarnet/gomath"
-	"github.com/wolfgarnet/gomath/intersection"
+	"github.com/wolfgarnet/gomath/collider"
 	"math"
 )
 
 func ShortestDistance[T gomath.Float](a gomath.AABB[T], b gomath.AABB[T]) T {
-	if intersection.AABBAABB(a, b) {
+	if collider.AABBAABB(a, b) {
 		return 0
 	}
 	var closest = T(math.MaxFloat32)

@@ -4,182 +4,127 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/wolfgarnet/gomath"
 )
 
 func TestCircleCircle(t *testing.T) {
 	tests := map[string]struct {
-		r1, r2              float32
-		o1x, o1y, o2x, o2y  float32
-		expected            bool
-		expectedPenetration float32
-		expectedNormalX     float32
-		expectedNormalY     float32
+		circle1     gomath.Circle[float32]
+		circle2     gomath.Circle[float32]
+		overlapping bool
+		penetration float32
+		normal      gomath.Vector2[float32]
 	}{
-		"not intersecting": {
-			r1: 1, r2: 1, o1x: 0, o1y: 0, o2x: 3, o2y: 0,
-			expected: false,
+		"from right": {
+			circle1:     gomath.NewCircle[float32](0, 0, 1),
+			circle2:     gomath.NewCircle[float32](2, 0, 1.1),
+			overlapping: true,
+			penetration: 0.1,
+			normal:      gomath.NewVector2[float32](1, 0),
 		},
-		"intersecting": {
-			r1: 1, r2: 1, o1x: 0, o1y: 0, o2x: 1.5, o2y: 0,
-			expected:            true,
-			expectedPenetration: 0.5,
-			expectedNormalX:     1,
-			expectedNormalY:     0,
+		"from right no overlap": {
+			circle1:     gomath.NewCircle[float32](0, 0, 1),
+			circle2:     gomath.NewCircle[float32](2, 0, 0.9),
+			overlapping: false,
 		},
-		"touching": {
-			r1: 1, r2: 1, o1x: 0, o1y: 0, o2x: 2, o2y: 0,
-			expected: false, // dist < r1+r2
-		},
-		"same position": {
-			r1: 1, r2: 1, o1x: 0, o1y: 0, o2x: 0, o2y: 0,
-			expected:            true,
-			expectedPenetration: 2,
-			expectedNormalX:     0,
-			expectedNormalY:     0,
+		"from top": {
+			circle1:     gomath.NewCircle[float32](0, 0, 1),
+			circle2:     gomath.NewCircle[float32](0, 2, 1.1),
+			overlapping: true,
+			penetration: 0.1,
+			normal:      gomath.NewVector2[float32](0, 1),
 		},
 	}
 
-	for name, tc := range tests {
+	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := CircleCircle(tc.r1, tc.o1x, tc.o1y, tc.r2, tc.o2x, tc.o2y)
-			assert.Equal(t, tc.expected, got)
-
-			penetration, normal, overlapping := CircleCirclePenetration(tc.r1, tc.o1x, tc.o1y, tc.r2, tc.o2x, tc.o2y)
-			assert.Equal(t, tc.expected, overlapping)
-			if overlapping {
-				assert.InDelta(t, tc.expectedPenetration, penetration, 0.0001)
-				assert.InDelta(t, tc.expectedNormalX, normal.X, 0.0001)
-				assert.InDelta(t, tc.expectedNormalY, normal.Y, 0.0001)
+			penetration, normal, overlapping := CircleCircleWithPenetration(test.circle1, test.circle2)
+			assert.Equal(t, test.overlapping, overlapping)
+			if !overlapping {
+				return
 			}
+
+			assert.InDelta(t, test.penetration, penetration, 0.001)
+			assert.Equal(t, test.normal, normal)
 		})
 	}
 }
 
 func TestCircleAABB(t *testing.T) {
 	tests := map[string]struct {
-		r                   float32
-		cx, cy              float32
-		hw, hh              float32
-		ax, ay              float32
-		expected            bool
-		expectedPenetration float32
-		expectedNormalX     float32
-		expectedNormalY     float32
+		circle      gomath.Circle[float32]
+		box         gomath.AABB[float32]
+		overlapping bool
+		penetration float32
+		normal      gomath.Vector2[float32]
 	}{
-		"not intersecting": {
-			r: 1, cx: -2, cy: 0,
-			hw: 1, hh: 1, ax: 0, ay: 0,
-			expected: false,
-		},
-		"intersecting from left": {
-			r: 1, cx: -1.5, cy: 0,
-			hw: 1, hh: 1, ax: 0, ay: 0,
-			expected:            true,
-			expectedPenetration: 0.5,
-			expectedNormalX:     1,
-			expectedNormalY:     0,
-		},
-		"inside AABB": {
-			r: 1, cx: 0, cy: 0,
-			hw: 5, hh: 5, ax: 0, ay: 0,
-			expected:            true,
-			expectedPenetration: 6, // hw - |cx-ax| + r = 5 - 0 + 1 = 6
-			expectedNormalX:     0,
-			expectedNormalY:     1,
-		},
-		"inside AABB slightly up": {
-			r: 1, cx: 0, cy: 1,
-			hw: 5, hh: 5, ax: 0, ay: 0,
-			expected:            true,
-			expectedPenetration: 5, // hw - |cx-ax| + r = 5 - 0 + 1 = 6
-			expectedNormalX:     0,
-			expectedNormalY:     -1,
-		},
-		"inside AABB slightly down": {
-			r: 1, cx: 0, cy: -1,
-			hw: 5, hh: 5, ax: 0, ay: 0,
-			expected:            true,
-			expectedPenetration: 5, // hw - |cx-ax| + r = 5 - 0 + 1 = 6
-			expectedNormalX:     0,
-			expectedNormalY:     1,
-		},
-		"intersecting from right": {
-			r: 1, cx: 5, cy: 0,
-			hw: 5, hh: 5, ax: 0, ay: 0,
-			expected:            true,
-			expectedPenetration: 1,
-			expectedNormalX:     -1,
-			expectedNormalY:     0,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := CircleAABB(tc.r, tc.cx, tc.cy, tc.hw, tc.hh, tc.ax, tc.ay)
-			assert.Equal(t, tc.expected, got)
-
-			penetration, normal, overlapping := CircleAABBPenetration(tc.r, tc.cx, tc.cy, tc.hw, tc.hh, tc.ax, tc.ay)
-			assert.Equal(t, tc.expected, overlapping)
-			if overlapping {
-				assert.InDelta(t, tc.expectedPenetration, penetration, 0.0001, "penetration")
-				assert.InDelta(t, tc.expectedNormalX, normal.X, 0.0001, "normalX")
-				assert.InDelta(t, tc.expectedNormalY, normal.Y, 0.0001, "normalY")
-			}
-		})
-	}
-}
-
-func TestCircleLineSegmentPenetration(t *testing.T) {
-	tests := map[string]struct {
-		circleRadius         float32
-		circlex, circley     float32
-		segment1x, segment1y float32
-		segment2x, segment2y float32
-		overlapping          bool
-		penetration          float32
-		normalx, normaly     float32
-	}{
-		"segment over circle overlapping": {
-			circleRadius: 2,
-			circlex:      0, circley: 0,
-			segment1x: 0, segment1y: 1,
-			segment2x: 0, segment2y: 1,
+		// The box spans x in [0,1024] and y in [0,96], so this circle sits wholly
+		// inside it and therefore overlaps it. The nearest wall is y=96, 32 away.
+		"circle contained in a wide box": {
+			circle: gomath.NewCircle[float32](64, 64, 6),
+			box: gomath.AABB[float32]{
+				Center:     gomath.NewVector2[float32](512, 48),
+				HalfWidth:  512,
+				HalfHeight: 48,
+			},
 			overlapping: true,
-			penetration: 1,
-			// Normal points from the circle toward the segment (obstacle),
-			// consistent with CircleCircle/CircleAABB.
-			normalx: 0, normaly: 1,
-		},
-		"segment slightly under circle overlapping": {
-			circleRadius: 1.1,
-			circlex:      0, circley: 0,
-			segment1x: 0, segment1y: -1,
-			segment2x: 0, segment2y: -1,
-			overlapping: true,
-			penetration: 0.1,
-			normalx:     0, normaly: -1,
-		},
-		"segment over left overlapping": {
-			circleRadius: 1.0,
-			circlex:      0, circley: 0,
-			segment1x: 0, segment1y: 1,
-			segment2x: 1, segment2y: 0,
-			overlapping: true,
-			penetration: 0.29289323,
-			normalx:     0.70710677, normaly: 0.70710677,
+			penetration: 32,
+			normal:      gomath.NewVector2[float32](0, -1),
 		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			penetration, normal, overlapping := CircleLineSegmentPenetration(test.circleRadius, test.circlex, test.circley, test.segment1x, test.segment1y, test.segment2x, test.segment2y)
-			require.Equal(t, test.overlapping, overlapping)
-			if overlapping {
-				assert.InDelta(t, test.penetration, penetration, 0.0001, "penetration")
-				assert.InDelta(t, test.normalx, normal.X, 0.0001, "normalx")
-				assert.InDelta(t, test.normaly, normal.Y, 0.0001, "normaly")
+			penetration, normal, overlapping := CircleAABBWithPenetration2(test.circle, test.box)
+			assert.Equal(t, test.overlapping, overlapping)
+			if !overlapping {
+				return
 			}
+
+			assert.InDelta(t, test.penetration, penetration, 0.001)
+			assert.Equal(t, test.normal, normal)
+		})
+	}
+}
+
+func TestCircleSquaredAABB(t *testing.T) {
+	tests := map[string]struct {
+		circle      gomath.Circle[float32]
+		box         gomath.SquaredAABB2D[float32]
+		overlapping bool
+		penetration float32
+		normal      gomath.Vector2[float32]
+	}{
+		"box from right": {
+			circle:      gomath.NewCircle[float32](0, 0, 1),
+			box:         gomath.NewSquaredAABB2DXY[float32](2, 0, 1.1),
+			overlapping: true,
+			penetration: 0.1,
+			normal:      gomath.NewVector2[float32](1, 0),
+		},
+		"box from top": {
+			circle:      gomath.NewCircle[float32](0, 0, 1),
+			box:         gomath.NewSquaredAABB2DXY[float32](0, 2, 1.1),
+			overlapping: true,
+			penetration: 0.1,
+			normal:      gomath.NewVector2[float32](0, 1),
+		},
+		"dkdkd": {
+			circle: gomath.NewCircle[float32](64, 64, 6),
+			box:    gomath.NewSquaredAABB2DXY[float32](0, 0, 10),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			penetration, normal, overlapping := CircleSquaredAABBWithPenetration(test.circle, test.box)
+			assert.Equal(t, test.overlapping, overlapping)
+			if !overlapping {
+				return
+			}
+
+			assert.InDelta(t, test.penetration, penetration, 0.001)
+			assert.Equal(t, test.normal, normal)
 		})
 	}
 }

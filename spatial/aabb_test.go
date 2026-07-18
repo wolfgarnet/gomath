@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/wolfgarnet/gomath"
-	"github.com/wolfgarnet/gomath/intersection"
+	"github.com/wolfgarnet/gomath/collider"
 )
 
 func TestSquaredAABBAABB(t *testing.T) {
@@ -156,7 +156,7 @@ func BenchmarkAABBAABB4(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		for i := 0; i < len(aabbs); i++ {
 			for j := i + 1; j < len(aabbs); j++ {
-				intersects := intersection.AABBAABB(aabbs[i], aabbs[j])
+				intersects := collider.AABBAABB(aabbs[i], aabbs[j])
 				_ = intersects
 			}
 		}

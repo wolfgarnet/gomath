@@ -6,7 +6,7 @@ import (
 	"github.com/wolfgarnet/gomath"
 )
 
-// QueryQuadtree queries the quadtree given a containing geometry compatible with intersection.Intersecting2D[T]().
+// QueryQuadtree queries the quadtree given a containing geometry compatible with collider.Intersecting2D[T]().
 // The resulting items are piped into the drain channel.
 // When checking the intersection of items and the containing geometry, it should be a 2d geometry with. Ie. not a point or line.
 func QueryQuadtree[T gomath.Number, I BoundedItem[ID], ID comparable](tree *Quadtree[T, I, ID], containing interface{}, drain chan I) {
@@ -66,7 +66,7 @@ func QueryQuadtreeWithBoundedItemWithResult[T gomath.Number, I BoundedItem[ID], 
 	return QueryQuadtreeWithResult(tree, containing.GetBounds())
 }
 
-// QueryQuadtreeWithoutCheck queries the quadtree given a containing geometry compatible with intersection.Intersecting2D[T]().
+// QueryQuadtreeWithoutCheck queries the quadtree given a containing geometry compatible with collider.Intersecting2D[T]().
 // But, it will not check the individual items against the containing object.
 // Thus returning all the items of the sub quadtrees the containing object overlaps.
 func QueryQuadtreeWithoutCheck[T gomath.Number, I BoundedItem[ID], ID comparable](tree *Quadtree[T, I, ID], containing interface{}, drain chan I) {

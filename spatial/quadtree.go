@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/wolfgarnet/gomath"
-	"github.com/wolfgarnet/gomath/intersection"
+	"github.com/wolfgarnet/gomath/collider"
 )
 
 const (
@@ -191,7 +191,7 @@ func (tree *Quadtree[T, I, ID]) Update(item I, newPos gomath.Vector2[T]) {
 	// Test to see if the update changes the quad
 	quad, ok := tree.FindQuadTree(item)
 	//if ok && quad.Boundary.Contains(newPos) {
-	if ok && intersection.SquaredAABBPoint(quad.Boundary, newPos) {
+	if ok && collider.SquaredAABBPoint(quad.Boundary, newPos) {
 		return
 	}
 	tree.Remove(item)
@@ -378,7 +378,7 @@ func (tree *Quadtree[T, I, ID]) Clear() {
 }
 
 func (tree *Quadtree[T, I, ID]) ContainedIn(item I) bool {
-	//return intersection.IntersectingSquaredAABB(tree.Boundary, item.GetBounds())
+	//return collider.IntersectingSquaredAABB(tree.Boundary, item.GetBounds())
 	return tree.Checker.Check(tree.Boundary, item.GetBounds())
 }
 

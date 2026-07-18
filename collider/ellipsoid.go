@@ -1,4 +1,4 @@
-package intersection
+package collider
 
 import (
 	"math"

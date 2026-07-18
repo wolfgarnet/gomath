@@ -2,7 +2,7 @@ package spatial
 
 import (
 	"github.com/wolfgarnet/gomath"
-	intersection "github.com/wolfgarnet/gomath/intersection"
+	"github.com/wolfgarnet/gomath/collider"
 )
 
 type PositionedItem[T gomath.Number, ID comparable] interface {
@@ -26,12 +26,12 @@ type BoundsCheck interface {
 type DefaultBoundsCheck struct{}
 
 func (bounds DefaultBoundsCheck) Check(a, b any) bool {
-	return intersection.Intersecting2D[float32](a, b)
-	//return intersection.IntersectingSquaredAABB[float32](a, b)
+	return collider.Intersecting2D[float32](a, b)
+	//return collider.IntersectingSquaredAABB[float32](a, b)
 }
 
 type IntegerBoundsCheck struct{}
 
 func (bounds IntegerBoundsCheck) Check(a, b any) bool {
-	return intersection.IntegerIntersecting(a, b)
+	return collider.IntegerIntersecting(a, b)
 }

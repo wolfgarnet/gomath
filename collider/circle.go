@@ -1,131 +1,287 @@
 package collider
 
-import "github.com/wolfgarnet/gomath"
+import (
+	"github.com/wolfgarnet/gomath"
+)
 
-func CircleCircle[T gomath.Number](radius1, offset1x, offset1y, radius2, offset2x, offset2y T) bool {
-	dx := offset2x - offset1x
-	dy := offset2y - offset1y
-	distSq := dx*dx + dy*dy
-	radiiSum := radius1 + radius2
-	return distSq < radiiSum*radiiSum
+// CircleCircle determines if the two circles are intersecting
+func CircleCircle[T gomath.Number](a, b gomath.Circle[T]) bool {
+	dist := b.Center.Sub(a.Center).Length()
+	return dist < a.Radius+b.Radius
 }
 
-func CircleCirclePenetration[T gomath.Number](radius1, offset1x, offset1y, radius2, offset2x, offset2y T) (penetration T, normal gomath.Vector2[T], overlapping bool) {
-	dx := offset2x - offset1x
-	dy := offset2y - offset1y
-	distSq := dx*dx + dy*dy
-	radiiSum := radius1 + radius2
-	if distSq >= radiiSum*radiiSum {
+// CircleCircleWithPenetration determines if the two circles are intersecting and how deep the penetration is
+func CircleCircleWithPenetration[T gomath.Number](a, b gomath.Circle[T]) (T, gomath.Vector2[T], bool) {
+	dist := b.Center.Sub(a.Center).Length()
+	penetration := (a.Radius + b.Radius) - dist
+	return penetration, b.Center.Sub(a.Center).Normalize(), penetration > 0
+}
+
+func CircleSegment[T gomath.Number](c gomath.Circle[T], p1, p2 gomath.Vector2[T]) bool {
+	dist := gomath.MinimumDistance(p1, p2, c.Center)
+
+	return dist < c.Radius
+}
+
+func CircleLineSegment[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment[T]) bool {
+	dist := gomath.MinimumDistance(s.P1, s.P2, c.Center)
+
+	return dist < c.Radius
+}
+
+func CircleSegmentCollider[t gomath.Number](circle gomath.CircleCollider[t], offset gomath.Vector2[t], p1, p2 gomath.Vector2[t]) bool {
+	dist := gomath.MinimumDistance(p1, p2, offset)
+	return dist < circle.Radius
+}
+
+func CircleLineSegmentCollider[T gomath.Number](circle gomath.CircleCollider[T], offset gomath.Vector2[T], segment gomath.LineSegment[T]) bool {
+	dist := gomath.MinimumDistance(segment.P1, segment.P2, offset)
+
+	return dist < circle.Radius
+}
+
+func CircleLineSegmentColliderPenetration[T gomath.Number](circle gomath.CircleCollider[T], offset gomath.Vector2[T], segment gomath.LineSegment[T]) (T, bool) {
+	dist := gomath.MinimumDistance(segment.P1, segment.P2, offset)
+	return circle.Radius - dist, dist < circle.Radius
+}
+
+func CircleLineSegmentWithPenetration[T gomath.Number](c gomath.Circle[T], s gomath.LineSegment[T]) (T, bool) {
+	dist := gomath.MinimumDistance(s.P1, s.P2, c.Center)
+
+	return c.Radius - dist, dist < c.Radius
+}
+
+func CirclePoint[T gomath.Number](c gomath.Circle[T], v gomath.Vector2[T]) bool {
+	dist := c.Center.DistanceTo(v)
+
+	return dist < c.Radius
+}
+
+func CirclePointWithPenetration[T gomath.Number](c gomath.Circle[T], v gomath.Vector2[T]) (T, gomath.Vector2[T], bool) {
+	dist := c.Center.DistanceTo(v)
+
+	return c.Radius - dist, v.Sub(c.Center).Normalize(), dist < c.Radius
+}
+
+func CircleSquaredAABB[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) bool {
+	p1 := gomath.Vector2[T]{X: b.Center.X + b.HalfSize, Y: b.Center.Y + b.HalfSize}
+	p2 := gomath.Vector2[T]{X: b.Center.X + b.HalfSize, Y: b.Center.Y - b.HalfSize}
+
+	if CircleSegment(c, p1, p2) {
+		return true
+	}
+
+	p3 := gomath.Vector2[T]{X: b.Center.X - b.HalfSize, Y: b.Center.Y - b.HalfSize}
+
+	if CircleSegment(c, p2, p3) {
+		return true
+	}
+
+	p4 := gomath.Vector2[T]{X: b.Center.X - b.HalfSize, Y: b.Center.Y + b.HalfSize}
+
+	if CircleSegment(c, p3, p4) {
+		return true
+	}
+	if CircleSegment(c, p4, p1) {
+		return true
+	}
+
+	if SquaredAABBPoint(b, c.Center) {
+		return true
+	}
+
+	return false
+}
+
+func CircleAABBColliders[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) bool {
+	return CircleAABB(
+		gomath.Circle[T]{Center: circleOffset, Radius: circle.Radius},
+		gomath.AABB[T]{Center: aabbOffset, HalfWidth: aabb.HalfWidth, HalfHeight: aabb.HalfHeight},
+	)
+}
+
+func CircleAABB[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
+	p1 := gomath.Vector2[T]{X: b.Center.X + b.HalfWidth, Y: b.Center.Y + b.HalfHeight}
+	p2 := gomath.Vector2[T]{X: b.Center.X + b.HalfWidth, Y: b.Center.Y - b.HalfHeight}
+
+	if CircleSegment(c, p1, p2) {
+		return true
+	}
+
+	p3 := gomath.Vector2[T]{X: b.Center.X - b.HalfWidth, Y: b.Center.Y - b.HalfHeight}
+
+	if CircleSegment(c, p2, p3) {
+		return true
+	}
+
+	p4 := gomath.Vector2[T]{X: b.Center.X - b.HalfWidth, Y: b.Center.Y + b.HalfHeight}
+
+	if CircleSegment(c, p3, p4) {
+		return true
+	}
+	if CircleSegment(c, p4, p1) {
+		return true
+	}
+
+	if AABBPoint(b, c.Center) {
+		return true
+	}
+
+	return false
+}
+
+func CircleSquaredAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.SquaredAABB2D[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	if !CircleSquaredAABB(c, b) {
 		return 0, normal, false
 	}
 
-	dist := gomath.Sqrt(distSq)
-	penetration = radiiSum - dist
-
-	if dist == 0 {
-		return penetration, normal, true
+	var max T
+	for _, side := range b.Sides() {
+		p, ok := CircleLineSegmentWithPenetration(c, side)
+		if !ok {
+			continue
+		}
+		if p > max {
+			max = p
+			normal = side.Normal()
+		}
 	}
 
-	invDist := T(1) / dist
-	return penetration, gomath.Vector2[T]{
-		X: dx * invDist,
-		Y: dy * invDist,
-	}, true
+	return max, normal, true
 }
 
-func CircleAABB[T gomath.Number](circleRadius T, circleOffsetX, circleOffsetY T, aabbHalfWidth, aabbHalfHeight T, aabbOffsetX, aabbOffsetY T) bool {
-	// Find the closest point on the AABB to the circle center
-	closestX := clamp(circleOffsetX, aabbOffsetX-aabbHalfWidth, aabbOffsetX+aabbHalfWidth)
-	closestY := clamp(circleOffsetY, aabbOffsetY-aabbHalfHeight, aabbOffsetY+aabbHalfHeight)
+func CircleAABBWithPenetration[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	if !CircleAABB(c, b) {
+		return 0, normal, false
+	}
 
-	dx := circleOffsetX - closestX
-	dy := circleOffsetY - closestY
+	var max T
+	for _, side := range b.Sides() {
+		p, ok := CircleLineSegmentWithPenetration(c, side)
+		if !ok {
+			continue
+		}
+		if p > max {
+			max = p
+			normal = side.Normal()
+		}
+	}
 
-	distSq := dx*dx + dy*dy
-	return distSq < circleRadius*circleRadius
+	return max, normal, true
 }
 
-func CircleAABBPenetration[T gomath.Number](circleRadius T, circleOffsetX, circleOffsetY T, aabbHalfWidth, aabbHalfHeight T, aabbOffsetX, aabbOffsetY T) (penetration T, normal gomath.Vector2[T], overlapping bool) {
-	// Find the closest point on the AABB to the circle center
-	closestX := clamp(circleOffsetX, aabbOffsetX-aabbHalfWidth, aabbOffsetX+aabbHalfWidth)
-	closestY := clamp(circleOffsetY, aabbOffsetY-aabbHalfHeight, aabbOffsetY+aabbHalfHeight)
+func CircleInsideAABBColliders[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) bool {
+	return circleOffset.X-circle.Radius >= aabbOffset.X-aabb.HalfWidth &&
+		circleOffset.X+circle.Radius <= aabbOffset.X+aabb.HalfWidth &&
+		circleOffset.Y-circle.Radius >= aabbOffset.Y-aabb.HalfHeight &&
+		circleOffset.Y+circle.Radius <= aabbOffset.Y+aabb.HalfHeight
+}
 
-	dx := circleOffsetX - closestX
-	dy := circleOffsetY - closestY
+func isCircleInsideAABB[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
+	return c.Center.X-c.Radius >= b.Center.X-b.HalfWidth &&
+		c.Center.X+c.Radius <= b.Center.X+b.HalfWidth &&
+		c.Center.Y-c.Radius >= b.Center.Y-b.HalfHeight &&
+		c.Center.Y+c.Radius <= b.Center.Y+b.HalfHeight
+}
 
-	distSq := dx*dx + dy*dy
-	dist := gomath.Sqrt(distSq)
+// AABBInsideCircleColliders reports whether the AABB lies entirely within the circle,
+// which is true exactly when every one of its corners does.
+func AABBInsideCircleColliders[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) bool {
+	corners := []gomath.Vector2[T]{
+		{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight},
+		{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y - aabb.HalfHeight},
+		{X: aabbOffset.X + aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight},
+		{X: aabbOffset.X - aabb.HalfWidth, Y: aabbOffset.Y + aabb.HalfHeight},
+	}
 
-	// If the circle center is inside the AABB
-	if dist == 0 {
-		// Find the distance to the closest edge
-		px := aabbHalfWidth - gomath.Abs(circleOffsetX-aabbOffsetX)
-		py := aabbHalfHeight - gomath.Abs(circleOffsetY-aabbOffsetY)
+	for _, corner := range corners {
+		if circleOffset.DistanceTo(corner) > circle.Radius {
+			return false
+		}
+	}
 
-		if px < py {
-			penetration = px + circleRadius
-			if circleOffsetX > aabbOffsetX {
-				return penetration, gomath.Vector2[T]{
-					X: -1,
-					Y: 0,
-				}, true
+	return true
+}
+
+func isAABBInsideCircle[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) bool {
+	corners := []gomath.Vector2[T]{
+		{X: b.Center.X - b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+		{X: b.Center.X + b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+		{X: b.Center.X + b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
+		{X: b.Center.X - b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
+	}
+
+	for _, corner := range corners {
+		if c.Center.DistanceTo(corner) > c.Radius {
+			return false
+		}
+	}
+	return true
+}
+
+func CircleAABBCollidersPenetration[T gomath.Number](circle gomath.CircleCollider[T], circleOffset gomath.Vector2[T], aabb gomath.AABBCollider[T], aabbOffset gomath.Vector2[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	return CircleAABBPenetration(
+		gomath.Circle[T]{Center: circleOffset, Radius: circle.Radius},
+		gomath.AABB[T]{Center: aabbOffset, HalfWidth: aabb.HalfWidth, HalfHeight: aabb.HalfHeight},
+	)
+}
+
+func CircleAABBWithPenetration2[T gomath.Number](c gomath.Circle[T], b gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	if !CircleAABB(c, b) {
+		return 0, normal, false
+	}
+
+	if isCircleInsideAABB(c, b) {
+		// Every side is at least c.Radius away here -- that is what being inside
+		// means -- so seeding minDist with c.Radius left the loop body unreachable
+		// and returned a zero normal.
+		var minDist T
+		nearest := false
+		for _, side := range b.Sides() {
+			dist := gomath.MinimumDistance(side.P1, side.P2, c.Center)
+			if !nearest || dist < minDist {
+				minDist = dist
+				normal = side.Normal()
+				nearest = true
 			}
-			return penetration, gomath.Vector2[T]{
-				X: 1,
-				Y: 0,
-			}, true
 		}
+		return minDist, normal, true
+	}
 
-		penetration = py + circleRadius
-		if circleOffsetY > aabbOffsetY {
-			return penetration, gomath.Vector2[T]{
-				X: 0,
-				Y: -1,
-			}, true
+	if isAABBInsideCircle(c, b) {
+		maxCornerDist := T(0)
+		corners := []gomath.Vector2[T]{
+			{X: b.Center.X - b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+			{X: b.Center.X + b.HalfWidth, Y: b.Center.Y - b.HalfHeight},
+			{X: b.Center.X + b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
+			{X: b.Center.X - b.HalfWidth, Y: b.Center.Y + b.HalfHeight},
 		}
-		return penetration, gomath.Vector2[T]{
-			X: 0,
-			Y: 1,
-		}, true
+		for _, corner := range corners {
+			dist := c.Radius - c.Center.DistanceTo(corner)
+			if dist > maxCornerDist {
+				maxCornerDist = dist
+				normal = corner.Sub(c.Center).Normalize()
+			}
+		}
+		return maxCornerDist, normal, true
 	}
 
-	penetration = circleRadius - dist
-	if penetration <= 0 {
-		return 0, normal, false
+	var max T
+	sides := b.Sides()
+	for i, side := range sides {
+		j := (i + 2) % 4
+		if !PointSideOfBox(c.Center, side, sides[j]) {
+			continue
+		}
+		p, ok := CircleLineSegmentWithPenetration(c, side)
+		if !ok {
+			continue
+		}
+		if p > max {
+			max = p
+			normal = side.Normal()
+		}
 	}
 
-	invDist := T(1) / dist
-	return penetration, gomath.Vector2[T]{
-		X: -dx * invDist,
-		Y: -dy * invDist,
-	}, true
-}
-
-func CircleLineSegmentPenetration[T gomath.Number](circleRadius T, circleOffsetX, circleOffsetY T, startSegmentX T, startSegmentY T, endSegmentX T, endSegmentY T) (penetration T, normal gomath.Vector2[T], overlapping bool) {
-	// VectorToMinimumDistance returns (circle - closestPointOnSegment), i.e. a
-	// vector pointing from the segment toward the circle. Negate it so the normal
-	// points from the circle toward the segment (the obstacle), matching the
-	// convention of CircleCircle/CircleAABB.
-	tox, toy, dist := gomath.VectorToMinimumDistance(startSegmentX, startSegmentY, endSegmentX, endSegmentY, circleOffsetX, circleOffsetY)
-	normalx, normaly := gomath.NormalizeVector(-tox, -toy)
-	return circleRadius - dist, gomath.Vector2[T]{
-		X: normalx,
-		Y: normaly,
-	}, dist < circleRadius
-}
-
-func CircleSegment[T gomath.Number](circleRadius T, circleOffsetX, circleOffsetY T, startSegmentX T, startSegmentY T, endSegmentX T, endSegmentY T) bool {
-	dist := gomath.MinimumDistanceValues(startSegmentX, startSegmentY, endSegmentX, endSegmentY, circleOffsetX, circleOffsetY)
-
-	return dist < circleRadius
-}
-
-func clamp[T gomath.Number](val, min, max T) T {
-	if val < min {
-		return min
-	}
-	if val > max {
-		return max
-	}
-	return val
+	return max, normal, true
 }
