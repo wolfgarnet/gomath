@@ -4,7 +4,18 @@ import (
 	"errors"
 )
 
-// Matrix is 3x3 matrix column matrix
+// Matrix is a column-major 3x3 matrix representing a 2D affine transform. The
+// element in row r, column c is stored at index c*3+r; columns 0 and 1 hold the
+// linear (rotation/scale/shear) basis and column 2 (indices 6 and 7) holds the
+// translation.
+//
+// Integer element types are storage-only for transform work: methods that go
+// through float64 (Rotation, Angle, GetScale) or division (GetInverse, Inverse)
+// truncate and give meaningless results for integer T. Use a floating-point T.
+//
+// See matrix_additions.go for the value-oriented builders and combinators
+// (TranslationMatrix/RotationMatrix/ScaleMatrix/TRSMatrix, Mul, TransformPoint,
+// Inverse, ...).
 type Matrix[T Number] [9]T
 
 func (m *Matrix[T]) Identity() {
@@ -70,7 +81,8 @@ func (m *Matrix[T]) Multiply(b *Matrix[T]) {
 }
 
 func MatrixMultiply[T Number](m *Matrix[T], b *Matrix[T]) (c Matrix[T]) {
-	c.Identity()
+	// All nine elements of c are assigned below, so there is no need to seed it
+	// with the identity first.
 	c[0] = m[0]*b[0] + m[3]*b[1] + m[6]*b[2]
 	c[3] = m[0]*b[3] + m[3]*b[4] + m[6]*b[5]
 	c[6] = m[0]*b[6] + m[3]*b[7] + m[6]*b[8]
@@ -159,7 +171,10 @@ func (m Matrix[T]) Transpose() Matrix[T] {
 	return m
 }
 
-// Translation set the translation part of a transformation matrix
+// Translation adds (x, y) to the translation part of the matrix in place. Note
+// it is additive: it accumulates onto the existing translation rather than
+// replacing it (use SetPosition to replace, or TranslationMatrix to build a
+// fresh translation).
 func (m *Matrix[T]) Translation(x, y T) {
 	m[6] += x
 	m[7] += y
