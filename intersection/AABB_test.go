@@ -71,7 +71,7 @@ func TestAABB2LineSegment(t *testing.T) {
 				MaxX: test.maxx,
 				MaxY: test.maxy,
 			}
-			intersects := AABB2LineSegment[float32](aabb, test.ls)
+			intersects := AABB2LineSegment(aabb, test.ls)
 			assert.Equal(t, test.expected, intersects)
 		})
 	}

@@ -49,7 +49,10 @@ func AABBAABB[T gomath.Number](b1, b2 gomath.AABB[T]) bool {
 	return true
 }
 
-func AABB2LineSegment[T gomath.Number](aabb gomath.AABB2[float32], segment gomath.LineSegment[float32]) bool {
+// AABB2LineSegment reports whether the segment intersects or lies inside the
+// AABB2. It is float32-only (the box and segment are float32); it previously
+// declared an unused [T Number] type parameter.
+func AABB2LineSegment(aabb gomath.AABB2[float32], segment gomath.LineSegment[float32]) bool {
 	// Check if both endpoints are inside the AABB
 	p1Inside := segment.P1.X >= aabb.MinX && segment.P1.X <= aabb.MaxX &&
 		segment.P1.Y >= aabb.MinY && segment.P1.Y <= aabb.MaxY
