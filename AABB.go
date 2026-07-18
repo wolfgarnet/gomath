@@ -6,6 +6,12 @@ import (
 	"math"
 )
 
+// AABB is an axis-aligned bounding box stored as a centre and half-extents. It
+// spans [Center.X-HalfWidth, Center.X+HalfWidth] x [Center.Y-HalfHeight,
+// Center.Y+HalfHeight]. Min/Max return the corner points and are independent of
+// whether Y points up or down; the "lower/upper" labels in Points and Sides
+// assume screen coordinates (Y down). See AABB_additions.go for the containment,
+// overlap and construction helpers.
 type AABB[T Number] struct {
 	Center     Vector2[T]
 	HalfWidth  T
