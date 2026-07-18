@@ -82,7 +82,7 @@ func (p Polygon[T]) Center2() Vector2[T] {
 		}
 
 		w := point.Sub(next).Length() + point.Sub(previous).Length()
-		center.Add(point.MultiplyScalar(w))
+		center = center.Add(point.MultiplyScalar(w))
 		weight += w
 	}
 
@@ -92,7 +92,7 @@ func (p Polygon[T]) Center2() Vector2[T] {
 func (p Polygon[T]) TranslateToOrigin() (translationVector Vector2[T]) {
 	translationVector = p.Center2()
 	for i := range p.Points {
-		p.Points[i].Sub(translationVector)
+		p.Points[i] = p.Points[i].Sub(translationVector)
 	}
 
 	return translationVector
@@ -264,12 +264,9 @@ for i = 0 to N-1, do
 end for
 Return 'area'
 */
-func (p Polygon[T]) Area() (area T) {
-	for i := range p.Points {
-		j := (i + 1) % len(p.Points)
-		area += p.Points[i].X * p.Points[j].Y
-		area -= p.Points[i].Y * p.Points[j].X
-	}
-
-	return area
+// Area returns the (unsigned) area of the polygon. Use SignedArea if you need
+// the sign (positive for counter-clockwise winding). For integer T the result
+// truncates when the true area is a half-integer.
+func (p Polygon[T]) Area() T {
+	return Abs(p.SignedArea())
 }
