@@ -182,7 +182,7 @@ func (grid *SimpleHashGrid[T, ID]) initialize() {
 func (grid *SimpleHashGrid[T, ID]) IterateContent() iter.Seq[*SimpleGridCell[T, ID]] {
 	return func(yield func(hashGrid *SimpleGridCell[T, ID]) bool) {
 		for _, cell := range grid.grid {
-			if yield(cell) {
+			if !yield(cell) {
 				return
 			}
 		}
@@ -192,7 +192,7 @@ func (grid *SimpleHashGrid[T, ID]) IterateContent() iter.Seq[*SimpleGridCell[T, 
 func (grid *SimpleHashGrid[T, ID]) IteratorForHash(hash uint64) iter.Seq[ID] {
 	return func(yield func(ID) bool) {
 		for _, item := range grid.grid[hash].items {
-			if yield(item) {
+			if !yield(item) {
 				return
 			}
 		}
@@ -309,16 +309,22 @@ func (grid *SimpleHashGrid[T, ID]) AABBIterator(aabb gomath.AABB2[T]) iter.Seq[I
 
 func (grid *SimpleHashGrid[T, ID]) SquaredAABBIteratorWithYield(position gomath.Vector2[T], radius T, yield func(ID) bool) {
 	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
+	// Follow neighbour pointers (which wrap toroidally) rather than adding the
+	// raw linear offset: hash + y*width + x escapes the row near the right edge
+	// and can index past the last cell, where the map returns a nil cell and
+	// .items panics. This mirrors rectangleIterator exactly.
+	cell := grid.grid[hash]
 	for y := uint64(0); y < offsetY; y++ {
-		hashOffset := hash + y*grid.width
+		xCell := cell
 		for x := uint64(0); x < offsetX; x++ {
-			currentHash := hashOffset + x
-			for _, item := range grid.grid[currentHash].items {
+			for _, item := range xCell.items {
 				if !yield(item) {
 					return
 				}
 			}
+			xCell = xCell.neighbours[rightNeighbour]
 		}
+		cell = cell.neighbours[downNeighbour]
 	}
 }
 
@@ -368,16 +374,34 @@ func (grid *SimpleHashGrid[T, ID]) RemoveItem(item ID, position gomath.Vector2[T
 	return false
 }
 
-func (grid *SimpleHashGrid[T, ID]) UpdateItem(item ID, position gomath.Vector2[T]) {
-	hash := grid.HashPositionIndex(position.X, position.Y)
-	cell, _ := grid.grid[hash]
-	for i, pp := range cell.items {
-		if pp == item {
-			cell.items[i] = item
+// UpdateItem moves item from the cell containing oldPosition to the cell
+// containing newPosition. When the two positions map to the same cell the item
+// is left in place (added if it was missing). Removing it from the old cell is
+// what prevents a stale ghost copy when the item crosses a cell boundary. The
+// operation is idempotent: the item ends up present exactly once, in the
+// newPosition cell, regardless of how many times it is called with the same
+// arguments.
+func (grid *SimpleHashGrid[T, ID]) UpdateItem(item ID, oldPosition gomath.Vector2[T], newPosition gomath.Vector2[T]) {
+	oldHash := grid.HashPositionIndex(oldPosition.X, oldPosition.Y)
+	newHash := grid.HashPositionIndex(newPosition.X, newPosition.Y)
+
+	if oldHash != newHash {
+		oldCell := grid.grid[oldHash]
+		for i, existing := range oldCell.items {
+			if existing == item {
+				oldCell.items = RemoveUnordered(oldCell.items, i)
+				break
+			}
+		}
+	}
+
+	newCell := grid.grid[newHash]
+	for _, existing := range newCell.items {
+		if existing == item {
 			return
 		}
 	}
-	cell.items = append(cell.items, item)
+	newCell.items = append(newCell.items, item)
 }
 
 func (grid *SimpleHashGrid[T, ID]) NeighbourHashes(index uint64) (hashes []uint64) {
