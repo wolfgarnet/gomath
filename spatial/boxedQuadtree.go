@@ -117,8 +117,7 @@ func (tree *BoxedQuadtree[T, I]) ContainedIn(item BoxedItem[T, I]) bool {
 // site from reintroducing the silent-drop hazard.
 func (tree *BoxedQuadtree[T, I]) Insert(item BoxedItem[T, I]) (bool, error) {
 	// First, verify that the item belongs in this tree.
-	//if !tree.ContainedIn(item) {
-	if !SquaredAABBAABB(tree.Boundary, item.AABB) {
+	if !tree.ContainedIn(item) {
 		return false, &InsertOutsideBoundaryError[T]{Boundary: tree.Boundary, ItemAABB: item.AABB}
 	}
 
@@ -142,26 +141,22 @@ func (tree *BoxedQuadtree[T, I]) Insert(item BoxedItem[T, I]) (bool, error) {
 	// Figure out which children the item can be in.
 	var insertInto *BoxedQuadtree[T, I]
 	multiple := false
-	//if tree.NorthEast.ContainedIn(item) {
-	if SquaredAABBAABB(tree.NorthEast.Boundary, item.AABB) {
+	if tree.NorthEast.ContainedIn(item) {
 		insertInto = tree.NorthEast
 	}
-	//if tree.SouthEast.ContainedIn(item) {
-	if SquaredAABBAABB(tree.SouthEast.Boundary, item.AABB) {
+	if tree.SouthEast.ContainedIn(item) {
 		if insertInto != nil {
 			multiple = true
 		}
 		insertInto = tree.SouthEast
 	}
-	//if tree.SouthWest.ContainedIn(item) {
-	if SquaredAABBAABB(tree.SouthWest.Boundary, item.AABB) {
+	if tree.SouthWest.ContainedIn(item) {
 		if insertInto != nil {
 			multiple = true
 		}
 		insertInto = tree.SouthWest
 	}
-	//if tree.NorthWest.ContainedIn(item) {
-	if SquaredAABBAABB(tree.NorthWest.Boundary, item.AABB) {
+	if tree.NorthWest.ContainedIn(item) {
 		if insertInto != nil {
 			multiple = true
 		}
@@ -218,7 +213,6 @@ func IteratePointQuadtree[T constraints.Float, I comparable](tree *BoxedQuadtree
 	}
 	// Leaf node
 	for _, item := range tree.Items {
-		//if tree.Checker.Check(item.GetBounds(), containing) {
 		if AABBAABB3(item.AABB, bounds) {
 			if !yield(item) {
 				return false
