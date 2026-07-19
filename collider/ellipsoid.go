@@ -202,6 +202,142 @@ func closestParamToOrigin(p1x, p1y, p2x, p2y float64) float64 {
 	return t
 }
 
+// EllipsoidCircle reports whether the circle c touches or overlaps the filled
+// ellipse e (boundary inclusive). It is exact: the circle overlaps iff its centre
+// is within c.Radius of the ellipse boundary.
+func EllipsoidCircle[T gomath.Number](e gomath.Ellipsoid[T], c gomath.Circle[T]) bool {
+	a, b := float64(e.Radii.X), float64(e.Radii.Y)
+	if a <= 0 || b <= 0 {
+		return false
+	}
+	cx := float64(c.Center.X) - float64(e.Position.X)
+	cy := float64(c.Center.Y) - float64(e.Position.Y)
+	return distancePointEllipse(a, b, cx, cy) <= float64(c.Radius)
+}
+
+// EllipsoidAABB reports whether the axis-aligned box overlaps the filled ellipse
+// e (boundary inclusive). Scaling by (1/Radii.X, 1/Radii.Y) turns e into the unit
+// disk and keeps the box axis-aligned, so the test reduces exactly to a
+// circle-vs-box overlap in that space.
+func EllipsoidAABB[T gomath.Number](e gomath.Ellipsoid[T], box gomath.AABB[T]) bool {
+	a, b := float64(e.Radii.X), float64(e.Radii.Y)
+	if a <= 0 || b <= 0 {
+		return false
+	}
+	scaled := gomath.AABB[float64]{
+		Center: gomath.Vector2[float64]{
+			X: (float64(box.Center.X) - float64(e.Position.X)) / a,
+			Y: (float64(box.Center.Y) - float64(e.Position.Y)) / b,
+		},
+		HalfWidth:  float64(box.HalfWidth) / a,
+		HalfHeight: float64(box.HalfHeight) / b,
+	}
+	return CircleAABB(gomath.Circle[float64]{Radius: 1}, scaled)
+}
+
+// EllipsoidEllipsoidPenetration returns an approximate depth and separation normal
+// for two overlapping ellipses. The normal points from e1 toward e2 (shape1->shape2)
+// along the line of centres, and the depth is (r1+r2) - dist where r1, r2 are each
+// ellipse's radius toward the other. This is a cheap, orientation-aware MTV meant
+// for an iterative solver, not the exact minimum translation; it reduces to
+// CircleCirclePenetration for circular ellipses.
+func EllipsoidEllipsoidPenetration[T gomath.Number](e1, e2 gomath.Ellipsoid[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	a1, b1 := float64(e1.Radii.X), float64(e1.Radii.Y)
+	a2, b2 := float64(e2.Radii.X), float64(e2.Radii.Y)
+	if a1 <= 0 || b1 <= 0 || a2 <= 0 || b2 <= 0 {
+		return 0, normal, false
+	}
+
+	dx := float64(e2.Position.X) - float64(e1.Position.X)
+	dy := float64(e2.Position.Y) - float64(e1.Position.Y)
+	dist := math.Hypot(dx, dy)
+
+	if dist == 0 {
+		// Coincident centres: separate along whichever axis needs the least push.
+		if a1+a2 <= b1+b2 {
+			return T(a1 + a2), gomath.Vector2[T]{X: 1}, true
+		}
+		return T(b1 + b2), gomath.Vector2[T]{Y: 1}, true
+	}
+
+	pen := ellipseRadius(a1, b1, dx, dy) + ellipseRadius(a2, b2, dx, dy) - dist
+	if pen <= 0 {
+		return 0, normal, false
+	}
+	inv := 1 / dist
+	return T(pen), gomath.Vector2[T]{X: T(dx * inv), Y: T(dy * inv)}, true
+}
+
+// EllipsoidCirclePenetration returns an approximate depth and separation normal
+// for a circle overlapping the ellipse e. The normal points from the ellipse
+// toward the circle (shape1->shape2). A circle is a degenerate ellipse, so this
+// delegates to EllipsoidEllipsoidPenetration.
+func EllipsoidCirclePenetration[T gomath.Number](e gomath.Ellipsoid[T], c gomath.Circle[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	return EllipsoidEllipsoidPenetration(e, gomath.Ellipsoid[T]{
+		Position: c.Center,
+		Radii:    gomath.Vector2[T]{X: c.Radius, Y: c.Radius},
+	})
+}
+
+// EllipsoidAABBPenetration returns an approximate depth and separation normal for
+// an ellipse overlapping an axis-aligned box. The normal points from the ellipse
+// toward the box (shape1->shape2), matching CircleAABBPenetration's convention so
+// consumers can wire it the same way.
+//
+// When the centre is outside the box it uses the box's closest point and the
+// ellipse's radius toward it; when the centre is inside it pushes out the nearest
+// face (as CircleAABBPenetration does). Cheap and orientation-aware, for an
+// iterative solver rather than an exact MTV.
+func EllipsoidAABBPenetration[T gomath.Number](e gomath.Ellipsoid[T], box gomath.AABB[T]) (penetration T, normal gomath.Vector2[T], overlapping bool) {
+	a, b := float64(e.Radii.X), float64(e.Radii.Y)
+	if a <= 0 || b <= 0 {
+		return 0, normal, false
+	}
+
+	closestX := gomath.Clamp(e.Position.X, box.Center.X-box.HalfWidth, box.Center.X+box.HalfWidth)
+	closestY := gomath.Clamp(e.Position.Y, box.Center.Y-box.HalfHeight, box.Center.Y+box.HalfHeight)
+
+	dx := float64(e.Position.X - closestX)
+	dy := float64(e.Position.Y - closestY)
+	distSq := dx*dx + dy*dy
+
+	// Centre inside the box: push out the nearest face, using the ellipse radius
+	// along that axis (a on X, b on Y).
+	if distSq == 0 {
+		px := float64(box.HalfWidth) - math.Abs(float64(e.Position.X-box.Center.X))
+		py := float64(box.HalfHeight) - math.Abs(float64(e.Position.Y-box.Center.Y))
+		if px < py {
+			if e.Position.X > box.Center.X {
+				return T(px + a), gomath.Vector2[T]{X: -1}, true
+			}
+			return T(px + a), gomath.Vector2[T]{X: 1}, true
+		}
+		if e.Position.Y > box.Center.Y {
+			return T(py + b), gomath.Vector2[T]{Y: -1}, true
+		}
+		return T(py + b), gomath.Vector2[T]{Y: 1}, true
+	}
+
+	dist := math.Sqrt(distSq)
+	pen := ellipseRadius(a, b, dx, dy) - dist
+	if pen <= 0 {
+		return 0, normal, false
+	}
+	inv := 1 / dist
+	return T(pen), gomath.Vector2[T]{X: T(-dx * inv), Y: T(-dy * inv)}, true
+}
+
+// ellipseRadius returns the distance from the centre of the origin-centred,
+// axis-aligned ellipse with semi-axes (a, b) to its boundary along the direction
+// (dx, dy). The direction need not be unit length.
+func ellipseRadius(a, b, dx, dy float64) float64 {
+	l := math.Hypot(dx, dy)
+	if l == 0 {
+		return 0
+	}
+	return l / math.Sqrt((dx/a)*(dx/a)+(dy/b)*(dy/b))
+}
+
 // closestPointOnEllipse returns the point on the origin-centred, axis-aligned
 // ellipse with semi-axes (a, b) closest to (px, py), for a query point inside,
 // on, or outside the ellipse. It reflects the query into the first quadrant and
