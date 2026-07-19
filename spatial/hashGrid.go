@@ -159,7 +159,11 @@ func (grid *HashGrid[T, I, ID]) initialize() {
 
 func (grid *HashGrid[T, I, ID]) IteratorForHash(hash uint64) iter.Seq[I] {
 	return func(yield func(I) bool) {
-		for _, item := range grid.grid[hash].items {
+		cell, ok := grid.grid[hash]
+		if !ok {
+			return
+		}
+		for _, item := range cell.items {
 			if !yield(item) {
 				return
 			}
@@ -169,12 +173,16 @@ func (grid *HashGrid[T, I, ID]) IteratorForHash(hash uint64) iter.Seq[I] {
 
 func (grid *HashGrid[T, I, ID]) Iterator(hash uint64) iter.Seq[I] {
 	return func(yield func(I) bool) {
-		for _, item := range grid.grid[hash].items {
+		cell, ok := grid.grid[hash]
+		if !ok {
+			return
+		}
+		for _, item := range cell.items {
 			if !yield(item) {
 				return
 			}
 		}
-		for _, neighbour := range grid.grid[hash].neighbours {
+		for _, neighbour := range cell.neighbours {
 			for _, item := range neighbour.items {
 				if !yield(item) {
 					return
@@ -185,12 +193,16 @@ func (grid *HashGrid[T, I, ID]) Iterator(hash uint64) iter.Seq[I] {
 }
 
 func (grid *HashGrid[T, I, ID]) IteratorWithYield(hash uint64, yield func(I) bool) {
-	for _, item := range grid.grid[hash].items {
+	cell, ok := grid.grid[hash]
+	if !ok {
+		return
+	}
+	for _, item := range cell.items {
 		if !yield(item) {
 			return
 		}
 	}
-	for _, neighbour := range grid.grid[hash].neighbours {
+	for _, neighbour := range cell.neighbours {
 		for _, item := range neighbour.items {
 			if !yield(item) {
 				return
@@ -404,13 +416,16 @@ func (grid *HashGrid[T, I, ID]) NeighbourHashesPair(index uint64) (pairs [][2]ui
 }
 
 func (grid *HashGrid[T, I, ID]) Neighbours(index uint64) [8]*GridCell[T, I, ID] {
-	cell, _ := grid.grid[index]
+	cell, ok := grid.grid[index]
+	if !ok {
+		return [8]*GridCell[T, I, ID]{}
+	}
 	return cell.neighbours
 }
 
+// GetCell returns the cell for index, or nil if index is out of range.
 func (grid *HashGrid[T, I, ID]) GetCell(index uint64) *GridCell[T, I, ID] {
-	cell, _ := grid.grid[index]
-	return cell
+	return grid.grid[index]
 }
 
 func (grid *HashGrid[T, I, ID]) HashPositionIndexVector(position gomath.Vector2[T]) uint64 {

@@ -191,7 +191,11 @@ func (grid *SimpleHashGrid[T, ID]) IterateContent() iter.Seq[*SimpleGridCell[T, 
 
 func (grid *SimpleHashGrid[T, ID]) IteratorForHash(hash uint64) iter.Seq[ID] {
 	return func(yield func(ID) bool) {
-		for _, item := range grid.grid[hash].items {
+		cell, ok := grid.grid[hash]
+		if !ok {
+			return
+		}
+		for _, item := range cell.items {
 			if !yield(item) {
 				return
 			}
@@ -201,12 +205,16 @@ func (grid *SimpleHashGrid[T, ID]) IteratorForHash(hash uint64) iter.Seq[ID] {
 
 func (grid *SimpleHashGrid[T, ID]) Iterator(hash uint64) iter.Seq[ID] {
 	return func(yield func(ID) bool) {
-		for _, item := range grid.grid[hash].items {
+		cell, ok := grid.grid[hash]
+		if !ok {
+			return
+		}
+		for _, item := range cell.items {
 			if !yield(item) {
 				return
 			}
 		}
-		for _, neighbour := range grid.grid[hash].neighbours {
+		for _, neighbour := range cell.neighbours {
 			for _, item := range neighbour.items {
 				if !yield(item) {
 					return
@@ -217,12 +225,16 @@ func (grid *SimpleHashGrid[T, ID]) Iterator(hash uint64) iter.Seq[ID] {
 }
 
 func (grid *SimpleHashGrid[T, ID]) IteratorWithYield(hash uint64, yield func(ID) bool) {
-	for _, item := range grid.grid[hash].items {
+	cell, ok := grid.grid[hash]
+	if !ok {
+		return
+	}
+	for _, item := range cell.items {
 		if !yield(item) {
 			return
 		}
 	}
-	for _, neighbour := range grid.grid[hash].neighbours {
+	for _, neighbour := range cell.neighbours {
 		for _, item := range neighbour.items {
 			if !yield(item) {
 				return
@@ -457,13 +469,16 @@ func (grid *SimpleHashGrid[T, ID]) NeighbourHashesPair(index uint64) (pairs [][2
 }
 
 func (grid *SimpleHashGrid[T, ID]) Neighbours(index uint64) [8]*SimpleGridCell[T, ID] {
-	cell, _ := grid.grid[index]
+	cell, ok := grid.grid[index]
+	if !ok {
+		return [8]*SimpleGridCell[T, ID]{}
+	}
 	return cell.neighbours
 }
 
+// GetCell returns the cell for index, or nil if index is out of range.
 func (grid *SimpleHashGrid[T, ID]) GetCell(index uint64) *SimpleGridCell[T, ID] {
-	cell, _ := grid.grid[index]
-	return cell
+	return grid.grid[index]
 }
 
 func (grid *SimpleHashGrid[T, ID]) HashPositionIndexVector(position gomath.Vector2[T]) uint64 {
