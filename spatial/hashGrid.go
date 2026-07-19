@@ -48,6 +48,10 @@ func (cell *GridCell[T, I, ID]) Size() int {
 // Clamping or de-duplicating would add branches to the hot path for no
 // correctness benefit. Grid dimensions are rounded up to a power of two (see
 // NewHashGrid), and the grid is not safe for concurrent modification.
+//
+// Use a floating-point T. Although Number admits integers, the grid precomputes
+// inverseCellSize = 1/cellSize, which truncates to 0 for any integer cellSize
+// greater than one and collapses every hash to cell 0.
 type HashGrid[T gomath.Number, I PositionedItem[T, ID], ID comparable] struct {
 	grid map[uint64]*GridCell[T, I, ID]
 
