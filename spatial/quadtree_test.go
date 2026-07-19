@@ -240,11 +240,11 @@ func TestQuadtree_insert_five_circles_overlapping2(t *testing.T) {
 
 func TestQuadtree_insert2(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{2, 2}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{3, 3}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{4, 4}})
-	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{1, 1.2}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 4, Y: 4}})
+	qt.Insert(TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1.2}})
 
 	fmt.Printf("Length: %v\n", len(qt.Items))
 
@@ -261,11 +261,11 @@ func TestQuadtree_insert2(t *testing.T) {
 
 func TestQuadtree_remove(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	qt.Insert(TestItem2D{id: 1, bounds: gomath.Vector2[float32]{1, 1}})
-	qt.Insert(TestItem2D{id: 2, bounds: gomath.Vector2[float32]{2, 2}})
-	qt.Insert(TestItem2D{id: 3, bounds: gomath.Vector2[float32]{3, 3}})
-	qt.Insert(TestItem2D{id: 4, bounds: gomath.Vector2[float32]{4, 4}})
-	item := TestItem2D{id: 5, bounds: gomath.Vector2[float32]{6, 6}}
+	qt.Insert(TestItem2D{id: 1, bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
+	qt.Insert(TestItem2D{id: 2, bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
+	qt.Insert(TestItem2D{id: 3, bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
+	qt.Insert(TestItem2D{id: 4, bounds: gomath.Vector2[float32]{X: 4, Y: 4}})
+	item := TestItem2D{id: 5, bounds: gomath.Vector2[float32]{X: 6, Y: 6}}
 	qt.Insert(item)
 
 	fmt.Printf("Length: %v\n", len(qt.Items))
@@ -371,11 +371,11 @@ func TestQuadtree_remove_five_aabb_crossing(t *testing.T) {
 
 func TestQuadtree_remove2(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D](0.0, 0, 10)
-	qt.Insert(TestItem2D{id: 1, bounds: gomath.Vector2[float32]{1, 1}})
-	qt.Insert(TestItem2D{id: 2, bounds: gomath.Vector2[float32]{2, 2}})
-	qt.Insert(TestItem2D{id: 3, bounds: gomath.Vector2[float32]{3, 3}})
-	qt.Insert(TestItem2D{id: 4, bounds: gomath.Vector2[float32]{4, 4}})
-	item := TestItem2D{id: 5, bounds: gomath.Vector2[float32]{6, 6}}
+	qt.Insert(TestItem2D{id: 1, bounds: gomath.Vector2[float32]{X: 1, Y: 1}})
+	qt.Insert(TestItem2D{id: 2, bounds: gomath.Vector2[float32]{X: 2, Y: 2}})
+	qt.Insert(TestItem2D{id: 3, bounds: gomath.Vector2[float32]{X: 3, Y: 3}})
+	qt.Insert(TestItem2D{id: 4, bounds: gomath.Vector2[float32]{X: 4, Y: 4}})
+	item := TestItem2D{id: 5, bounds: gomath.Vector2[float32]{X: 6, Y: 6}}
 	qt.Insert(item)
 
 	fmt.Printf("Length: %v\n", len(qt.Items))
@@ -399,10 +399,10 @@ func TestQuadtree_remove2(t *testing.T) {
 
 func TestQuadtree_Query_simple(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D, uint64](0.0, 0, 10)
-	item1 := TestItem2D{id: 1, bounds: gomath.Vector2[float32]{1, 1}}
-	item2 := TestItem2D{id: 2, bounds: gomath.Vector2[float32]{2, 2}}
-	item3 := TestItem2D{id: 3, bounds: gomath.Vector2[float32]{3, 3}}
-	item4 := TestItem2D{id: 4, bounds: gomath.Vector2[float32]{4, 4}}
+	item1 := TestItem2D{id: 1, bounds: gomath.Vector2[float32]{X: 1, Y: 1}}
+	item2 := TestItem2D{id: 2, bounds: gomath.Vector2[float32]{X: 2, Y: 2}}
+	item3 := TestItem2D{id: 3, bounds: gomath.Vector2[float32]{X: 3, Y: 3}}
+	item4 := TestItem2D{id: 4, bounds: gomath.Vector2[float32]{X: 4, Y: 4}}
 	expected := []TestItem2D{item1, item2, item3, item4}
 	qt.Insert(item1)
 	qt.Insert(item2)
@@ -429,15 +429,15 @@ func TestQuadtree_Query_simple(t *testing.T) {
 
 func TestQuadtree_Query_simple2(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D, uint64](0.0, 0, 10)
-	item1 := TestItem2D{bounds: gomath.Vector2[float32]{1, 1}}
-	item2 := TestItem2D{bounds: gomath.Vector2[float32]{2, 2}}
-	item3 := TestItem2D{bounds: gomath.Vector2[float32]{3, 3}}
-	item4 := TestItem2D{bounds: gomath.Vector2[float32]{4, 4}}
-	item5 := TestItem2D{bounds: gomath.Vector2[float32]{5, 5}}
-	item6 := TestItem2D{bounds: gomath.Vector2[float32]{6, 6}}
-	item7 := TestItem2D{bounds: gomath.Vector2[float32]{7, 7}}
-	item8 := TestItem2D{bounds: gomath.Vector2[float32]{8, 8}}
-	item9 := TestItem2D{bounds: gomath.Vector2[float32]{9, 9}}
+	item1 := TestItem2D{bounds: gomath.Vector2[float32]{X: 1, Y: 1}}
+	item2 := TestItem2D{bounds: gomath.Vector2[float32]{X: 2, Y: 2}}
+	item3 := TestItem2D{bounds: gomath.Vector2[float32]{X: 3, Y: 3}}
+	item4 := TestItem2D{bounds: gomath.Vector2[float32]{X: 4, Y: 4}}
+	item5 := TestItem2D{bounds: gomath.Vector2[float32]{X: 5, Y: 5}}
+	item6 := TestItem2D{bounds: gomath.Vector2[float32]{X: 6, Y: 6}}
+	item7 := TestItem2D{bounds: gomath.Vector2[float32]{X: 7, Y: 7}}
+	item8 := TestItem2D{bounds: gomath.Vector2[float32]{X: 8, Y: 8}}
+	item9 := TestItem2D{bounds: gomath.Vector2[float32]{X: 9, Y: 9}}
 	qt.Insert(item1)
 	qt.Insert(item2)
 	qt.Insert(item3)

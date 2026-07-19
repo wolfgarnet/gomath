@@ -15,6 +15,12 @@ const (
 // Quadtree represents a quadtree that may contain elements inside the bounds defined as its boundary.
 // The quadtree has a node capacity when exceeded it divides itself into four new sub-quadtrees.
 // An element can only be contained in one quadtree, the quadtree that contains the element completely.
+//
+// A Quadtree is not safe for concurrent use: Insert/Remove/Update/Subdivide/
+// Collapse/Expand mutate the tree in place, and the query iterators read it, so
+// callers must provide their own synchronisation if a tree is shared across
+// goroutines. Concurrent read-only queries against a tree that no goroutine is
+// modifying are fine.
 type Quadtree[T gomath.Number, I BoundedItem[ID], ID comparable] struct {
 	Items     []I
 	Boundary  gomath.SquaredAABB2D[T]

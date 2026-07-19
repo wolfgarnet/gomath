@@ -38,6 +38,15 @@ type BoxedItem[T constraints.Float, ID comparable] struct {
 	AABB   gomath.AABB[T]
 }
 
+// BoxedQuadtree is a quadtree of AABB-bounded items. Unlike Quadtree it stores
+// each item's AABB directly (no BoundsCheck indirection) and an item that spans
+// several child quadrants is held at the parent, so a single item lives in
+// exactly one node.
+//
+// A BoxedQuadtree is not safe for concurrent use: Insert/Remove/Subdivide/Clear
+// mutate the tree in place while the Iterator reads it, so callers sharing a
+// tree across goroutines must synchronise. Concurrent read-only iteration over a
+// tree that no goroutine is modifying is fine.
 type BoxedQuadtree[T constraints.Float, I comparable] struct {
 	Items []BoxedItem[T, I]
 
