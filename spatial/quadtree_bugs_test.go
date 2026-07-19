@@ -69,16 +69,22 @@ func TestQuadtree_ExpandKeepsParentsConsistent(t *testing.T) {
 	assertParentsConsistent(t, qt)
 }
 
-// TestQuadtree_UpdateDoesNotPanic pins that Update (via FindQuadTree) does not
-// dereference a nil pointer while walking to the root.
-func TestQuadtree_UpdateDoesNotPanic(t *testing.T) {
+// TestQuadtree_Update_ReinsertsWithNewBounds pins that Update relocates an item:
+// it removes the item by ID and re-inserts it at its current bounds, leaving no
+// stale copy at the old location.
+func TestQuadtree_Update_ReinsertsWithNewBounds(t *testing.T) {
 	qt := NewQuadtree[float32, TestItem2D, uint64](0, 0, 10)
-	item := point2D(1, 1, 1)
-	qt.Insert(item)
+	qt.Insert(box2D(1, -6, -6, 0.5)) // starts in the SW
+	assert.Equal(t, 1, qt.Size())
 
-	assert.NotPanics(t, func() {
-		qt.Update(item, gomath.Vector2[float32]{X: 2, Y: 2})
-	})
+	moved := box2D(1, 6, 6, 0.5) // same ID, now in the NE
+	assert.True(t, qt.Update(moved), "re-insert of in-bounds item succeeds")
+	assert.Equal(t, 1, qt.Size(), "still exactly one item, no ghost")
+
+	atNew := QueryQuadtreeWithResult(qt, gomath.NewSquaredAABB2DXY[float32](6, 6, 0.5))
+	assert.Len(t, atNew, 1, "item is found at its new location")
+	atOld := QueryQuadtreeWithResult(qt, gomath.NewSquaredAABB2DXY[float32](-6, -6, 0.5))
+	assert.Len(t, atOld, 0, "item is gone from its old location")
 }
 
 // TestIterateQuadtreeWithoutCheck_SkipsItemLevelCheck pins that the "without

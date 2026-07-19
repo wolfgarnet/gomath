@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/wolfgarnet/gomath"
-	"github.com/wolfgarnet/gomath/collider"
 )
 
 const (
@@ -31,7 +30,6 @@ type Quadtree[T gomath.Number, I BoundedItem[ID], ID comparable] struct {
 	parent   *Quadtree[T, I, ID]
 	maxDepth int
 	depth    int
-	allItems map[ID]*Quadtree[T, I, ID]
 
 	// mayExpand determines if the quad tree may expand itself
 	mayExpand bool
@@ -81,21 +79,6 @@ func (tree *Quadtree[T, I, ID]) Depth() int {
 		tree.SouthWest.Depth(),
 		tree.NorthWest.Depth(),
 	)
-}
-
-// FindQuadTree will find the quadtree storing the given item.
-func (tree *Quadtree[T, I, ID]) FindQuadTree(i I) (*Quadtree[T, I, ID], bool) {
-	root := tree
-	for root.parent != nil {
-		root = root.parent
-	}
-
-	if root.allItems == nil {
-		return nil, false
-	}
-
-	v, ok := root.allItems[i.ID()]
-	return v, ok
 }
 
 func (tree *Quadtree[T, I, ID]) Subdivide() {
@@ -193,16 +176,13 @@ func (tree *Quadtree[T, I, ID]) Unique() int {
 	return len(u)
 }
 
-// Update will update whether or not the item will be in a new quad
-func (tree *Quadtree[T, I, ID]) Update(item I, newPos gomath.Vector2[T]) {
-	// Test to see if the update changes the quad
-	quad, ok := tree.FindQuadTree(item)
-	//if ok && quad.Boundary.Contains(newPos) {
-	if ok && collider.SquaredAABBPoint(quad.Boundary, newPos) {
-		return
-	}
+// Update re-places item after its bounds have changed: it removes the item by
+// ID and re-inserts it at its current GetBounds(). Pass the item carrying its
+// new bounds. Returns whether the re-insert succeeded (false if the new bounds
+// fall outside the tree and it cannot expand).
+func (tree *Quadtree[T, I, ID]) Update(item I) bool {
 	tree.Remove(item)
-	tree.Insert(item)
+	return tree.Insert(item)
 }
 
 func (tree *Quadtree[T, I, ID]) Remove(item I) bool {
