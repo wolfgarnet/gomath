@@ -53,6 +53,25 @@ func (cell *SimpleGridCell[T, ID]) IterateContentFrom(id int) iter.Seq[ID] {
 	}
 }
 
+// SimpleHashGrid is a fixed-size, toroidal spatial hash grid for broad-phase
+// proximity queries: it cheaply answers "which items share or border this
+// cell/rectangle" so a caller can run a precise narrow-phase test (distance,
+// intersection, ...) on the much smaller candidate set.
+//
+// It is deliberately an over-approximation, and two properties follow from the
+// toroidal wrap (cell neighbours are masked to width/height, so the right edge
+// borders the left and the bottom borders the top):
+//
+//   - Edge wrap: a query near a world edge may return items from the opposite
+//     edge. They are false positives that the narrow-phase test discards. The
+//     wrap only ever adds candidate cells, so it never causes a missed pair.
+//   - Duplicates: if a query spans as many cells as the grid is wide/tall, the
+//     same cell — and therefore the same item — can be yielded more than once.
+//
+// Both are accepted on purpose: clamping or de-duplicating would add branches
+// to the hot path for no correctness benefit, since results always feed a
+// narrow-phase filter. Grid dimensions are rounded up to a power of two (see
+// NewSimpleHashGrid), and the grid is not safe for concurrent modification.
 type SimpleHashGrid[T gomath.Number, ID comparable] struct {
 	grid map[uint64]*SimpleGridCell[T, ID]
 
@@ -76,6 +95,10 @@ type SimpleHashGrid[T gomath.Number, ID comparable] struct {
 	yHashMask uint64
 }
 
+// NewSimpleHashGrid builds a grid of width x height cells of the given cellSize.
+// width and height are each rounded UP to the next power of two (so the hash can
+// mask instead of divide), which means the resulting grid can be larger than
+// requested — check Width/Height for the actual dimensions.
 func NewSimpleHashGrid[T gomath.Number, ID comparable](width, height uint64, cellSize T) *SimpleHashGrid[T, ID] {
 	width = gomath.NextPowerOfTwo(width)
 	height = gomath.NextPowerOfTwo(height)
@@ -304,21 +327,33 @@ func (grid *SimpleHashGrid[T, ID]) rectangleIterator(hash uint64, offsetX uint64
 	}
 }
 
+// SquaredIterator yields the broad-phase candidates in the square of the given
+// radius around position. Results may include edge-wrapped false positives and
+// duplicates; see the SimpleHashGrid type doc.
 func (grid *SimpleHashGrid[T, ID]) SquaredIterator(position gomath.Vector2[T], radius T) iter.Seq[ID] {
 	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
 	return grid.rectangleIterator(hash, offsetX, offsetY)
 }
 
+// RectangleIterator yields the broad-phase candidates in the half-width x
+// half-height rectangle around position. Results may include edge-wrapped false
+// positives and duplicates; see the SimpleHashGrid type doc.
 func (grid *SimpleHashGrid[T, ID]) RectangleIterator(position gomath.Vector2[T], halfWidth T, halfHeight T) iter.Seq[ID] {
 	hash, offsetX, offsetY := grid.HashValuesForRectangle(position, halfWidth, halfHeight)
 	return grid.rectangleIterator(hash, offsetX, offsetY)
 }
 
+// AABBIterator yields the broad-phase candidates overlapping aabb. Results may
+// include edge-wrapped false positives and duplicates; see the SimpleHashGrid
+// type doc.
 func (grid *SimpleHashGrid[T, ID]) AABBIterator(aabb gomath.AABB2[T]) iter.Seq[ID] {
 	hash, offsetX, offsetY := grid.HashValuesForRectangleMinMax(aabb)
 	return grid.rectangleIterator(hash, offsetX, offsetY)
 }
 
+// SquaredAABBIteratorWithYield is the callback form of SquaredIterator. Results
+// may include edge-wrapped false positives and duplicates; see the
+// SimpleHashGrid type doc.
 func (grid *SimpleHashGrid[T, ID]) SquaredAABBIteratorWithYield(position gomath.Vector2[T], radius T, yield func(ID) bool) {
 	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
 	// Follow neighbour pointers (which wrap toroidally) rather than adding the
