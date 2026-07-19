@@ -66,14 +66,21 @@ func (tree *Quadtree[T, I, ID]) SetMayExpand(mayExpand bool) {
 	tree.mayExpand = mayExpand
 }
 
-func (tree *Quadtree[T, I, ID]) Depth() (d int) {
-	subQT := tree
-	for subQT != nil {
-		subQT = subQT.NorthEast
-		d++
+// Depth returns the number of levels in this subtree: a leaf counts as 1, and
+// each subdivision adds a level along the deepest quadrant. The previous
+// implementation walked only the North East spine, so it undercounted whenever
+// another quadrant subdivided deeper.
+func (tree *Quadtree[T, I, ID]) Depth() int {
+	if tree.NorthEast == nil {
+		return 1
 	}
 
-	return
+	return 1 + max(
+		tree.NorthEast.Depth(),
+		tree.SouthEast.Depth(),
+		tree.SouthWest.Depth(),
+		tree.NorthWest.Depth(),
+	)
 }
 
 // FindQuadTree will find the quadtree storing the given item.

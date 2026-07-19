@@ -11,6 +11,21 @@ func point2D(id uint64, x, y float32) TestItem2D {
 	return TestItem2D{id: id, bounds: gomath.Vector2[float32]{X: x, Y: y}}
 }
 
+// TestQuadtree_Depth_AsymmetricSubtree pins that Depth reports the deepest
+// quadrant, not just the length of the North East spine. The bug walked only
+// tree.NorthEast, so a tree subdivided under North West reported the wrong depth.
+func TestQuadtree_Depth_AsymmetricSubtree(t *testing.T) {
+	tree := NewQuadtree[float32, TestItem2D, uint64](0, 0, 10)
+	assert.Equal(t, 1, tree.Depth(), "a leaf is one level")
+
+	tree.Subdivide()
+	assert.Equal(t, 2, tree.Depth(), "one subdivision is two levels")
+
+	// Deepen a NON-North-East quadrant. North East stays a leaf.
+	tree.NorthWest.Subdivide()
+	assert.Equal(t, 3, tree.Depth(), "depth must follow the deepest quadrant (North West)")
+}
+
 func box2D(id uint64, x, y, half float32) TestItem2D {
 	return TestItem2D{id: id, bounds: gomath.NewSquaredAABB2DXY[float32](x, y, half)}
 }
