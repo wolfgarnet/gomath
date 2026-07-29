@@ -208,3 +208,39 @@ func TestMatrix4_TRS(t *testing.T) {
 	assert.InDelta(t, 2, got.Y, 1e-12)
 	assert.InDelta(t, 0, got.Z, 1e-12)
 }
+
+func TestMatrix4_LocalSpaceCombinators(t *testing.T) {
+	// Translated/Scaled/RotatedAxis right-multiply, so the composed transform is
+	// applied in the receiver's local space rather than the world's.
+	base := TranslationMatrix4[float64](10, 0, 0)
+
+	// Translating locally then transforming the origin gives 10+5 along X.
+	translated := base.Translated(5, 0, 0)
+	assert.Equal(t, Vector3[float64]{15, 0, 0}, translated.TransformPoint(Vector3[float64]{}))
+	assert.True(t, translated.ApproxEquals(base.Mul(TranslationMatrix4[float64](5, 0, 0)), 1e-12))
+
+	scaled := base.Scaled(2, 3, 4)
+	assert.True(t, scaled.ApproxEquals(base.Mul(ScaleMatrix4[float64](2, 3, 4)), 1e-12))
+	assert.Equal(t, Vector3[float64]{12, 3, 4}, scaled.TransformPoint(Vector3[float64]{1, 1, 1}))
+
+	axis := Vector3[float64]{0, 1, 0}
+	rotated := base.RotatedAxis(axis, math.Pi/2)
+	assert.True(t, rotated.ApproxEquals(base.Mul(RotationMatrix4Axis(axis, math.Pi/2)), 1e-12))
+
+	// Rotating about Y in local space then moving along local +Z: +Z maps to +X.
+	got := rotated.TransformPoint(Vector3[float64]{0, 0, 1})
+	assert.InDelta(t, 11, got.X, 1e-12)
+	assert.InDelta(t, 0, got.Y, 1e-12)
+	assert.InDelta(t, 0, got.Z, 1e-12)
+}
+
+func TestMatrix4_MultiplyScalarAndString(t *testing.T) {
+	doubled := Identity4[float64]().MultiplyScalar(2)
+	assert.Equal(t, float64(2), doubled[0])
+	assert.Equal(t, float64(2), doubled[15])
+
+	// String renders row-major, so it reads the way the matrix is written.
+	assert.Equal(t,
+		"Matrix4[[1 0 0 7] [0 1 0 8] [0 0 1 9] [0 0 0 1]]",
+		TranslationMatrix4[float64](7, 8, 9).String())
+}

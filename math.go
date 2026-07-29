@@ -35,6 +35,49 @@ func Acos[T Number](v T) T {
 	return T(math.Acos(float64(v)))
 }
 
+// Asin returns the arcsine of v in radians. v must be in [-1, 1]; outside that
+// the result is NaN.
+func Asin[T Number](v T) T {
+	return T(math.Asin(float64(v)))
+}
+
+// Atan returns the arctangent of v in radians, in (-pi/2, pi/2). When both
+// coordinates of a direction are known, prefer Atan2, which resolves the
+// quadrant.
+func Atan[T Number](v T) T {
+	return T(math.Atan(float64(v)))
+}
+
+// DegToRad converts degrees to radians. Every angle in this package is in
+// radians; this exists for the boundary where degrees come in from data files
+// or a UI.
+func DegToRad[T Number](degrees T) T {
+	return T(float64(degrees) * math.Pi / 180)
+}
+
+// RadToDeg converts radians to degrees.
+func RadToDeg[T Number](radians T) T {
+	return T(float64(radians) * 180 / math.Pi)
+}
+
+// Lerp linearly interpolates from a to b by t, where t == 0 returns a and
+// t == 1 returns b. t is not clamped, so values outside [0, 1] extrapolate.
+func Lerp[T Number](a T, b T, t T) T {
+	return a + (b-a)*t
+}
+
+// Sign returns -1 for a negative value, 1 for a positive one, and 0 for zero.
+func Sign[T Number](v T) T {
+	switch {
+	case v < 0:
+		return -1
+	case v > 0:
+		return 1
+	}
+
+	return 0
+}
+
 func Atan2[T Number](x, y T) T {
 	return T(math.Atan2(float64(x), float64(y)))
 }

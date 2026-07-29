@@ -102,6 +102,64 @@ func TRSMatrix4[T Float](translation Vector3[T], rotation Matrix4[T], scale Vect
 		Mul(ScaleMatrix4(scale.X, scale.Y, scale.Z))
 }
 
+// ComposeMatrix4 builds the transform T*R*S from a translation, a rotation and a
+// scale: a point is first scaled, then rotated, then translated. It is the
+// quaternion counterpart of TRSMatrix4 and the form an ECS system wants, since
+// entity components naturally store position, rotation and scale separately.
+//
+// It is written out rather than composed from three matrix products because
+// this is the hottest builder in a renderer — one call per visible object per
+// frame — and the expanded form does a third of the arithmetic.
+func ComposeMatrix4[T Float](translation Vector3[T], rotation Quaternion[T], scale Vector3[T]) Matrix4[T] {
+	x2, y2, z2 := rotation.X+rotation.X, rotation.Y+rotation.Y, rotation.Z+rotation.Z
+	xx, xy, xz := rotation.X*x2, rotation.X*y2, rotation.X*z2
+	yy, yz, zz := rotation.Y*y2, rotation.Y*z2, rotation.Z*z2
+	wx, wy, wz := rotation.W*x2, rotation.W*y2, rotation.W*z2
+
+	return Matrix4[T]{
+		(1 - (yy + zz)) * scale.X, (xy + wz) * scale.X, (xz - wy) * scale.X, 0,
+		(xy - wz) * scale.Y, (1 - (xx + zz)) * scale.Y, (yz + wx) * scale.Y, 0,
+		(xz + wy) * scale.Z, (yz - wx) * scale.Z, (1 - (xx + yy)) * scale.Z, 0,
+		translation.X, translation.Y, translation.Z, 1,
+	}
+}
+
+// Decompose splits an affine transform back into the translation, rotation and
+// scale that ComposeMatrix4 would rebuild it from.
+//
+// It is exact only for transforms that are genuinely a composition of those
+// three; shear cannot be represented and is silently absorbed into the rotation.
+// A negative determinant means the transform includes a reflection, which no
+// rotation-plus-positive-scale can express, so the sign is folded into scale.X
+// by convention.
+//
+// The second result is false when the basis is singular (an axis scaled to
+// zero), in which case the rotation is unrecoverable and the identity is
+// returned for it.
+func (m *Matrix4[T]) Decompose() (Vector3[T], Quaternion[T], Vector3[T], bool) {
+	translation := m.GetPosition()
+	scale := m.GetScale()
+
+	// A reflection shows up as a negative determinant; attribute it to X.
+	if m.Determinant() < 0 {
+		scale.X = -scale.X
+	}
+
+	if scale.X == 0 || scale.Y == 0 || scale.Z == 0 {
+		return translation, IdentityQuaternion[T](), scale, false
+	}
+
+	// Divide the scale out of the basis columns to leave a pure rotation.
+	rotationMatrix := Matrix4[T]{
+		m[0] / scale.X, m[1] / scale.X, m[2] / scale.X, 0,
+		m[4] / scale.Y, m[5] / scale.Y, m[6] / scale.Y, 0,
+		m[8] / scale.Z, m[9] / scale.Z, m[10] / scale.Z, 0,
+		0, 0, 0, 1,
+	}
+
+	return translation, QuaternionFromRotationMatrix(rotationMatrix), scale, true
+}
+
 // LookAtMatrix4 returns a view matrix that places the camera at eye looking
 // towards target, with up defining the roll. It is the inverse of the camera's
 // world transform: it maps world space into a right-handed eye space where the

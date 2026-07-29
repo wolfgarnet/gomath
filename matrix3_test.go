@@ -231,3 +231,30 @@ func TestMatrix4_NormalMatrixOfSingularBasisReportsFailure(t *testing.T) {
 	assert.False(t, ok)
 	assert.Equal(t, Identity3[float64](), normalMatrix)
 }
+
+func TestMatrix3_MultiplyScalarAndString(t *testing.T) {
+	doubled := Identity3[float64]().MultiplyScalar(2)
+	assert.Equal(t, float64(2), doubled[0])
+	assert.Equal(t, float64(2), doubled[8])
+
+	assert.Equal(t,
+		"Matrix3[[1 0 0] [0 1 0] [0 0 1]]",
+		Identity3[float64]().String())
+}
+
+func TestMatrix3_MulComposesRightToLeft(t *testing.T) {
+	scale := Basis3(
+		Vector3[float64]{2, 0, 0},
+		Vector3[float64]{0, 2, 0},
+		Vector3[float64]{0, 0, 2},
+	)
+	rotation := QuaternionFromAxisAngle(Vector3[float64]{Z: 1}, math.Pi/2).ToMatrix3()
+
+	composed := rotation.Mul(scale)
+
+	// Scaled to (2,0,0), then rotated a quarter turn about Z to (0,2,0).
+	got := composed.TransformVector3(Vector3[float64]{1, 0, 0})
+	assert.InDelta(t, 0, got.X, 1e-12)
+	assert.InDelta(t, 2, got.Y, 1e-12)
+	assert.InDelta(t, 0, got.Z, 1e-12)
+}
