@@ -54,6 +54,12 @@ func Sin[T Number](theta T) T {
 	return T(math.Sin(float64(theta)))
 }
 
+// Tan returns the tangent of theta radians. It is undefined at odd multiples of
+// pi/2, where the true value is infinite.
+func Tan[T Number](theta T) T {
+	return T(math.Tan(float64(theta)))
+}
+
 func Floor[T Number](v T) T {
 	return T(math.Floor(float64(v)))
 }
