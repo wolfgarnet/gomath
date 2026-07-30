@@ -73,24 +73,26 @@ func TestSqr(t *testing.T) {
 	assert.InDelta(t, 2.25, Sqr(1.5), 0.0001)
 }
 
-// TestIsEpsilon pins the CURRENT behaviour of IsEpsilon, which uses epsilon = 0.9.
-// This is deliberately generous: values well away from zero are reported as
-// "epsilon". Its only caller is intersection.LineAABB, which uses it as a
-// divide-by-zero guard on a non-normalised direction component, so the threshold
-// is scale-dependent. Revisit alongside the intersection package rather than here;
-// this test exists to make any change to the constant visible.
-func TestIsEpsilon(t *testing.T) {
-	assert.True(t, IsEpsilon(0.0))
-	assert.True(t, IsEpsilon(0.5))
-	assert.True(t, IsEpsilon(-0.5))
-	assert.True(t, IsEpsilon(0.89))
-	assert.False(t, IsEpsilon(0.9))
-	assert.False(t, IsEpsilon(1.0))
-}
-
 func TestIsNearlyEqual(t *testing.T) {
 	assert.True(t, IsNearlyEqual(1.0, 1.0))
 	assert.True(t, IsNearlyEqual(1.0, 1.0005))
 	assert.False(t, IsNearlyEqual(1.0, 1.01))
 	assert.False(t, IsNearlyEqual(1.0, 2.0))
+}
+
+// TestAtan2ArgumentOrder pins the argument order, which used to be documented
+// backwards. y comes first, as in the standard library.
+func TestAtan2ArgumentOrder(t *testing.T) {
+	// Straight up: y = 1, x = 0 is a quarter turn anticlockwise.
+	assert.InDelta(t, math.Pi/2, Atan2(1.0, 0.0), 1e-12)
+	// Straight right.
+	assert.InDelta(t, 0, Atan2(0.0, 1.0), 1e-12)
+	// Straight left.
+	assert.InDelta(t, math.Pi, Atan2(0.0, -1.0), 1e-12)
+	// The 45 degree diagonal, where a swapped order would be indistinguishable —
+	// which is why the cases above are the ones that matter.
+	assert.InDelta(t, math.Pi/4, Atan2(1.0, 1.0), 1e-12)
+
+	// It must agree with the standard library for the same arguments.
+	assert.InDelta(t, math.Atan2(3, -4), Atan2(3.0, -4.0), 1e-12)
 }

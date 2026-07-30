@@ -25,8 +25,8 @@ func TestAABB_MinMaxSizeArea(t *testing.T) {
 func TestAABB_Contains(t *testing.T) {
 	a := NewAABB(Vector2[int]{0, 0}, 2, 2) // [-2,2]^2
 	assert.True(t, a.Contains(Vector2[int]{1, 1}))
-	assert.True(t, a.Contains(Vector2[int]{2, 2}))   // edge is inclusive
-	assert.True(t, a.Contains(Vector2[int]{-2, 0}))  // edge is inclusive
+	assert.True(t, a.Contains(Vector2[int]{2, 2}))  // edge is inclusive
+	assert.True(t, a.Contains(Vector2[int]{-2, 0})) // edge is inclusive
 	assert.False(t, a.Contains(Vector2[int]{3, 0}))
 	assert.False(t, a.Contains(Vector2[int]{0, 3}))
 }
@@ -39,7 +39,7 @@ func TestAABB_ContainsAABB(t *testing.T) {
 }
 
 func TestAABB_Intersects(t *testing.T) {
-	a := NewAABB(Vector2[int]{0, 0}, 2, 2) // [-2,2]^2
+	a := NewAABB(Vector2[int]{0, 0}, 2, 2)                           // [-2,2]^2
 	assert.True(t, a.Intersects(NewAABB(Vector2[int]{3, 0}, 2, 2)))  // overlap on x
 	assert.True(t, a.Intersects(NewAABB(Vector2[int]{4, 0}, 2, 2)))  // edge touch (inclusive)
 	assert.False(t, a.Intersects(NewAABB(Vector2[int]{5, 0}, 2, 2))) // gap
@@ -73,10 +73,10 @@ func TestAABB_Union(t *testing.T) {
 }
 
 func TestAABB_ClosestPoint(t *testing.T) {
-	a := box(0, 0, 2, 2) // [-2,2]^2
-	assert.Equal(t, Vector2[float64]{2, 1}, a.ClosestPoint(Vector2[float64]{5, 1}))   // clamped x
+	a := box(0, 0, 2, 2)                                                                // [-2,2]^2
+	assert.Equal(t, Vector2[float64]{2, 1}, a.ClosestPoint(Vector2[float64]{5, 1}))     // clamped x
 	assert.Equal(t, Vector2[float64]{-2, -2}, a.ClosestPoint(Vector2[float64]{-9, -3})) // clamped both
-	assert.Equal(t, Vector2[float64]{1, 1}, a.ClosestPoint(Vector2[float64]{1, 1}))    // inside: unchanged
+	assert.Equal(t, Vector2[float64]{1, 1}, a.ClosestPoint(Vector2[float64]{1, 1}))     // inside: unchanged
 }
 
 func TestAABB_ExpandToInclude(t *testing.T) {

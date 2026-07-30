@@ -2,16 +2,26 @@ package gomath
 
 import "math"
 
-const epsilon = 0.9
 const epsilon2 = 0.001
 
+// IsNearlyEqual reports whether a and b are within 0.001 of each other.
+//
+// The threshold is absolute, so this is only meaningful for values of roughly
+// unit magnitude. For anything else compare against a tolerance scaled to your
+// own data.
 func IsNearlyEqual[T Float](a, b T) bool {
 	return Abs(a-b) < epsilon2
 }
 
-func IsEpsilon[T Float](v T) bool {
-	return Abs(v) < epsilon
-}
+// IsEpsilon was removed. It reported Abs(v) < 0.9, which reads as a near-zero
+// test but is nothing of the kind, and its single caller — collider.LineAABB —
+// used it as a divide-by-zero guard on non-normalised direction components.
+// Every component under 0.9 was therefore treated as parallel to its axis, and
+// the axis was never clipped against, so the test reported intersections that
+// did not exist. See collider/lineaabb_regression_test.go.
+//
+// For a genuine near-zero test compare against the exported Epsilon (1e-5), or
+// better, against a tolerance derived from the magnitudes involved.
 
 func Sqrt32(v float32) float32 {
 	return float32(math.Sqrt(float64(v)))
@@ -78,8 +88,16 @@ func Sign[T Number](v T) T {
 	return 0
 }
 
-func Atan2[T Number](x, y T) T {
-	return T(math.Atan2(float64(x), float64(y)))
+// Atan2 returns the angle in radians of the point (x, y) from the positive X
+// axis, in (-pi, pi].
+//
+// The argument order is y THEN x, matching math.Atan2 and every other atan2 in
+// existence. The parameters used to be named (x, y) while being passed straight
+// through in that order, so the names said the opposite of what the function
+// did; the behaviour was always the stdlib's, and every caller already relied on
+// it, so this is a rename and not a change.
+func Atan2[T Number](y, x T) T {
+	return T(math.Atan2(float64(y), float64(x)))
 }
 
 func Abs[T Number](v T) T {

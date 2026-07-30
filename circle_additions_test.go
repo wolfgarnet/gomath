@@ -19,10 +19,10 @@ func TestCircle_Contains(t *testing.T) {
 
 func TestCircle_ContainsCircle(t *testing.T) {
 	big := NewCircle[int](0, 0, 5)
-	assert.True(t, big.ContainsCircle(NewCircle[int](2, 0, 1)))   // fully inside
-	assert.True(t, big.ContainsCircle(big))                       // contains itself
-	assert.False(t, big.ContainsCircle(NewCircle[int](5, 0, 1)))  // pokes out
-	assert.False(t, big.ContainsCircle(NewCircle[int](0, 0, 6)))  // larger radius
+	assert.True(t, big.ContainsCircle(NewCircle[int](2, 0, 1)))  // fully inside
+	assert.True(t, big.ContainsCircle(big))                      // contains itself
+	assert.False(t, big.ContainsCircle(NewCircle[int](5, 0, 1))) // pokes out
+	assert.False(t, big.ContainsCircle(NewCircle[int](0, 0, 6))) // larger radius
 }
 
 func TestCircle_Intersects(t *testing.T) {

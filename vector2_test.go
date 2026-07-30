@@ -219,3 +219,24 @@ func BenchmarkVector2Float32Operations(b *testing.B) {
 		}
 	})
 }
+
+// TestVector2_MulIsComponentwise moved here from the former test/ package, which
+// existed to benchmark gomath against a vendored copy of g3n's math32. That copy
+// was removed, taking the package's reason for existing with it — but it held the
+// only coverage of Vector2.Mul, so the assertion lives here now.
+//
+// Mul is the Hadamard product, not a dot or cross product, which is the thing
+// worth pinning: the name invites the other reading.
+func TestVector2_MulIsComponentwise(t *testing.T) {
+	a := Vector2[float32]{X: 1, Y: 2}
+	b := Vector2[float32]{X: 3, Y: 4}
+
+	assert.Equal(t, Vector2[float32]{X: 3, Y: 8}, a.Mul(b))
+
+	// The chain the old test asserted, kept end to end.
+	chained := a.Add(b).Mul(b).MultiplyScalar(2)
+	assert.Equal(t, Vector2[float32]{X: 24, Y: 48}, chained)
+
+	// Non-mutating.
+	assert.Equal(t, Vector2[float32]{X: 1, Y: 2}, a)
+}

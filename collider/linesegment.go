@@ -184,7 +184,15 @@ func LineAABB[T gomath.Float](ls gomath.LineSegment[T], bb gomath.AABB[T]) bool 
 	axes := []int{0, 1}
 	for _, axis := range axes {
 		d := beginToEnd.Component(axis)
-		if gomath.IsEpsilon(d) || d == 0 { // parallel
+		// Only an exactly-zero component is parallel. This previously also
+		// treated gomath.IsEpsilon(d) as parallel, but that threshold is 0.9 and
+		// these directions are P2-P1 rather than unit vectors, so any component
+		// under 0.9 skipped its axis entirely and the test reported hits that
+		// were not there. See lineaabb_regression_test.go.
+		//
+		// A tiny non-zero d needs no special case: the division yields a huge
+		// or infinite t, and the slab clipping below handles that correctly.
+		if d == 0 { // parallel to this axis
 			// If origin is outside the slabs, no intersection
 			if ls.P1.Component(axis) < min.Component(axis) || ls.P1.Component(axis) > max.Component(axis) {
 				return false

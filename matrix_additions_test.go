@@ -108,7 +108,7 @@ func TestMatrix_FluentBuilders(t *testing.T) {
 	// Local-space translation then rotation: translate (1,0) in local X, then the
 	// 90-degree rotation carries it to +Y.
 	p := NewMatrix[float64]()
-	p = p.Rotated(math.Pi / 2).Translated(1, 0)
+	p = p.Rotated(math.Pi/2).Translated(1, 0)
 	got := p.TransformPoint(Vector2[float64]{0, 0})
 	assert.InDelta(t, 0, got.X, 1e-9)
 	assert.InDelta(t, 1, got.Y, 1e-9)

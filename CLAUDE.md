@@ -6,7 +6,7 @@ Generic 2D/3D math and geometry library for Go games. Vectors, matrices, boundin
 
 ```bash
 go build ./...
-go test ./...            # root + collider + spatial
+go test ./...            # root + collider + spatial; all green
 go test ./collider/...   # one package
 go test -run TestFoo ./  # one test
 go test -bench=. ./spatial/...
@@ -18,18 +18,21 @@ go test -bench=. ./spatial/...
 <root>/       Primitives (package gomath): Vector2, Vector3, Vector4, Matrix
                 (col-major 3x3 *2D affine*), Matrix3 (col-major 3x3 *3D linear
                 basis* — not interchangeable with Matrix), Matrix4 (col-major
-                4x4 3D transform, GL upload order), AABB, Circle, Ellipsoid,
-                LineSegment, Ray, Polygon, ConvexHull, plus scalar helpers
-                (math.go, power.go, distance.go). Volume interfaces
+                4x4 3D transform, GL upload order), Quaternion, AABB, Circle,
+                Ellipsoid, LineSegment, Ray, Polygon, ConvexHull, plus scalar
+                helpers (math.go, power.go, distance.go). 3D volumes: Box3
+                (axis-aligned), OBB3 (oriented). Volume interfaces
                 (CenteredVolume, SimpleVolume) in types.go.
+                NOTE: AABB, Circle, Ellipsoid, LineSegment, Ray and Polygon are
+                all 2D despite some of the names. Box3/OBB3 are the only 3D
+                volumes so far; there is no Sphere, Ray3, Plane or Frustum yet.
 collider/      Struct-based collision: bool intersection tests + penetration/MTV
                 for every shape pair. (Was the old scalar `intersection` package.)
 spatial/       Spatial partitioning: BoxedQuadtree, SimpleHashGrid, HashGrid,
                 Quadtree, hash grids. (pixelmaster uses BoxedQuadtree + SimpleHashGrid.)
 util/          Standalone helpers (distance).
-test/         Cross-package tests. NOTE: test/vector_test.go still imports a
-                deleted `gomath/g3n` package and does not build; the g3n/ directory
-                was removed. Root, collider and spatial all build and pass.
+                (test/ was removed: it existed only to benchmark gomath against a
+                vendored copy of g3n's math32, which no longer exists.)
 ```
 
 ## Type System
@@ -85,6 +88,13 @@ test/         Cross-package tests. NOTE: test/vector_test.go still imports a
 - **Cross-shape collision lives in `collider/`, not on the root types** — the root types
   can't import `collider` (import cycle: collider → gomath). Root types carry only
   self-contained helpers (`PointAt`, `ClosestPoint`, `BoundingBox`, ...).
+- **3D box overlap uses the scalar SAT form, not the obvious one.** `collider/obb3.go`
+  precomputes the rotation of b in a's frame and tests fifteen axes in scalars. The direct
+  transcription — building nine cross products as vectors — is both ~2.2x slower (measured,
+  pinned) and *wrong* for near-parallel boxes, where the cross product is dominated by
+  cancellation error. Exactly-parallel boxes are worse: every edge axis is zero, so whether
+  the test says "separated" depends on whether the comparison is `>` or `>=`. If you touch
+  that file, keep `TestOBB3ParallelBoxesOverlap` and `TestEdgeAxesAreNecessary` passing.
 - MTV/penetration normals point **shape1 → shape2** (the solver's convention). Keep every
   penetration function consistent with it; the consistency tests anchor this.
 - Real-world variable names over single letters; single-word receiver names; singular of a

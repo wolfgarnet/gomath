@@ -175,6 +175,33 @@ func (m *Matrix4[T]) TransformVector4(v Vector4[T]) Vector4[T] {
 	}
 }
 
+// TransformBox3 returns the axis-aligned box enclosing box after this transform.
+//
+// The result is generally larger than the transformed box itself: rotating a box
+// and re-fitting an axis-aligned one around it cannot be tight. That is the right
+// trade for frustum culling, where this runs once per object per frame — the
+// alternative is building an OBB3, which costs three square roots to normalise
+// the basis, and a slightly looser bound only ever means a few extra draws.
+//
+// Use NewOBB3FromMatrix4 when tightness matters more than speed.
+//
+// It lives here rather than on Box3 because Box3 allows any T Number while a
+// transform needs T Float, and a method cannot narrow its receiver's constraint.
+func (m *Matrix4[T]) TransformBox3(box Box3[T]) Box3[T] {
+	// The extent along each world axis is the half-size projected through the
+	// absolute value of the basis. No square roots involved.
+	half := Vector3[T]{
+		X: Abs(m[0])*box.HalfSize.X + Abs(m[4])*box.HalfSize.Y + Abs(m[8])*box.HalfSize.Z,
+		Y: Abs(m[1])*box.HalfSize.X + Abs(m[5])*box.HalfSize.Y + Abs(m[9])*box.HalfSize.Z,
+		Z: Abs(m[2])*box.HalfSize.X + Abs(m[6])*box.HalfSize.Y + Abs(m[10])*box.HalfSize.Z,
+	}
+
+	return Box3[T]{
+		Center:   m.TransformPoint(box.Center),
+		HalfSize: half,
+	}
+}
+
 // GetPosition returns the translation stored in column 3.
 func (m *Matrix4[T]) GetPosition() Vector3[T] {
 	return Vector3[T]{X: m[12], Y: m[13], Z: m[14]}

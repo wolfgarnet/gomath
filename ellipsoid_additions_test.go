@@ -10,8 +10,8 @@ import (
 func TestEllipsoid_Contains(t *testing.T) {
 	e := NewEllipsoid(Vector2[int]{0, 0}, Vector2[int]{4, 2})
 	assert.True(t, e.Contains(Vector2[int]{0, 0}))
-	assert.True(t, e.Contains(Vector2[int]{4, 0}))  // on the boundary (x apex)
-	assert.True(t, e.Contains(Vector2[int]{0, 2}))  // on the boundary (y apex)
+	assert.True(t, e.Contains(Vector2[int]{4, 0})) // on the boundary (x apex)
+	assert.True(t, e.Contains(Vector2[int]{0, 2})) // on the boundary (y apex)
 	assert.True(t, e.Contains(Vector2[int]{3, 0}))
 	assert.False(t, e.Contains(Vector2[int]{4, 2})) // outside
 	assert.False(t, e.Contains(Vector2[int]{5, 0}))
