@@ -97,6 +97,20 @@ func (tree *BoxedQuadtree[T, I]) Subdivide() {
 	}
 }
 
+// Size is the number of items held by this node and every node below it. It
+// walks the tree, so it is a diagnostic (occupancy census, tests) rather than
+// something to call per frame.
+func (tree *BoxedQuadtree[T, I]) Size() int {
+	size := len(tree.Items)
+	for _, child := range [4]*BoxedQuadtree[T, I]{tree.NorthEast, tree.SouthEast, tree.SouthWest, tree.NorthWest} {
+		if child == nil {
+			continue
+		}
+		size += child.Size()
+	}
+	return size
+}
+
 func (tree *BoxedQuadtree[T, I]) Clear() {
 	tree.Items = make([]BoxedItem[T, I], 0)
 	tree.NorthEast = nil
