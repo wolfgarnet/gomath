@@ -3,6 +3,7 @@ package spatial
 import (
 	"fmt"
 	"iter"
+	"slices"
 
 	"github.com/wolfgarnet/gomath"
 )
@@ -78,6 +79,9 @@ func (cell *SimpleGridCell[T, ID]) IterateContentFrom(id int) iter.Seq[ID] {
 // greater than one and collapses every hash to cell 0.
 type SimpleHashGrid[T gomath.Number, ID comparable] struct {
 	grid map[uint64]*SimpleGridCell[T, ID]
+
+	// order is IterateCells' reusable buffer of sorted cell hashes.
+	order []uint64
 
 	// size is the total number of cells in the grid
 	size uint64
@@ -379,10 +383,31 @@ func (grid *SimpleHashGrid[T, ID]) SquaredAABBIteratorWithYield(position gomath.
 	}
 }
 
+// IterateCells yields every occupied cell, in ascending hash order.
+//
+// The order is sorted rather than the map's own because callers use this to
+// generate work whose *result* depends on the order they see it in — a physics
+// broad phase pairs items cell by cell, and the contacts it produces are then
+// resolved in the order they were appended. Go randomises map iteration per run,
+// so ranging the map directly makes a simulation that cannot replay itself:
+// entities with two or more contacts settle a fraction of a unit differently
+// every time, and over a few thousand ticks that compounds into a different
+// world.
+//
+// Sorting costs O(cells log cells) per call against a buffer reused between
+// calls, which is small beside the pair checks the caller then does. The buffer
+// means one iteration at a time per grid: do not nest IterateCells over the same
+// grid.
 func (grid *SimpleHashGrid[T, ID]) IterateCells() iter.Seq2[uint64, *SimpleGridCell[T, ID]] {
 	return func(yield func(hash uint64, cell *SimpleGridCell[T, ID]) bool) {
-		for hash, cell := range grid.grid {
-			if !yield(hash, cell) {
+		grid.order = grid.order[:0]
+		for hash := range grid.grid {
+			grid.order = append(grid.order, hash)
+		}
+		slices.Sort(grid.order)
+
+		for _, hash := range grid.order {
+			if !yield(hash, grid.grid[hash]) {
 				return
 			}
 		}
