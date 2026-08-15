@@ -29,7 +29,12 @@ go test -bench=. ./spatial/...
 collider/      Struct-based collision: bool intersection tests + penetration/MTV
                 for every shape pair. (Was the old scalar `intersection` package.)
 spatial/       Spatial partitioning: BoxedQuadtree, SimpleHashGrid, HashGrid,
-                Quadtree, hash grids. (pixelmaster uses BoxedQuadtree + SimpleHashGrid.)
+                Quadtree, hash grids — all 2D. (pixelmaster uses BoxedQuadtree +
+                SimpleHashGrid.) Grid3 (grid3.go) is the only 3D structure: a
+                uniform grid with a per-axis cell size (zero on an axis leaves it
+                unsubdivided), rebuild-per-tick, no toroidal wrap, offering
+                QueryBox/QuerySphere, near-to-far RayCandidates and a Pairs
+                broadphase sweep. See docs/spatial-3d/spec.md.
 util/          Standalone helpers (distance).
                 (test/ was removed: it existed only to benchmark gomath against a
                 vendored copy of g3n's math32, which no longer exists.)
