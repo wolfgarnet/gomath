@@ -162,6 +162,22 @@ The linear scan the ray replaces is **151 µs** per cast, so the traversal is
 70-160x faster than testing every item, which is the claim the ordering was
 built to support. Rebuilds allocate **nothing** after the first.
 
+Against `pickindex`, re-measured on this machine rather than taken from its
+comment (`BenchmarkPickIndexRebuild`, `BenchmarkPickIndexed`, same 5 000
+entities, pinned, medians of 7): rebuild **444 µs**, cast **12.5 µs**. So
+`Grid3`'s ground-plane rebuild (598 µs) is the same order and its cast is
+faster either way — 8.0 µs flat, 0.96 µs subdivided.
+
+**That is not a controlled comparison and should not be quoted as a ratio.**
+The scenes differ (spread 120 against a 200-unit world) and so does the work:
+`pickindex`'s rebuild also walks the ECS and derives a bounding sphere per
+entity, which `Grid3` never does because its caller does it before calling
+`Add`; while `Grid3`'s number includes 5 000 `Add` calls (23 µs, measured
+separately). The item spans differ too, and filing cost follows span count.
+What the numbers support is "the same order of magnitude on the same
+machine", nothing finer. A real head-to-head would need one scene driving
+both, which has not been built.
+
 Three things were measured rather than assumed, and two of them changed the code:
 
 - **Clearing only the occupied cells, not the grid.** In 3D the grid is mostly
