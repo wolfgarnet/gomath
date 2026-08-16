@@ -61,6 +61,9 @@ grounds that the world is a ground plane with things standing on it.
 - Replacing or generifying the 2D structures. They run the shipped game.
 - A BVH, or anything with a build cost that assumes static geometry. The
   consumer rebuilds every tick from moving transforms.
+  **Corrected in v3** — that reasoning is about the *dynamic* layer and does not
+  transfer to a static one, where "assumes static geometry" is a description of
+  the case rather than an objection to it. See Open questions.
 - Persistent incremental update (insert/remove/relocate as the world changes).
   The consumer's pattern is clear-and-rebuild; if incremental update is wanted
   later it is its own task, with its own evidence.
@@ -242,6 +245,57 @@ so this matches.
   millisecond and allocates nothing; there is no evidence for paying a tree's
   build cost against an access pattern that throws the structure away each tick.
   An octree still needs its own evidence before it is worth building.
+
+  **v3 narrows what that evidence would have to be**, because the paragraph
+  above only argues about the *dynamic* layer and the question was raised again
+  against the static one.
+
+  The argument as written rejects the octree on **density adaptation**, which is
+  the weakest of the three things a tree offers. The two it does not address:
+
+  - **Persistence and mutation.** `Grid3` is `Add` / `Build` / `Clear`, batch
+    only, by design. `Quadtree` has `Insert`, `Remove`, `Update`, `Expand`,
+    `Collapse`. That is a difference of lifecycle, not of dimension, and nothing
+    in the measurements speaks to it.
+  - **Large-span items**, which is the real gap. An item is filed into every
+    cell its bound covers, so filing cost follows span count. One building or
+    cliff face in a grid sized for characters files into thousands of cells, and
+    `MaxGrid3Cells` responds by doubling the cell size until it fits — degrading
+    the grid *for everything else*. A tree stops a large item at a shallow node:
+    one entry. This is the classic grid weakness and `Grid3` does not address it.
+
+  **So the condition is narrow: a static layer with a wide size range.** Not
+  merely static, and not merely dense. `pixelmaster`'s 2D `simulation.Spatial`
+  has exactly this shape already — a `BoxedQuadtree` for props and regions,
+  inserted at level load and never rebuilt, beside a per-tick hash grid for
+  actors — and the 3D side has no equivalent of the static half.
+
+  **This is measurable before anything is built, with what already exists.**
+  Load the static scenery into a `Grid3` and compare total cell entries against
+  `Len()`; `OccupiedCells()` and `CellCounts()` are exposed for it. If a handful
+  of large items generate most of the entries, that is the evidence, in numbers.
+  If they do not, there is nothing to build. **Do not build the tree first and
+  measure afterwards** — the quadtree's own history is the argument for that
+  order (see below).
+
+  **And if the evidence does arrive, an octree is probably still the wrong
+  answer.** For a layer that is genuinely static, a BVH beats an octree — it is
+  built once over known geometry, adapts to the items rather than to space, and
+  has no mutation paths at all. The Non-goals entry excluding it was reasoning
+  about the dynamic layer. Cheaper than either: hold oversized items in a
+  separate coarse list checked on every query, or a two-level grid. That targets
+  the large-span problem specifically and needs none of a tree's machinery.
+
+  **What the 2D trees' age actually tells us.** They date from December 2025 and
+  needed a bug-fix campaign in July 2026 — *"fix iterator yield inversion, edge
+  panics, and UpdateItem ghosts"*, *"fix Quadtree.Depth to follow the deepest
+  quadrant"*, *"remove dead Quadtree.allItems index, make Update honest"*,
+  *"BoxedQuadtree.Remove and superseded-type bugs"*. Six commits, and nearly all
+  of them in the **mutable** paths. An octree is that machinery with eight
+  children rather than four and a third axis of edge cases. Their existence is a
+  cost estimate, not a template arguing that the 3D sibling should exist for
+  symmetry; `Grid3` avoids that entire bug class by being immutable between
+  builds, which is a large part of why it landed clean.
 - **Does it subdivide height?** — **Answered: subdivide by default, and keep the
   flat case one constructor away.** The measurement is the table above.
 
@@ -285,6 +339,11 @@ kept rather than folded into this — PMP-581's call.
 
 ## Revision history
 
+- v3 (2026-08-15) — the octree question reopened against the *static* layer and
+  narrowed rather than reversed: the grid stands, the condition that would
+  justify a tree is a static layer with a wide size range, and the measurement
+  that settles it can be run against `Grid3` today. Corrected the BVH non-goal,
+  which had excluded it by reasoning about the dynamic layer. No code changed.
 - v2 (2026-08-15) — built. All four phases landed in `spatial/grid3.go`; results,
   the height answer, and the cell-size finding recorded above.
 - v1 (2026-08-14) — initial spec.
