@@ -84,3 +84,13 @@ func OBB3Box3[T gomath.Float](a gomath.OBB3[T], b gomath.Box3[T]) bool {
 func Box3OBB3Penetration[T gomath.Float](a gomath.Box3[T], b gomath.OBB3[T]) (penetration T, normal gomath.Vector3[T], overlapping bool) {
 	return OBB3OBB3Penetration(gomath.NewOBB3FromBox3(a), b)
 }
+
+// OBB3Box3Penetration returns the minimum translation separating an oriented box
+// from an axis-aligned one, with the normal pointing from a towards b.
+//
+// It promotes b rather than negating Box3OBB3Penetration's normal, because
+// OBB3OBB3Penetration already resolves the direction from the argument order —
+// so there is no sign to get wrong here.
+func OBB3Box3Penetration[T gomath.Float](a gomath.OBB3[T], b gomath.Box3[T]) (penetration T, normal gomath.Vector3[T], overlapping bool) {
+	return OBB3OBB3Penetration(a, gomath.NewOBB3FromBox3(b))
+}

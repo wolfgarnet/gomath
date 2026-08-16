@@ -2,7 +2,8 @@
 
 **Linear:** [PMP-570](https://linear.app/pixel-master-pro/issue/PMP-570/complete-the-3d-penetration-matrix-and-a-consistency-harness-to-hold)
 
-**Status:** not started.
+**Status:** complete (2026-08-16). All four phases landed; `go test ./...` green and
+pixelmaster still builds.
 
 > This is the first spec in gomath, so it also establishes the convention:
 > `docs/<topic-slug>/spec.md`, one directory per spec'd task, phases checked off
@@ -32,7 +33,9 @@ Nothing. This is the root task.
 - **PMP-573** (swept volumes) — same.
 - **PMP-577** (pixelmaster's 3D narrow phase) — dispatches into this matrix.
 
-## What exists today
+## What existed before this task
+
+(Kept as written, for the record. See "What landed" below for the current state.)
 
 `collider/` holds these 3D functions, written across three commits
 (`7525e97`, `4de3177`, and the OBB work before them):
@@ -92,24 +95,24 @@ depends on it.
 
 ## Phases
 
-- [ ] **Phase 1 — `SphereOBB3Penetration`**: the missing MTV. Transform the
+- [x] **Phase 1 — `SphereOBB3Penetration`**: the missing MTV. Transform the
       sphere's centre into the box's frame, clamp to the box's half-extents to
       find the closest point, and map back — the same shape as
       `SphereBox3Penetration` with a rotation on either side. Handle the
       centre-inside-the-box case, where the closest point is the centre itself
       and the correct axis is the least-penetrated face, not a zero-length
       vector.
-- [ ] **Phase 2 — the 3D consistency harness**: for every 3D penetration pair,
+- [x] **Phase 2 — the 3D consistency harness**: for every 3D penetration pair,
       assert (a) the normal points shape1 → shape2, (b) translating shape2 by
       `penetration * normal` separates them to within tolerance, (c) the swapped
       call returns the negated normal and the same magnitude, and (d) a
       non-overlapping pair returns `overlapping == false` and leaves the other
       returns at zero. Table-driven, one row per pair.
-- [ ] **Phase 3 — a brute-force oracle for the exact-math pairs**: sample points
+- [x] **Phase 3 — a brute-force oracle for the exact-math pairs**: sample points
       on a grid, take the true minimum separation, and check the analytic MTV
       against it. The repo already does this for 2D ellipse distance
       (`collider/ellipsoid_oracle_test.go`) — same technique, 3D shapes.
-- [ ] **Phase 4 — correct `CLAUDE.md`**: the Project Structure paragraph, and a
+- [x] **Phase 4 — correct `CLAUDE.md`**: the Project Structure paragraph, and a
       line stating which 3D pairs have penetration functions so the next reader
       does not have to grep for it.
 
@@ -147,15 +150,42 @@ The right answer is the axis of least penetration among the six faces. This is
 worth a named test, because a body deeply overlapped is exactly the state the
 resolver has to dig out of and exactly the state that is rare in casual testing.
 
-## Open questions
+## Resolved questions
 
-- Whether the 3D consistency table lives in the existing
-  `penetration_consistency_test.go` or a `penetration3d_consistency_test.go`.
-  Leaning separate: the 2D table is already long and the two share no fixtures.
-- Whether `SphereOBB3Penetration` should be joined by an `OBB3SpherePenetration`
-  wrapper for symmetry (`Box3OBB3`/`OBB3Box3` set that precedent for the bool
-  tests). Cheap to add, and it removes an argument-order trap from the consumer.
+- **Where the 3D table lives** — separate, as the spec leaned. It is
+  `collider/penetration3d_consistency_test.go`; the 2D file is untouched.
+- **Whether to add reversed wrappers** — yes, and further than the spec asked.
+  The matrix is now complete over all **nine** ordered pairs of
+  {Sphere, Box3, OBB3}, not eight: writing `OBB3SpherePenetration` exposed that
+  `Box3SpherePenetration` was missing for exactly the same reason, and leaving one
+  reversal absent would have kept the argument-order trap alive for the pair a
+  consumer hits most. Added: `SphereOBB3Penetration` (real implementation),
+  `OBB3SpherePenetration`, `Box3SpherePenetration`, `OBB3Box3Penetration`.
+
+## What landed
+
+| Phase | Where |
+|---|---|
+| 1 | `collider/sphere3.go` — `SphereOBB3Penetration`, plus the three reversed wrappers and two extracted helpers (`shallowestFaceNormal`, `localDirectionToWorld`); `collider/box3.go` — `OBB3Box3Penetration` |
+| 2 | `collider/penetration3d_consistency_test.go` — 11 rows × 4 assertions |
+| 3 | `collider/penetration3d_oracle_test.go` — 9 pairs × 120 random trials |
+| 4 | `CLAUDE.md` — Project Structure corrected, MTV bullet now names both harnesses |
+
+`SphereBox3Penetration`'s centre-inside branch was refactored onto the shared
+`shallowestFaceNormal` helper rather than duplicated into the new function. It is
+a pure extraction — no behaviour change, and the oracle covers it.
+
+**A note for whoever adds Capsule3 (PMP-571).** The two test files are not
+redundant, and it is worth knowing why before deciding to write only one. The
+consistency harness fixes its fixtures' rotations about the **X axis**, which
+makes them invariant under transposing the rotation matrix — so it does **not**
+catch a normal mapped back to world space with the inverse rotation, the single
+most likely bug in any oriented-shape penetration function. The oracle does catch
+it (verified by injecting exactly that bug: the harness stayed green, the oracle
+failed on both sphere/OBB rows). Add rows to **both**.
 
 ## Revision history
 
+- v2 (2026-08-16) — implemented. Open questions resolved above; scope grew by one
+  function (`Box3SpherePenetration`) to close the ordered matrix completely.
 - v1 (2026-08-14) — initial spec.

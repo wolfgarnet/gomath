@@ -20,14 +20,21 @@ go test -bench=. ./spatial/...
                 basis* — not interchangeable with Matrix), Matrix4 (col-major
                 4x4 3D transform, GL upload order), Quaternion, AABB, Circle,
                 Ellipsoid, LineSegment, Ray, Polygon, ConvexHull, plus scalar
-                helpers (math.go, power.go, distance.go). 3D volumes: Box3
-                (axis-aligned), OBB3 (oriented). Volume interfaces
-                (CenteredVolume, SimpleVolume) in types.go.
+                helpers (math.go, power.go, distance.go). 3D: Sphere, Box3
+                (axis-aligned), OBB3 (oriented), Plane3, Ray3, Frustum. Volume
+                interfaces (CenteredVolume, SimpleVolume) in types.go.
                 NOTE: AABB, Circle, Ellipsoid, LineSegment, Ray and Polygon are
-                all 2D despite some of the names. Box3/OBB3 are the only 3D
-                volumes so far; there is no Sphere, Ray3, Plane or Frustum yet.
+                all 2D despite some of the names — the 3D counterparts are Box3,
+                Ellipsoid has none, Ray3, and Polygon has none. There is no
+                Capsule3 or convex hull in 3D yet.
 collider/      Struct-based collision: bool intersection tests + penetration/MTV
                 for every shape pair. (Was the old scalar `intersection` package.)
+                The 3D penetration matrix is COMPLETE over {Sphere, Box3, OBB3}:
+                all nine ordered pairs have a `<A><B>Penetration` function, so
+                callers never have to swap arguments and negate. Reversed forms
+                (Box3Sphere, OBB3Sphere, OBB3Box3) are thin wrappers. The bool
+                tests are NOT symmetric in the same way — SphereBox3 and
+                SphereOBB3 exist but their reverses do not.
 spatial/       Spatial partitioning: BoxedQuadtree, SimpleHashGrid, HashGrid,
                 Quadtree, hash grids — all 2D. (pixelmaster uses BoxedQuadtree +
                 SimpleHashGrid.) Grid3 (grid3.go) is the only 3D structure: a
@@ -101,7 +108,13 @@ util/          Standalone helpers (distance).
   the test says "separated" depends on whether the comparison is `>` or `>=`. If you touch
   that file, keep `TestOBB3ParallelBoxesOverlap` and `TestEdgeAxesAreNecessary` passing.
 - MTV/penetration normals point **shape1 → shape2** (the solver's convention). Keep every
-  penetration function consistent with it; the consistency tests anchor this.
+  penetration function consistent with it; the consistency tests anchor this —
+  `collider/penetration_consistency_test.go` for 2D and
+  `collider/penetration3d_consistency_test.go` for 3D. The 3D one is table-driven over
+  every ordered pair and asserts four things: the normal points shape1 → shape2, moving
+  shape2 by `penetration * normal` separates the pair, the swapped call negates the normal
+  and keeps the depth, and a non-overlapping pair zeroes the other two returns. **Adding a
+  3D pair means adding a row**, not writing a bespoke test.
 - Real-world variable names over single letters; single-word receiver names; singular of a
   plural slice (`element` from `elements`). Repeat the type on every parameter
   (`f(a string, b string)`, not `f(a, b string)`). Avoid shadowing builtins (`min`/`max` →
