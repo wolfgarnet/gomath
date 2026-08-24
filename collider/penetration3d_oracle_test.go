@@ -64,6 +64,19 @@ func box3Support(box gomath.Box3[float64]) supportFunc {
 	}
 }
 
+// A capsule's support is its segment's, widened by the radius on both sides — a
+// Minkowski sum with a ball adds the radius along every direction at once. That
+// makes the capsule rows independent evidence in the same sense as the others:
+// two lines that know nothing of segments, parameters or separating axes.
+func capsule3Support(capsule gomath.Capsule3[float64]) supportFunc {
+	return func(direction gomath.Vector3[float64]) (float64, float64) {
+		first := capsule.Segment.P1.Dot(direction)
+		second := capsule.Segment.P2.Dot(direction)
+
+		return math.Min(first, second) - capsule.Radius, math.Max(first, second) + capsule.Radius
+	}
+}
+
 func obb3Support(box gomath.OBB3[float64]) supportFunc {
 	return func(direction gomath.Vector3[float64]) (float64, float64) {
 		centre := box.Center.Dot(direction)
@@ -324,6 +337,81 @@ func TestPenetration3D_AgainstBruteForceOracle(t *testing.T) {
 				penetration, normal, overlapping := OBB3OBB3Penetration(first, second)
 
 				return oracleTrial{penetration, normal, overlapping, obb3Support(first), obb3Support(second)}
+			},
+		},
+		// Every capsule pair runs at depthSlack 1: none of them buys any slack, the
+		// box ones included. See capsuleAlignedBoxPenetration for why the box pairs
+		// can be exact rather than the approximation they are usually written as —
+		// and note that it is this file, not the consistency harness, that would
+		// catch a normal mapped back to world space by the wrong rotation.
+		{
+			name:       "Capsule3SpherePenetration",
+			depthSlack: 1,
+			build: func(random *rand.Rand) oracleTrial {
+				first, second := randomCapsule3(random, oracleSpread, oracleMaxRadius), randomSphere(random, oracleSpread, oracleMaxRadius)
+				penetration, normal, overlapping := Capsule3SpherePenetration(first, second)
+
+				return oracleTrial{penetration, normal, overlapping, capsule3Support(first), sphereSupport(second)}
+			},
+		},
+		{
+			name:       "SphereCapsule3Penetration",
+			depthSlack: 1,
+			build: func(random *rand.Rand) oracleTrial {
+				first, second := randomSphere(random, oracleSpread, oracleMaxRadius), randomCapsule3(random, oracleSpread, oracleMaxRadius)
+				penetration, normal, overlapping := SphereCapsule3Penetration(first, second)
+
+				return oracleTrial{penetration, normal, overlapping, sphereSupport(first), capsule3Support(second)}
+			},
+		},
+		{
+			name:       "Capsule3Capsule3Penetration",
+			depthSlack: 1,
+			build: func(random *rand.Rand) oracleTrial {
+				first, second := randomCapsule3(random, oracleSpread, oracleMaxRadius), randomCapsule3(random, oracleSpread, oracleMaxRadius)
+				penetration, normal, overlapping := Capsule3Capsule3Penetration(first, second)
+
+				return oracleTrial{penetration, normal, overlapping, capsule3Support(first), capsule3Support(second)}
+			},
+		},
+		{
+			name:       "Capsule3Box3Penetration",
+			depthSlack: 1,
+			build: func(random *rand.Rand) oracleTrial {
+				first, second := randomCapsule3(random, oracleSpread, oracleMaxRadius), randomBox3(random, oracleSpread)
+				penetration, normal, overlapping := Capsule3Box3Penetration(first, second)
+
+				return oracleTrial{penetration, normal, overlapping, capsule3Support(first), box3Support(second)}
+			},
+		},
+		{
+			name:       "Box3Capsule3Penetration",
+			depthSlack: 1,
+			build: func(random *rand.Rand) oracleTrial {
+				first, second := randomBox3(random, oracleSpread), randomCapsule3(random, oracleSpread, oracleMaxRadius)
+				penetration, normal, overlapping := Box3Capsule3Penetration(first, second)
+
+				return oracleTrial{penetration, normal, overlapping, box3Support(first), capsule3Support(second)}
+			},
+		},
+		{
+			name:       "Capsule3OBB3Penetration",
+			depthSlack: 1,
+			build: func(random *rand.Rand) oracleTrial {
+				first, second := randomCapsule3(random, oracleSpread, oracleMaxRadius), randomOBB3(random, oracleSpread)
+				penetration, normal, overlapping := Capsule3OBB3Penetration(first, second)
+
+				return oracleTrial{penetration, normal, overlapping, capsule3Support(first), obb3Support(second)}
+			},
+		},
+		{
+			name:       "OBB3Capsule3Penetration",
+			depthSlack: 1,
+			build: func(random *rand.Rand) oracleTrial {
+				first, second := randomOBB3(random, oracleSpread), randomCapsule3(random, oracleSpread, oracleMaxRadius)
+				penetration, normal, overlapping := OBB3Capsule3Penetration(first, second)
+
+				return oracleTrial{penetration, normal, overlapping, obb3Support(first), capsule3Support(second)}
 			},
 		},
 	}

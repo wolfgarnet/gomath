@@ -112,6 +112,18 @@ func penetration3DPairs() []pair3D {
 	obb3At := func(centre gomath.Vector3[float32], rotation gomath.Quaternion[float32]) gomath.OBB3[float32] {
 		return gomath.NewOBB3FromQuaternion(centre, unitHalfSize(), rotation)
 	}
+	// The capsule fixture is a unit-radius capsule whose segment runs along Y, so
+	// it reaches exactly 1 along X like every other shape here and the row is
+	// directly comparable with the rest of the table. A segment along X would have
+	// made the capsule longer than the others in the very direction the fixtures
+	// separate along.
+	capsule3At := func(centre gomath.Vector3[float32]) gomath.Capsule3[float32] {
+		return gomath.NewCapsule3(
+			centre.Sub(gomath.Vector3[float32]{Y: 0.5}),
+			centre.Add(gomath.Vector3[float32]{Y: 0.5}),
+			1,
+		)
+	}
 
 	return []pair3D{
 		{
@@ -275,7 +287,122 @@ func penetration3DPairs() []pair3D {
 			wantNormal:       plusX,
 			clearOfEachOther: wellClear,
 		},
+		{
+			name: "Capsule3/Sphere",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3SpherePenetration(capsule3At(origin), sphereAt(offsetCentre(shift)))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return SphereCapsule3Penetration(sphereAt(offsetCentre(shift)), capsule3At(origin))
+			},
+			wantPenetration:  0.5,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
+		{
+			name: "Sphere/Capsule3",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return SphereCapsule3Penetration(sphereAt(origin), capsule3At(offsetCentre(shift)))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3SpherePenetration(capsule3At(offsetCentre(shift)), sphereAt(origin))
+			},
+			wantPenetration:  0.5,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
+		{
+			// Both segments run along Y, so this row also exercises the parallel
+			// branch of LineSegment3.ClosestParameters — the arrangement two
+			// standing characters produce, and the one with no unique closest pair.
+			name: "Capsule3/Capsule3",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3Capsule3Penetration(capsule3At(origin), capsule3At(offsetCentre(shift)))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3Capsule3Penetration(capsule3At(offsetCentre(shift)), capsule3At(origin))
+			},
+			wantPenetration:  0.5,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
+		{
+			name: "Capsule3/Box3",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3Box3Penetration(capsule3At(origin), box3At(offsetCentre(shift)))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Box3Capsule3Penetration(box3At(offsetCentre(shift)), capsule3At(origin))
+			},
+			wantPenetration:  0.5,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
+		{
+			name: "Box3/Capsule3",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Box3Capsule3Penetration(box3At(origin), capsule3At(offsetCentre(shift)))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3Box3Penetration(capsule3At(offsetCentre(shift)), box3At(origin))
+			},
+			wantPenetration:  0.5,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
+		{
+			name: "Capsule3/OBB3",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3OBB3Penetration(capsule3At(origin), obb3At(offsetCentre(shift), rotationAboutX(0.5)))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return OBB3Capsule3Penetration(obb3At(offsetCentre(shift), rotationAboutX(0.5)), capsule3At(origin))
+			},
+			wantPenetration:  0.5,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
+		{
+			name: "OBB3/Capsule3",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return OBB3Capsule3Penetration(obb3At(origin, rotationAboutX(0.5)), capsule3At(offsetCentre(shift)))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3OBB3Penetration(capsule3At(offsetCentre(shift)), obb3At(origin, rotationAboutX(0.5)))
+			},
+			wantPenetration:  0.5,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
+		{
+			// The capsule counterpart of the row above: the segment lies INSIDE the
+			// box, so there is no closest pair to take a direction from and the
+			// answer comes from the separating-axis branch instead. The segment runs
+			// along Z at x = -0.8, which puts it 0.2 inside the -X face — the
+			// shallowest — so the capsule leaves along -X and the normal, pointing
+			// capsule towards box, is +X.
+			name: "Capsule3/Box3 segment inside",
+			forward: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Capsule3Box3Penetration(piercingCapsule(), box3At(shift))
+			},
+			swapped: func(shift gomath.Vector3[float32]) (float32, gomath.Vector3[float32], bool) {
+				return Box3Capsule3Penetration(box3At(shift), piercingCapsule())
+			},
+			wantPenetration:  0.45,
+			wantNormal:       plusX,
+			clearOfEachOther: wellClear,
+		},
 	}
+}
+
+// piercingCapsule is a capsule whose segment lies wholly inside the unit box at
+// the origin, used by the row that exercises the separating-axis branch.
+func piercingCapsule() gomath.Capsule3[float32] {
+	return gomath.NewCapsule3(
+		gomath.Vector3[float32]{X: -0.8, Z: -0.4},
+		gomath.Vector3[float32]{X: -0.8, Z: 0.4},
+		0.25,
+	)
 }
 
 // TestPenetration3D_NormalPointsShape1ToShape2 is part (a): every function agrees

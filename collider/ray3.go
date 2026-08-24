@@ -202,3 +202,99 @@ func Ray3OBB3[T gomath.Float](ray gomath.Ray3[T], box gomath.OBB3[T]) (distance 
 
 	return Ray3Box3(local, aligned)
 }
+
+// Ray3Capsule3 returns the distance to where a ray first meets a capsule.
+//
+// A ray starting inside reports 0, per the note at the top of this file.
+//
+// # Three candidates, not a cascade
+//
+// A capsule is a cylindrical body with a hemisphere at each end, and a ray can
+// enter through any of the three. The textbook version tests the body first and
+// falls through to the caps only when the body's hit lands outside the segment's
+// span; that is correct but easy to get subtly wrong, because the fall-through
+// has to reason about which cap the ray could still reach.
+//
+// This computes all three candidate entry distances and keeps the smallest, which
+// needs no such reasoning: the capsule is convex and the ray has already been
+// shown to start outside it, so its first crossing of the surface is simply the
+// nearest of the crossings of the pieces. The price is two sphere tests on every
+// call, and a capsule is not what a picking loop spends its time on — the boxes
+// of the scenery are.
+func Ray3Capsule3[T gomath.Float](ray gomath.Ray3[T], capsule gomath.Capsule3[T]) (distance T, hit bool) {
+	if !ray.IsValid() {
+		return 0, false
+	}
+
+	if capsule.ContainsPoint(ray.Origin) {
+		return 0, true
+	}
+
+	nearest := T(math.Inf(1))
+	found := false
+
+	keep := func(candidate T, ok bool) {
+		if ok && candidate < nearest {
+			nearest, found = candidate, true
+		}
+	}
+
+	keep(rayCapsuleBody(ray, capsule))
+	keep(Ray3Sphere(ray, gomath.Sphere[T]{Center: capsule.Segment.P1, Radius: capsule.Radius}))
+	keep(Ray3Sphere(ray, gomath.Sphere[T]{Center: capsule.Segment.P2, Radius: capsule.Radius}))
+
+	if !found {
+		return 0, false
+	}
+
+	return nearest, true
+}
+
+// rayCapsuleBody returns the distance at which a ray enters the cylindrical part
+// of a capsule — the part strictly between the two caps.
+//
+// Substituting the ray into the infinite cylinder about the segment's line gives
+// a quadratic. Every coefficient below is that quadratic's, multiplied through by
+// the segment's squared length so that no division by it is needed and a
+// degenerate segment simply produces a quadratic with no solutions rather than a
+// NaN. Its caller covers that case with the caps, which for a degenerate segment
+// are the whole shape.
+//
+// A vanishing leading coefficient means the ray runs parallel to the axis, and
+// such a ray can only ever enter through a cap.
+func rayCapsuleBody[T gomath.Float](ray gomath.Ray3[T], capsule gomath.Capsule3[T]) (distance T, hit bool) {
+	axis := capsule.Segment.Direction()
+	toOrigin := ray.Origin.Sub(capsule.Segment.P1)
+
+	axisLengthSq := axis.LengthSq()
+	alongAxis := toOrigin.Dot(axis)
+	directionAlongAxis := ray.Direction.Dot(axis)
+
+	quadratic := axisLengthSq - directionAlongAxis*directionAlongAxis
+	if quadratic <= 0 {
+		return 0, false
+	}
+
+	linear := axisLengthSq*toOrigin.Dot(ray.Direction) - alongAxis*directionAlongAxis
+	constant := axisLengthSq*(toOrigin.LengthSq()-capsule.Radius*capsule.Radius) - alongAxis*alongAxis
+
+	discriminant := linear*linear - quadratic*constant
+	if discriminant < 0 {
+		return 0, false
+	}
+
+	distance = (-linear - gomath.Sqrt(discriminant)) / quadratic
+	if distance < 0 {
+		return 0, false
+	}
+
+	// Where that crossing sits along the axis, in units of its squared length.
+	// Outside [0, length^2] the ray met the infinite cylinder beyond a cap, so it
+	// is not a point of the capsule.
+	projected := alongAxis + distance*directionAlongAxis
+	if projected < 0 || projected > axisLengthSq {
+		return 0, false
+	}
+
+	return distance, true
+}

@@ -2,7 +2,8 @@
 
 **Linear:** [PMP-571](https://linear.app/pixel-master-pro/issue/PMP-571/capsule3-the-primitive-a-3d-character-collider-needs)
 
-**Status:** not started.
+**Status:** complete (2026-08-24). All four phases landed; `go test ./...` green,
+pixelmaster and gorendr3d still build.
 
 ## Goal
 
@@ -79,24 +80,24 @@ library.
 
 ## Phases
 
-- [ ] **Phase 1 — the type**: `Capsule3[T]` with `Segment gomath.LineSegment3[T]`
-      (or two `Vector3` fields — see Open questions) and `Radius T`. Constructors
+- [x] **Phase 1 — the type**: `Capsule3[T]` with `Segment gomath.LineSegment3[T]`
+      and `Radius T`. (The type question is settled under Resolved questions.) Constructors
       for the upright character case (`NewCapsule3Upright(base, height, radius)`)
       and the general one. `BoundingBox() Box3[T]`, `Center()`, `ClosestPoint()`,
       the self-contained helpers the root types carry. **A segment-point distance
       helper is the whole engine of this feature** — if `distance.go` has no 3D
       segment-point routine, it gets one here.
-- [ ] **Phase 2 — sphere and capsule pairs**: `Capsule3Sphere`,
+- [x] **Phase 2 — sphere and capsule pairs**: `Capsule3Sphere`,
       `Capsule3Capsule3`, and both penetrations. These are the cheap analytic
       ones: sphere is point-to-segment distance against `r1+r2`, capsule-capsule
       is segment-to-segment distance against the same. Land them first because
       they are exact and make good oracles for what follows.
-- [ ] **Phase 3 — box pairs**: `Capsule3Box3`, `Capsule3OBB3` and their
+- [x] **Phase 3 — box pairs**: `Capsule3Box3`, `Capsule3OBB3` and their
       penetrations. Segment-vs-box is genuinely harder than the above and is
       where an approximation will be tempting. Whatever is chosen, say in this
       document what it is and where it is wrong — a capsule resting on a box
       corner is the case to name.
-- [ ] **Phase 4 — `Ray3Capsule3`**, and the consistency + oracle rows for every
+- [x] **Phase 4 — `Ray3Capsule3`**, and the consistency + oracle rows for every
       pair added above, following PMP-570's harness.
 
 ## Design notes
@@ -126,17 +127,105 @@ and pin it in a test. `collider/obb3.go` records the analogous lesson for
 parallel boxes and its `TestOBB3ParallelBoxesOverlap` exists for that reason;
 this is the same failure in a different shape.
 
-## Open questions
+## Resolved questions
 
-- Whether gomath needs a `LineSegment3[T]` type first. The root has
-  `LineSegment` (2D, despite the name) and no 3D sibling. Two bare `Vector3`
-  fields on the capsule avoids introducing a type nothing else asks for — but
-  PMP-573's swept tests and PMP-575's wireframes both want to talk about 3D
-  segments, so it may earn itself. Decide in Phase 1 and record the reasoning.
-- Whether `Capsule3Box3` should be exact or an accepted approximation. Exactness
-  costs a segment-vs-box distance routine; approximation risks a character
-  sinking into a corner. Settle it in Phase 3 with the case written down.
+- **`LineSegment3[T]` exists** — the type earned itself. The segment-distance
+  routines are the engine of the whole feature and wanted a home with a test file
+  of its own rather than being hidden inside the capsule, and PMP-573 and PMP-575
+  both talk about 3D segments. Fields are `P1`/`P2`, matching the 2D
+  `LineSegment` so that code ported between the dimensions reads the same;
+  `Capsule3` holds it as a named `Segment` field rather than embedding it, so
+  that `capsule.Height()` cannot be confused with the segment's `Length()`.
+
+- **`Capsule3Box3` is EXACT**, and so is `Capsule3OBB3`. The approximation was
+  not needed. Two branches, each closed-form:
+
+  1. *The segment misses the box.* The squared distance from the box to a point
+     travelling along the segment is a **convex, piecewise-quadratic** function of
+     the segment parameter — convex because distance to a convex set is convex and
+     the segment is affine in its parameter; piecewise-quadratic because within any
+     stretch where each coordinate stays on the same side of its slab, the
+     difference from the clamped point is affine. The pieces are delimited by the
+     parameters at which a coordinate crosses a slab face: six at most. So the
+     exact closest pair costs at most eight breakpoints and seven quadratics
+     minimised in closed form, with no iteration and no tolerance.
+
+     Given that pair at distance `d`, the MTV is `radius - d` along it. That is not
+     obvious and is worth writing down: for `D` the Minkowski difference
+     `box - segment` and `c` its point nearest the origin, moving by `lambda`
+     along `-c/|c|` puts the origin beyond `D`'s supporting hyperplane at `c`, so
+     the separation is at least `|c| + lambda`; and no shorter move can work,
+     because any translation `t` reaches a separation of at most `|c| + |t|`.
+
+  2. *The segment pierces the box.* The origin is then inside `D`, and its distance
+     to a convex polytope's boundary is the least distance to a face plane — so a
+     separating-axis minimum over `D`'s face normals is exact. `D` is a box swept
+     along a segment, and a Minkowski sum's face normals are each operand's plus
+     their edge-edge crosses; a segment contributes no faces and one edge, leaving
+     the box's three axes and their three crosses with the segment direction. Six
+     axes. Rounding by the radius adds the same amount to every one, so it does not
+     change which is least.
+
+  **The corner case the spec asked to have named** is therefore not a case where
+  this is wrong — it is the case that rules out the shortcut. Running the
+  sphere-box test at the point of the segment nearest the box's *centre* is right
+  for a face contact and wrong on a corner, because the closest point to the centre
+  is not the closest point to the box; a character on the corner of a step would
+  get a normal pointing somewhere other than out of the corner and settle into it.
+  `TestCapsule3Box3OnABoxCorner` is that case.
+
+  The one place accuracy is soft is a segment grazing a corner at a gap of a few
+  ulps. The depth stays accurate — it is a length — but the direction comes from
+  subtracting nearly equal coordinates, and the returned normal can be some degrees
+  out below about a float32 millionth. No threshold is applied to hide it: a pair
+  that close is touching, the depth is right either way, and rounding the gap up to
+  contact would trade a bounded direction error for an unbounded choice of which
+  branch answers. Exact contact *is* exact, which is what the interval search's
+  middle-of-the-interval return buys (see below).
+
+- **`NewCapsule3Upright`'s height is the total, feet to crown**, caps included —
+  the figure a designer means by "this character is 1.8 metres tall". A height
+  below twice the radius has no answer and collapses to the sphere of that radius
+  rather than erroring mid-frame.
+
+## What landed
+
+| Phase | Where |
+|---|---|
+| 1 | `linesegment3.go` (+`_test.go`) — the type and its distance routines; `capsule3.go` (+`_test.go`) — `Capsule3`, `NewCapsule3`, `NewCapsule3Upright`, `NewCapsule3FromSphere`, and the self-contained helpers |
+| 2 | `collider/capsule3.go` — `Capsule3Sphere`, `Capsule3Capsule3` and both penetrations, plus `SphereCapsule3Penetration` |
+| 3 | `collider/capsule3.go` — `Capsule3Box3`, `Capsule3OBB3`, their penetrations and the two reversed wrappers, over the shared `capsuleAlignedBoxPenetration` core |
+| 4 | `collider/ray3.go` — `Ray3Capsule3`; 8 new rows in `penetration3d_consistency_test.go` (19 total) and 7 in `penetration3d_oracle_test.go` (16 total), all at `depthSlack: 1` |
+
+The penetration matrix is now complete over all sixteen ordered pairs of
+{Sphere, Box3, OBB3, Capsule3}.
+
+### Two bugs the harnesses caught, worth knowing about
+
+**A sign, in `LineSegment3.ClosestParameters`.** The degenerate branch projected
+onto the other segment with the wrong sign, which clamped the parameter to an
+endpoint whenever it should have landed in the interior. The unit table missed
+it and the brute-force oracle in `linesegment3_test.go` found it immediately.
+
+**An exact zero that was not one, in `closestOnSegmentToAlignedBox`.** Where the
+segment passes through the box, the gap is constant at zero over an interval, and
+the interval minimiser originally returned the interval's LOW end. That end is a
+slab crossing computed by a division, so it evaluated to `1.2e-32` rather than to
+zero — and `1.2e-32 > 0` sent the caller down its closest-pair branch, to
+normalise a difference vector made entirely of rounding error. It returned a depth
+of exactly the radius where the true answer was half again as much, because a small
+box sits *inside* a fat capsule and has further to travel than a radius to get out.
+Returning the interval's MIDDLE fixes it: an interior point evaluates to an exact
+zero. `TestCapsule3Box3SegmentEndingInsideTheBox` pins it.
+
+Only the 3D oracle caught the second one. The consistency harness did not, and
+would not have: it is the same asymmetry PMP-570 recorded, where the harness's
+X-axis rotations leave it blind to bugs the oracle sees. Confirmed again here by
+injecting an inverse-rotation bug into `Capsule3OBB3Penetration` — the harness
+stayed green, both oracle rows failed.
 
 ## Revision history
 
+- v2 (2026-08-24) — implemented. Open questions resolved above: `LineSegment3`
+  added, and the box pairs are exact rather than approximated.
 - v1 (2026-08-14) — initial spec.

@@ -377,3 +377,173 @@ func randomRay(random *rand.Rand) gomath.Ray3[float64] {
 
 	return gomath.NewRay3(randomPoint(random, 12), direction)
 }
+
+func TestRay3Capsule3(t *testing.T) {
+	// A capsule standing on the Y axis: segment from y=-1 to y=1, radius 0.5, so
+	// the body spans that stretch and the caps reach y=±1.5.
+	capsule := gomath.NewCapsule3(
+		gomath.Vector3[float64]{Y: -1},
+		gomath.Vector3[float64]{Y: 1},
+		0.5,
+	)
+
+	tests := []struct {
+		name     string
+		ray      gomath.Ray3[float64]
+		want     float64
+		wantHit  bool
+		tolerant bool
+	}{
+		{
+			name:    "straight at the body from the side",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{X: -5}, gomath.Vector3[float64]{X: 1}),
+			want:    4.5,
+			wantHit: true,
+		},
+		{
+			name:    "down the axis into the top cap",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{Y: 5}, gomath.Vector3[float64]{Y: -1}),
+			want:    3.5,
+			wantHit: true,
+		},
+		{
+			name:    "up the axis into the bottom cap",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{Y: -5}, gomath.Vector3[float64]{Y: 1}),
+			want:    3.5,
+			wantHit: true,
+		},
+		{
+			name:    "at the side of a cap, above the body",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{X: -5, Y: 1.2}, gomath.Vector3[float64]{X: 1}),
+			want:    5 - math.Sqrt(0.25-0.04),
+			wantHit: true,
+		},
+		{
+			name:    "starting inside reports zero",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{Y: 0.3}, gomath.Vector3[float64]{X: 1}),
+			want:    0,
+			wantHit: true,
+		},
+		{
+			name:    "starting inside a cap reports zero",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{Y: 1.3}, gomath.Vector3[float64]{Z: 1}),
+			want:    0,
+			wantHit: true,
+		},
+		{
+			name:    "pointing away is not a hit",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{X: -5}, gomath.Vector3[float64]{X: -1}),
+			wantHit: false,
+		},
+		{
+			name:    "past the end of a cap",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{X: -5, Y: 1.6}, gomath.Vector3[float64]{X: 1}),
+			wantHit: false,
+		},
+		{
+			name:    "parallel to the axis and beside it, missing",
+			ray:     gomath.NewRay3(gomath.Vector3[float64]{X: 0.7, Y: -5}, gomath.Vector3[float64]{Y: 1}),
+			wantHit: false,
+		},
+		{
+			// The case a body-first cascade gets wrong: the ray meets the INFINITE
+			// cylinder well above the segment, and the real first surface is the
+			// top cap.
+			name:    "grazing above the body, caught by the cap",
+			ray:     gomath.NewRay3Between(gomath.Vector3[float64]{X: -5, Y: 1.4}, gomath.Vector3[float64]{X: 0, Y: 1.4}),
+			want:    5 - math.Sqrt(0.25-0.16),
+			wantHit: true,
+		},
+		{
+			name:    "an invalid ray never hits",
+			ray:     gomath.Ray3[float64]{Origin: gomath.Vector3[float64]{X: -5}},
+			wantHit: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			distance, hit := Ray3Capsule3(test.ray, capsule)
+
+			require.Equal(t, test.wantHit, hit)
+
+			if test.wantHit {
+				assert.InDelta(t, test.want, distance, 1e-12)
+			} else {
+				assert.Zero(t, distance, "a miss must leave the distance at zero")
+			}
+		})
+	}
+}
+
+// A degenerate capsule is a sphere, so its ray cast must be Ray3Sphere's — the
+// same reduction the penetration functions are held to.
+func TestRay3Capsule3ReducesToRay3Sphere(t *testing.T) {
+	random := rand.New(rand.NewSource(20260824))
+
+	for trial := range 500 {
+		sphere := gomath.Sphere[float64]{Center: randomPoint(random, 4), Radius: 0.5 + random.Float64()*2}
+		capsule := gomath.NewCapsule3FromSphere(sphere)
+		ray := randomRayNear(random, sphere.Center, sphere.Radius*1.6)
+
+		wantDistance, wantHit := Ray3Sphere(ray, sphere)
+		gotDistance, gotHit := Ray3Capsule3(ray, capsule)
+
+		require.Equalf(t, wantHit, gotHit, "trial %d", trial)
+		assert.InDeltaf(t, wantDistance, gotDistance, 1e-12, "trial %d", trial)
+	}
+}
+
+// The same marching oracle the sphere and box casts are held to: step along the
+// ray until the first point inside, and require the analytic distance to agree
+// within a step.
+func TestRay3Capsule3AgainstMarching(t *testing.T) {
+	random := rand.New(rand.NewSource(20260824))
+
+	const (
+		samples = 4000
+		reach   = 30.0
+		step    = reach / samples
+	)
+
+	checked := 0
+	for range 400 {
+		centre := randomPoint(random, 8)
+		capsule := gomath.NewCapsule3(
+			centre.Add(randomPoint(random, 2)),
+			centre.Add(randomPoint(random, 2)),
+			0.3+random.Float64()*1.5,
+		)
+
+		ray := randomRayNear(random, centre, capsule.Radius*2)
+
+		distance, hit := Ray3Capsule3(ray, capsule)
+
+		marched := -1.0
+		for sample := range samples {
+			at := float64(sample) * step
+			if capsule.ContainsPoint(ray.At(at)) {
+				marched = at
+
+				break
+			}
+		}
+
+		if marched < 0 {
+			if hit && distance < reach-step {
+				require.InDelta(t, marched, distance, step*2,
+					"reported a hit at %v that marching never found", distance)
+			}
+
+			continue
+		}
+
+		require.True(t, hit, "marching hit at %v but the test reported a miss", marched)
+		assert.LessOrEqual(t, distance, marched+step)
+		assert.GreaterOrEqual(t, distance, marched-step)
+		checked++
+	}
+
+	require.Positive(t, checked, "the oracle never found a hit, so it proved nothing")
+	t.Logf("cross-checked %d ray/capsule hits against marching", checked)
+}

@@ -21,20 +21,27 @@ go test -bench=. ./spatial/...
                 4x4 3D transform, GL upload order), Quaternion, AABB, Circle,
                 Ellipsoid, LineSegment, Ray, Polygon, ConvexHull, plus scalar
                 helpers (math.go, power.go, distance.go). 3D: Sphere, Box3
-                (axis-aligned), OBB3 (oriented), Plane3, Ray3, Frustum. Volume
-                interfaces (CenteredVolume, SimpleVolume) in types.go.
+                (axis-aligned), OBB3 (oriented), Capsule3, LineSegment3, Plane3,
+                Ray3, Frustum. Volume interfaces (CenteredVolume, SimpleVolume)
+                in types.go.
                 NOTE: AABB, Circle, Ellipsoid, LineSegment, Ray and Polygon are
                 all 2D despite some of the names — the 3D counterparts are Box3,
-                Ellipsoid has none, Ray3, and Polygon has none. There is no
-                Capsule3 or convex hull in 3D yet.
+                Ellipsoid has none, LineSegment3, Ray3, and Polygon has none.
+                There is no convex hull in 3D yet.
+                Capsule3 is a LineSegment3 plus a radius, with no orientation
+                field: the rotation is implicit in the endpoints. A degenerate
+                segment makes it exactly a Sphere, and the tests lean on that
+                reduction throughout — see docs/capsule3/spec.md.
 collider/      Struct-based collision: bool intersection tests + penetration/MTV
                 for every shape pair. (Was the old scalar `intersection` package.)
-                The 3D penetration matrix is COMPLETE over {Sphere, Box3, OBB3}:
-                all nine ordered pairs have a `<A><B>Penetration` function, so
-                callers never have to swap arguments and negate. Reversed forms
-                (Box3Sphere, OBB3Sphere, OBB3Box3) are thin wrappers. The bool
-                tests are NOT symmetric in the same way — SphereBox3 and
-                SphereOBB3 exist but their reverses do not.
+                The 3D penetration matrix is COMPLETE over
+                {Sphere, Box3, OBB3, Capsule3}: every ordered pair has a
+                `<A><B>Penetration` function, so callers never have to swap
+                arguments and negate. Reversed forms (Box3Sphere, OBB3Sphere,
+                OBB3Box3, SphereCapsule3, Box3Capsule3, OBB3Capsule3) are thin
+                wrappers. The bool tests are NOT symmetric in the same way —
+                SphereBox3, SphereOBB3 and the four Capsule3* tests exist but
+                their reverses do not.
 spatial/       Spatial partitioning: BoxedQuadtree, SimpleHashGrid, HashGrid,
                 Quadtree, hash grids — all 2D. (pixelmaster uses BoxedQuadtree +
                 SimpleHashGrid.) Grid3 (grid3.go) is the only 3D structure: a
@@ -107,6 +114,17 @@ util/          Standalone helpers (distance).
   cancellation error. Exactly-parallel boxes are worse: every edge axis is zero, so whether
   the test says "separated" depends on whether the comparison is `>` or `>=`. If you touch
   that file, keep `TestOBB3ParallelBoxesOverlap` and `TestEdgeAxesAreNecessary` passing.
+- **Capsule-vs-box is exact, and deliberately so.** `collider/capsule3.go` does not
+  take the usual shortcut of running the sphere-box test at the segment's closest
+  point to the box CENTRE, which is wrong on a corner — the case a character on a
+  step hits. It branches instead: an exact segment-to-box distance (the squared
+  distance is convex and piecewise quadratic in the segment parameter, so it is
+  minimised in closed form over at most eight breakpoints) where the segment misses
+  the box, and a six-axis SAT over the box's axes plus their crosses with the
+  segment direction where it pierces. Both branches degenerate to the sphere
+  functions when the segment does, which is what `TestCapsule3ReducesToSphereWhenDegenerate`
+  checks. If you touch that file, keep `TestCapsule3Box3SegmentEndingInsideTheBox`
+  passing — it pins why the interval search returns a MIDPOINT.
 - MTV/penetration normals point **shape1 → shape2** (the solver's convention). Keep every
   penetration function consistent with it; the consistency tests anchor this —
   `collider/penetration_consistency_test.go` for 2D and
@@ -114,7 +132,12 @@ util/          Standalone helpers (distance).
   every ordered pair and asserts four things: the normal points shape1 → shape2, moving
   shape2 by `penetration * normal` separates the pair, the swapped call negates the normal
   and keeps the depth, and a non-overlapping pair zeroes the other two returns. **Adding a
-  3D pair means adding a row**, not writing a bespoke test.
+  3D pair means adding a row**, not writing a bespoke test — and a row in
+  `collider/penetration3d_oracle_test.go` too. The two are not redundant: the
+  harness fixes its rotations about X, which makes them invariant under
+  transposing the rotation matrix, so it does NOT catch a normal mapped back to
+  world space with the inverse rotation. The oracle does (verified by injecting
+  exactly that bug into `Capsule3OBB3Penetration`: the harness stayed green).
 - Real-world variable names over single letters; single-word receiver names; singular of a
   plural slice (`element` from `elements`). Repeat the type on every parameter
   (`f(a string, b string)`, not `f(a, b string)`). Avoid shadowing builtins (`min`/`max` →
