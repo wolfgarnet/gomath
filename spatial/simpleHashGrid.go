@@ -3,7 +3,7 @@ package spatial
 import (
 	"fmt"
 	"iter"
-	"slices"
+	"math/bits"
 
 	"github.com/wolfgarnet/gomath"
 )
@@ -74,14 +74,24 @@ func (cell *SimpleGridCell[T, ID]) IterateContentFrom(id int) iter.Seq[ID] {
 // narrow-phase filter. Grid dimensions are rounded up to a power of two (see
 // NewSimpleHashGrid), and the grid is not safe for concurrent modification.
 //
+// Cells live in one slice indexed by their hash: every hash the grid produces
+// is in [0, Size()), so a slice answers what a map would, without hashing the
+// key, and walking it is ascending hash order for free. An occupancy bitset
+// beside it records which cells have received an item since the last Clear, so
+// Clear and IterateCells cost what the grid holds rather than what it spans.
+//
 // Use a floating-point T. Although Number admits integers, the grid precomputes
 // inverseCellSize = 1/cellSize, which truncates to 0 for any integer cellSize
 // greater than one and collapses every hash to cell 0.
 type SimpleHashGrid[T gomath.Number, ID comparable] struct {
-	grid map[uint64]*SimpleGridCell[T, ID]
+	// cells holds every cell, indexed by hash. It is allocated once and never
+	// grows, so the neighbour pointers between cells stay valid.
+	cells []SimpleGridCell[T, ID]
 
-	// order is IterateCells' reusable buffer of sorted cell hashes.
-	order []uint64
+	// occupied has one bit per cell, set when an item is added to it and
+	// cleared by Clear. A set bit says the cell may hold items, not that it
+	// does: removing a cell's last item leaves its bit set until the next Clear.
+	occupied []uint64
 
 	// size is the total number of cells in the grid
 	size uint64
@@ -121,16 +131,42 @@ func NewSimpleHashGrid[T gomath.Number, ID comparable](width, height uint64, cel
 		yHashMask:       height - 1,
 	}
 
-	grid.grid = make(map[uint64]*SimpleGridCell[T, ID])
 	grid.initialize()
 
 	return grid
 }
 
+// Clear empties every cell, visiting only the cells an item was added to since
+// the previous Clear.
 func (grid *SimpleHashGrid[T, ID]) Clear() {
-	for _, cell := range grid.grid {
-		cell.items = cell.items[:0]
+	for wordIndex, word := range grid.occupied {
+		for word != 0 {
+			bit := bits.TrailingZeros64(word)
+			word &= word - 1
+			cell := &grid.cells[uint64(wordIndex)<<6|uint64(bit)]
+			cell.items = cell.items[:0]
+		}
+		grid.occupied[wordIndex] = 0
 	}
+}
+
+// markOccupied records that the cell at hash has received an item.
+//
+//go:inline
+func (grid *SimpleHashGrid[T, ID]) markOccupied(hash uint64) {
+	grid.occupied[hash>>6] |= 1 << (hash & 63)
+}
+
+// cell returns the cell at hash, or nil when hash is outside the grid. Hashes
+// the grid computes itself are always inside it; this guards the methods that
+// take one from the caller.
+//
+//go:inline
+func (grid *SimpleHashGrid[T, ID]) cell(hash uint64) *SimpleGridCell[T, ID] {
+	if hash >= grid.size {
+		return nil
+	}
+	return &grid.cells[hash]
 }
 
 func (grid *SimpleHashGrid[T, ID]) Size() uint64 {
@@ -151,8 +187,8 @@ func (grid *SimpleHashGrid[T, ID]) CellSize() T {
 
 func (grid *SimpleHashGrid[T, ID]) NumberOfElements() uint64 {
 	var count uint64
-	for _, cell := range grid.grid {
-		count += uint64(len(cell.items))
+	for index := range grid.cells {
+		count += uint64(len(grid.cells[index].items))
 	}
 	return count
 }
@@ -170,50 +206,51 @@ func (grid *SimpleHashGrid[T, ID]) localToHash(x, y uint64) uint64 {
 }
 
 func (grid *SimpleHashGrid[T, ID]) initialize() {
+	grid.cells = make([]SimpleGridCell[T, ID], grid.size)
+	grid.occupied = make([]uint64, (grid.size+63)/64)
 	for i := uint64(0); i < grid.size; i++ {
-		grid.grid[i] = &SimpleGridCell[T, ID]{
-			neighbours:      [8]*SimpleGridCell[T, ID]{},
-			neighbourHashes: [8]uint64{},
-			items:           make([]ID, 0, 8),
-			hash:            i,
+		grid.cells[i] = SimpleGridCell[T, ID]{
+			items: make([]ID, 0, 8),
+			hash:  i,
 		}
 	}
 
 	for i := uint64(0); i < grid.size; i++ {
-		cell := grid.grid[i]
+		cell := &grid.cells[i]
 		x, y := grid.HashToCell(i)
 
 		// Top 0
-		cell.neighbours[upNeighbour] = grid.grid[grid.localToHash(x, y-1)]
+		cell.neighbours[upNeighbour] = &grid.cells[grid.localToHash(x, y-1)]
 		cell.neighbourHashes[upNeighbour] = grid.localToHash(x, y-1)
 		// Top-right 1
-		cell.neighbours[upRightNeighbour] = grid.grid[grid.localToHash(x+1, y-1)]
+		cell.neighbours[upRightNeighbour] = &grid.cells[grid.localToHash(x+1, y-1)]
 		cell.neighbourHashes[upRightNeighbour] = grid.localToHash(x+1, y-1)
 		// Right 2
-		cell.neighbours[rightNeighbour] = grid.grid[grid.localToHash(x+1, y)]
+		cell.neighbours[rightNeighbour] = &grid.cells[grid.localToHash(x+1, y)]
 		cell.neighbourHashes[rightNeighbour] = grid.localToHash(x+1, y)
 		// Bottom-right 3
-		cell.neighbours[downRightNeighbour] = grid.grid[grid.localToHash(x+1, y+1)]
+		cell.neighbours[downRightNeighbour] = &grid.cells[grid.localToHash(x+1, y+1)]
 		cell.neighbourHashes[downRightNeighbour] = grid.localToHash(x+1, y+1)
 		// Bottom 4
-		cell.neighbours[downNeighbour] = grid.grid[grid.localToHash(x, y+1)]
+		cell.neighbours[downNeighbour] = &grid.cells[grid.localToHash(x, y+1)]
 		cell.neighbourHashes[downNeighbour] = grid.localToHash(x, y+1)
 		// Bottom-left 5
-		cell.neighbours[downLeftNeighbour] = grid.grid[grid.localToHash(x-1, y+1)]
+		cell.neighbours[downLeftNeighbour] = &grid.cells[grid.localToHash(x-1, y+1)]
 		cell.neighbourHashes[downLeftNeighbour] = grid.localToHash(x-1, y+1)
 		// Left 6
-		cell.neighbours[leftNeighbour] = grid.grid[grid.localToHash(x-1, y)]
+		cell.neighbours[leftNeighbour] = &grid.cells[grid.localToHash(x-1, y)]
 		cell.neighbourHashes[leftNeighbour] = grid.localToHash(x-1, y)
 		// Top-left 7
-		cell.neighbours[upLeftNeighbour] = grid.grid[grid.localToHash(x-1, y-1)]
+		cell.neighbours[upLeftNeighbour] = &grid.cells[grid.localToHash(x-1, y-1)]
 		cell.neighbourHashes[upLeftNeighbour] = grid.localToHash(x-1, y-1)
 	}
 }
 
+// IterateContent yields every cell, empty or not, in ascending hash order.
 func (grid *SimpleHashGrid[T, ID]) IterateContent() iter.Seq[*SimpleGridCell[T, ID]] {
 	return func(yield func(hashGrid *SimpleGridCell[T, ID]) bool) {
-		for _, cell := range grid.grid {
-			if !yield(cell) {
+		for index := range grid.cells {
+			if !yield(&grid.cells[index]) {
 				return
 			}
 		}
@@ -222,8 +259,8 @@ func (grid *SimpleHashGrid[T, ID]) IterateContent() iter.Seq[*SimpleGridCell[T, 
 
 func (grid *SimpleHashGrid[T, ID]) IteratorForHash(hash uint64) iter.Seq[ID] {
 	return func(yield func(ID) bool) {
-		cell, ok := grid.grid[hash]
-		if !ok {
+		cell := grid.cell(hash)
+		if cell == nil {
 			return
 		}
 		for _, item := range cell.items {
@@ -236,8 +273,8 @@ func (grid *SimpleHashGrid[T, ID]) IteratorForHash(hash uint64) iter.Seq[ID] {
 
 func (grid *SimpleHashGrid[T, ID]) Iterator(hash uint64) iter.Seq[ID] {
 	return func(yield func(ID) bool) {
-		cell, ok := grid.grid[hash]
-		if !ok {
+		cell := grid.cell(hash)
+		if cell == nil {
 			return
 		}
 		for _, item := range cell.items {
@@ -256,8 +293,8 @@ func (grid *SimpleHashGrid[T, ID]) Iterator(hash uint64) iter.Seq[ID] {
 }
 
 func (grid *SimpleHashGrid[T, ID]) IteratorWithYield(hash uint64, yield func(ID) bool) {
-	cell, ok := grid.grid[hash]
-	if !ok {
+	cell := grid.cell(hash)
+	if cell == nil {
 		return
 	}
 	for _, item := range cell.items {
@@ -316,7 +353,7 @@ func (grid *SimpleHashGrid[T, ID]) HashValuesForRectangleMinMax(aabb gomath.AABB
 //go:inline
 func (grid *SimpleHashGrid[T, ID]) rectangleIterator(hash uint64, offsetX uint64, offsetY uint64) iter.Seq[ID] {
 	return func(yield func(ID) bool) {
-		cell := grid.grid[hash]
+		cell := &grid.cells[hash]
 		for y := uint64(0); y < offsetY; y++ {
 			xCell := cell
 			for x := uint64(0); x < offsetX; x++ {
@@ -366,9 +403,8 @@ func (grid *SimpleHashGrid[T, ID]) SquaredAABBIteratorWithYield(position gomath.
 	hash, offsetX, offsetY := grid.HashValuesForSquared(position, radius)
 	// Follow neighbour pointers (which wrap toroidally) rather than adding the
 	// raw linear offset: hash + y*width + x escapes the row near the right edge
-	// and can index past the last cell, where the map returns a nil cell and
-	// .items panics. This mirrors rectangleIterator exactly.
-	cell := grid.grid[hash]
+	// and can index past the last cell. This mirrors rectangleIterator exactly.
+	cell := &grid.cells[hash]
 	for y := uint64(0); y < offsetY; y++ {
 		xCell := cell
 		for x := uint64(0); x < offsetX; x++ {
@@ -383,32 +419,34 @@ func (grid *SimpleHashGrid[T, ID]) SquaredAABBIteratorWithYield(position gomath.
 	}
 }
 
-// IterateCells yields every occupied cell, in ascending hash order.
+// IterateCells yields every cell holding at least one item, in ascending hash
+// order. Empty cells are skipped.
 //
-// The order is sorted rather than the map's own because callers use this to
-// generate work whose *result* depends on the order they see it in — a physics
-// broad phase pairs items cell by cell, and the contacts it produces are then
-// resolved in the order they were appended. Go randomises map iteration per run,
-// so ranging the map directly makes a simulation that cannot replay itself:
-// entities with two or more contacts settle a fraction of a unit differently
-// every time, and over a few thousand ticks that compounds into a different
-// world.
+// The order is fixed rather than arbitrary because callers use this to generate
+// work whose *result* depends on the order they see it in — a physics broad
+// phase pairs items cell by cell, and the contacts it produces are then
+// resolved in the order they were appended. An order that varied between runs
+// would make a simulation that cannot replay itself: entities with two or more
+// contacts settle a fraction of a unit differently every time, and over a few
+// thousand ticks that compounds into a different world.
 //
-// Sorting costs O(cells log cells) per call against a buffer reused between
-// calls, which is small beside the pair checks the caller then does. The buffer
-// means one iteration at a time per grid: do not nest IterateCells over the same
-// grid.
+// It walks the occupancy bitset, so it costs one word test per 64 cells plus
+// one step per cell that received an item since the last Clear — not one per
+// cell in the grid.
 func (grid *SimpleHashGrid[T, ID]) IterateCells() iter.Seq2[uint64, *SimpleGridCell[T, ID]] {
 	return func(yield func(hash uint64, cell *SimpleGridCell[T, ID]) bool) {
-		grid.order = grid.order[:0]
-		for hash := range grid.grid {
-			grid.order = append(grid.order, hash)
-		}
-		slices.Sort(grid.order)
-
-		for _, hash := range grid.order {
-			if !yield(hash, grid.grid[hash]) {
-				return
+		for wordIndex, word := range grid.occupied {
+			for word != 0 {
+				bit := bits.TrailingZeros64(word)
+				word &= word - 1
+				hash := uint64(wordIndex)<<6 | uint64(bit)
+				cell := &grid.cells[hash]
+				if len(cell.items) == 0 {
+					continue
+				}
+				if !yield(hash, cell) {
+					return
+				}
 			}
 		}
 	}
@@ -417,20 +455,28 @@ func (grid *SimpleHashGrid[T, ID]) IterateCells() iter.Seq2[uint64, *SimpleGridC
 // AddItem adds an item to the grid and returns the hash of the cell it was added to
 func (grid *SimpleHashGrid[T, ID]) AddItem(item ID, position gomath.Vector2[T]) (hash uint64) {
 	hash = grid.HashPositionIndex(position.X, position.Y)
-	grid.grid[hash].items = append(grid.grid[hash].items, item)
+	cell := &grid.cells[hash]
+	cell.items = append(cell.items, item)
+	grid.markOccupied(hash)
 
 	return hash
 }
 
 func (grid *SimpleHashGrid[T, ID]) AddItemAtCellIndex(item ID, hash uint64) {
-	grid.grid[hash].items = append(grid.grid[hash].items, item)
+	cell := &grid.cells[hash]
+	cell.items = append(cell.items, item)
+	grid.markOccupied(hash)
 }
 
 // RemoveItemAtCellIndex removes an item from the grid at the given cell index
 func (grid *SimpleHashGrid[T, ID]) RemoveItemAtCellIndex(item ID, hash uint64) bool {
-	for i, pp := range grid.grid[hash].items {
+	cell := grid.cell(hash)
+	if cell == nil {
+		return false
+	}
+	for i, pp := range cell.items {
 		if pp == item {
-			grid.grid[hash].items = RemoveUnordered(grid.grid[hash].items, i)
+			cell.items = RemoveUnordered(cell.items, i)
 			return true
 		}
 	}
@@ -440,9 +486,13 @@ func (grid *SimpleHashGrid[T, ID]) RemoveItemAtCellIndex(item ID, hash uint64) b
 
 func (grid *SimpleHashGrid[T, ID]) RemoveItem(item ID, position gomath.Vector2[T]) bool {
 	hash := grid.HashPositionIndex(position.X, position.Y)
-	for i, pp := range grid.grid[hash].items {
+	cell := grid.cell(hash)
+	if cell == nil {
+		return false
+	}
+	for i, pp := range cell.items {
 		if pp == item {
-			grid.grid[hash].items = RemoveUnordered(grid.grid[hash].items, i)
+			cell.items = RemoveUnordered(cell.items, i)
 			return true
 		}
 	}
@@ -462,7 +512,7 @@ func (grid *SimpleHashGrid[T, ID]) UpdateItem(item ID, oldPosition gomath.Vector
 	newHash := grid.HashPositionIndex(newPosition.X, newPosition.Y)
 
 	if oldHash != newHash {
-		oldCell := grid.grid[oldHash]
+		oldCell := &grid.cells[oldHash]
 		for i, existing := range oldCell.items {
 			if existing == item {
 				oldCell.items = RemoveUnordered(oldCell.items, i)
@@ -471,13 +521,14 @@ func (grid *SimpleHashGrid[T, ID]) UpdateItem(item ID, oldPosition gomath.Vector
 		}
 	}
 
-	newCell := grid.grid[newHash]
+	newCell := &grid.cells[newHash]
 	for _, existing := range newCell.items {
 		if existing == item {
 			return
 		}
 	}
 	newCell.items = append(newCell.items, item)
+	grid.markOccupied(newHash)
 }
 
 func (grid *SimpleHashGrid[T, ID]) NeighbourHashes(index uint64) (hashes []uint64) {
@@ -533,8 +584,8 @@ func (grid *SimpleHashGrid[T, ID]) NeighbourHashesPair(index uint64) (pairs [][2
 }
 
 func (grid *SimpleHashGrid[T, ID]) Neighbours(index uint64) [8]*SimpleGridCell[T, ID] {
-	cell, ok := grid.grid[index]
-	if !ok {
+	cell := grid.cell(index)
+	if cell == nil {
 		return [8]*SimpleGridCell[T, ID]{}
 	}
 	return cell.neighbours
@@ -542,7 +593,7 @@ func (grid *SimpleHashGrid[T, ID]) Neighbours(index uint64) [8]*SimpleGridCell[T
 
 // GetCell returns the cell for index, or nil if index is out of range.
 func (grid *SimpleHashGrid[T, ID]) GetCell(index uint64) *SimpleGridCell[T, ID] {
-	return grid.grid[index]
+	return grid.cell(index)
 }
 
 func (grid *SimpleHashGrid[T, ID]) HashPositionIndexVector(position gomath.Vector2[T]) uint64 {

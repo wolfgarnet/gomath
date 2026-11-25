@@ -63,3 +63,129 @@ func TestSimpleHashGrid_RemoveItem(t *testing.T) {
 	assert.Equal(t, uint64(1), grid.NumberOfElements())
 	assert.False(t, grid.RemoveItem(99, vec(15, 15)))
 }
+
+// TestSimpleHashGrid_IterateCells pins the contract the broad phase depends
+// on: IterateCells yields exactly the cells that hold an item, each once, in
+// ascending hash order — whatever order the items went in, and however they
+// were moved or removed since the last Clear.
+func TestSimpleHashGrid_IterateCells(t *testing.T) {
+	type step func(grid *SimpleHashGrid[float32, uint64])
+
+	tests := []struct {
+		name  string
+		steps []step
+	}{
+		{
+			name: "empty grid yields nothing",
+		},
+		{
+			name: "items added out of hash order come back sorted",
+			steps: []step{
+				func(grid *SimpleHashGrid[float32, uint64]) {
+					grid.AddItem(1, vec(500, 900))
+					grid.AddItem(2, vec(10, 10))
+					grid.AddItem(3, vec(300, 40))
+					grid.AddItem(4, vec(11, 12)) // same cell as 2
+				},
+			},
+		},
+		{
+			name: "negative positions wrap and still sort",
+			steps: []step{
+				func(grid *SimpleHashGrid[float32, uint64]) {
+					grid.AddItem(1, vec(-5, -5))
+					grid.AddItem(2, vec(5, 5))
+				},
+			},
+		},
+		{
+			name: "a cell emptied by removal is skipped",
+			steps: []step{
+				func(grid *SimpleHashGrid[float32, uint64]) {
+					grid.AddItem(1, vec(10, 10))
+					grid.AddItem(2, vec(300, 300))
+					grid.RemoveItem(1, vec(10, 10))
+				},
+			},
+		},
+		{
+			name: "a cell emptied by a move is skipped, the new cell is yielded",
+			steps: []step{
+				func(grid *SimpleHashGrid[float32, uint64]) {
+					grid.AddItem(1, vec(10, 10))
+					grid.UpdateItem(1, vec(10, 10), vec(700, 700))
+				},
+			},
+		},
+		{
+			name: "items added by cell index are yielded",
+			steps: []step{
+				func(grid *SimpleHashGrid[float32, uint64]) {
+					grid.AddItemAtCellIndex(1, grid.Size()-1)
+					grid.AddItemAtCellIndex(2, 0)
+				},
+			},
+		},
+		{
+			name: "clear forgets everything added before it",
+			steps: []step{
+				func(grid *SimpleHashGrid[float32, uint64]) {
+					grid.AddItem(1, vec(10, 10))
+					grid.AddItem(2, vec(300, 300))
+					grid.Clear()
+					grid.AddItem(3, vec(600, 20))
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			grid := NewSimpleHashGrid[float32, uint64](40, 40, 24)
+			for _, apply := range test.steps {
+				apply(grid)
+			}
+
+			// The reference answer: every cell that holds anything, by brute
+			// force over the whole grid.
+			var expected []uint64
+			for hash := uint64(0); hash < grid.Size(); hash++ {
+				if grid.GetCell(hash).Size() > 0 {
+					expected = append(expected, hash)
+				}
+			}
+
+			var visited []uint64
+			for hash, cell := range grid.IterateCells() {
+				assert.Same(t, grid.GetCell(hash), cell, "cell yielded under the wrong hash")
+				visited = append(visited, hash)
+			}
+
+			assert.Equal(t, expected, visited)
+		})
+	}
+}
+
+// TestSimpleHashGrid_ClearEmptiesEveryCell checks Clear reaches every cell
+// that was written, including ones reached through moves and cell-index adds,
+// which are the paths that have to remember occupancy themselves.
+func TestSimpleHashGrid_ClearEmptiesEveryCell(t *testing.T) {
+	grid := NewSimpleHashGrid[float32, uint64](40, 40, 24)
+	extent := float32(grid.Width()) * grid.CellSize()
+	for index := uint64(0); index < 500; index++ {
+		position := vec(float32(index*37%997)/997*extent, float32(index*61%991)/991*extent)
+		grid.AddItem(index, position)
+		if index%3 == 0 {
+			grid.UpdateItem(index, position, vec(position.Y, position.X))
+		}
+	}
+	grid.AddItemAtCellIndex(9999, grid.Size()-1)
+	assert.Positive(t, grid.NumberOfElements())
+
+	grid.Clear()
+
+	assert.Zero(t, grid.NumberOfElements())
+	for range grid.IterateCells() {
+		assert.Fail(t, "a cleared grid yielded a cell")
+	}
+}
