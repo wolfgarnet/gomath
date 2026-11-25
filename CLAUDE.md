@@ -43,8 +43,13 @@ collider/      Struct-based collision: bool intersection tests + penetration/MTV
                 SphereBox3, SphereOBB3 and the four Capsule3* tests exist but
                 their reverses do not.
 spatial/       Spatial partitioning: BoxedQuadtree, SimpleHashGrid, HashGrid,
-                Quadtree, hash grids — all 2D. (pixelmaster uses BoxedQuadtree +
-                SimpleHashGrid.) Grid3 (grid3.go) is the only 3D structure: a
+                Quadtree, hash grids, ChunkedIndex — all 2D. (pixelmaster uses
+                BoxedQuadtree, SimpleHashGrid and ChunkedIndex.) ChunkedIndex
+                (chunkedIndex.go) is for items that rarely move over a world of
+                any size: cells in chunks found through a growable directory, no
+                boundary, local insert/remove; a query writes per-item stamps, so
+                queries must not nest and it is not safe for concurrent readers.
+                Grid3 (grid3.go) is the only 3D structure: a
                 uniform grid with a per-axis cell size (zero on an axis leaves it
                 unsubdivided), rebuild-per-tick, no toroidal wrap, offering
                 QueryBox/QuerySphere, near-to-far RayCandidates and a Pairs
