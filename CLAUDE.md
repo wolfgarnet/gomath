@@ -43,12 +43,17 @@ collider/      Struct-based collision: bool intersection tests + penetration/MTV
                 SphereBox3, SphereOBB3 and the four Capsule3* tests exist but
                 their reverses do not.
 spatial/       Spatial partitioning: BoxedQuadtree, SimpleHashGrid, HashGrid,
-                Quadtree, hash grids, ChunkedIndex — all 2D. (pixelmaster uses
-                BoxedQuadtree, SimpleHashGrid and ChunkedIndex.) ChunkedIndex
-                (chunkedIndex.go) is for items that rarely move over a world of
-                any size: cells in chunks found through a growable directory, no
-                boundary, local insert/remove; a query writes per-item stamps, so
-                queries must not nest and it is not safe for concurrent readers.
+                Quadtree, hash grids, ChunkedIndex, ChunkedGrid — all 2D.
+                (pixelmaster uses BoxedQuadtree, SimpleHashGrid, ChunkedIndex and
+                ChunkedGrid.) ChunkedIndex (chunkedIndex.go) is for items that
+                rarely move over a world of any size: cells in chunks found
+                through a growable directory, no boundary, local insert/remove; a
+                query writes per-item stamps, so queries must not nest and it is
+                not safe for concurrent readers. ChunkedGrid (chunkedGrid.go) is
+                the rebuilt-every-tick broad phase on the same chunk scheme: dense
+                cells per chunk with an occupancy bitset, no wrap, ascending
+                (y, x) order; SweepPairs is its fast pair sweep — the iterator
+                sweep was measured 10–28 % slower in pixelmaster's collisions.
                 Grid3 (grid3.go) is the only 3D structure: a
                 uniform grid with a per-axis cell size (zero on an axis leaves it
                 unsubdivided), rebuild-per-tick, no toroidal wrap, offering
