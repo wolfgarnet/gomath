@@ -246,3 +246,36 @@ func BenchmarkRegionLookup(b *testing.B) {
 		_ = hits
 	})
 }
+
+// TestChunkedIndexQueriesNest: a query run inside another's loop answers in
+// full, and so does the outer one — the inner keeps its own record of what it
+// has yielded rather than overwriting the outer's marks, which would have made
+// the outer skip every item the inner had already seen.
+func TestChunkedIndexQueriesNest(t *testing.T) {
+	index := NewChunkedIndex[float32, int](32, 4)
+	for id := range 40 {
+		// Wide items, so each sits in many cells and deduplication matters.
+		index.Insert(BoxedItem[float32, int]{ItemID: id, AABB: box(float32(id*50), 0, 80, 80)})
+	}
+	everywhere := box(1000, 0, 5000, 5000)
+
+	outer := map[int]int{}
+	for item := range index.Iterator(everywhere) {
+		outer[item.ItemID]++
+		inner := map[int]int{}
+		for nested := range index.Iterator(everywhere) {
+			inner[nested.ItemID]++
+		}
+		require.Len(t, inner, 40, "a nested query found every item")
+		for id, count := range inner {
+			require.Equal(t, 1, count, "the nested query yielded item %d once", id)
+		}
+	}
+	assert.Len(t, outer, 40, "the outer query found every item, nested queries notwithstanding")
+	for id, count := range outer {
+		assert.Equal(t, 1, count, "the outer query yielded item %d once", id)
+	}
+
+	// And after the nesting, a plain query is back on the fast path and right.
+	assert.Len(t, collect(index, everywhere), 40)
+}

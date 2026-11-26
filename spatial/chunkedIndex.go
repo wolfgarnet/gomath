@@ -35,8 +35,10 @@ import (
 // within a cell in the order items were added to it, each item once, at its
 // first cell — but not in any order a quadtree would give. Each item is yielded
 // once per query, which is tracked by stamping items as they are seen. That
-// makes a query a write: queries on one index must not be nested, and the index
-// is not safe for concurrent use, even by readers.
+// makes a query a write, so the index is not safe for concurrent use, even by
+// readers. Queries may nest: one started while another is running keeps its own
+// record of what it has yielded instead of the stamps, which is slower but only
+// paid when queries actually nest.
 //
 // Use a floating-point T, as for the other grids.
 type ChunkedIndex[T constraints.Float, ID comparable] struct {
@@ -62,6 +64,10 @@ type ChunkedIndex[T constraints.Float, ID comparable] struct {
 	// stamps marks, per handle, the query that last yielded it.
 	stamps []uint32
 	stamp  uint32
+
+	// running counts the queries in progress, so a nested one knows not to use
+	// the stamps the outer one is relying on.
+	running int
 }
 
 type indexedItem[T constraints.Float, ID comparable] struct {
@@ -175,13 +181,23 @@ func (index *ChunkedIndex[T, ID]) Remove(id ID) bool {
 
 // Iterator yields every item whose box overlaps bounds — the same overlap test
 // a BoxedQuadtree's Iterator applies, so the two answer the same set — each item
-// once. See the type's doc for the order and for why queries must not nest.
+// once. See the type's doc for the order, and for what nesting costs.
 func (index *ChunkedIndex[T, ID]) Iterator(bounds gomath.AABB[T]) iter.Seq[BoxedItem[T, ID]] {
 	return func(yield func(BoxedItem[T, ID]) bool) {
 		if index.count == 0 {
 			return
 		}
-		stamp := index.nextStamp()
+		// The outermost query dedupes with the stamps; one nested inside another
+		// keeps its own set, so as not to disturb the outer one's marks.
+		var stamp uint32
+		var seen map[int32]struct{}
+		if index.running == 0 {
+			stamp = index.nextStamp()
+		} else {
+			seen = make(map[int32]struct{})
+		}
+		index.running++
+
 		minX, minY, maxX, maxY := index.cellRange(bounds)
 		// Only the part of the query the directory covers can hold anything.
 		minX = max(minX, index.originX*index.chunkCells)
@@ -196,20 +212,29 @@ func (index *ChunkedIndex[T, ID]) Iterator(bounds gomath.AABB[T]) iter.Seq[Boxed
 					continue
 				}
 				for _, handle := range *cell {
-					if index.stamps[handle] == stamp {
-						continue
+					if seen != nil {
+						if _, done := seen[handle]; done {
+							continue
+						}
+						seen[handle] = struct{}{}
+					} else {
+						if index.stamps[handle] == stamp {
+							continue
+						}
+						index.stamps[handle] = stamp
 					}
-					index.stamps[handle] = stamp
 					item := index.items[handle].item
 					if !AABBAABB3(item.AABB, bounds) {
 						continue
 					}
 					if !yield(item) {
+						index.running--
 						return
 					}
 				}
 			}
 		}
+		index.running--
 	}
 }
 
